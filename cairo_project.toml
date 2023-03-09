@@ -1,0 +1,2 @@
+[crate_roots]
+zklink_starknet_contracts = "src"
