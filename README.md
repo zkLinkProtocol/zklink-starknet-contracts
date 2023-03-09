@@ -30,7 +30,7 @@ source ~/.zshrc
 
 After installation, you can find command such as `cairo-test`.
 
-**If you need upgrade, just download the latest source code into `release`, build it, and remove the soft link to the newest **
+**If you need upgrade, just download the latest source code into `release`, build it, and remove the soft link to the newest**
 
 ### Installing Scarb
 
