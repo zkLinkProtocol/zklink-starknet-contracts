@@ -1,4 +1,16 @@
-[TOC]
+- [zkLink Starknet Contracts](#zklink-starknet-contracts)
+  - [Setting up local development environment](#setting-up-local-development-environment)
+    - [Installing prerequisites](#installing-prerequisites)
+    - [Installing the `cairo-lang` CLI](#installing-the-cairo-lang-cli)
+    - [Installing the `cairo` Cairo 1 compiler](#installing-the-cairo-cairo-1-compiler)
+    - [Installing development tools](#installing-development-tools)
+      - [Installing `scarb`](#installing-scarb)
+      - [Installing `nile-rs`](#installing-nile-rs)
+      - [Installing `protostar`](#installing-protostar)
+      - [Installing `starknet-devnet`](#installing-starknet-devnet)
+    - [Configuring `VSCode` as an Editor](#configuring-vscode-as-an-editor)
+  - [Run tests](#run-tests)
+  - [Deploy contract](#deploy-contract)
 
 # zkLink Starknet Contracts
 
