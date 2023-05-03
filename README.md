@@ -1,3 +1,7 @@
+# zkLink Starknet Contracts
+
+zkLink starknet core contracts, which is `cairo1` compatible.
+
 - [zkLink Starknet Contracts](#zklink-starknet-contracts)
   - [Setting up local development environment](#setting-up-local-development-environment)
     - [Installing prerequisites](#installing-prerequisites)
@@ -11,10 +15,6 @@
     - [Configuring `VSCode` as an Editor](#configuring-vscode-as-an-editor)
   - [Run tests](#run-tests)
   - [Deploy contract](#deploy-contract)
-
-# zkLink Starknet Contracts
-
-zkLink starknet core contracts, which is `cairo1` compatible.
 
 ## Setting up local development environment
 
