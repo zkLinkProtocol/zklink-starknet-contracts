@@ -1,7 +1,0 @@
-[package]
-name = "zklink_starknet_contracts"
-version = "0.1.0"
-description = "zklink starknet core contracts, cairo1.0 compatible"
-homepage = "https://zk.link/"
-
-[[target.starknet-contract]]
