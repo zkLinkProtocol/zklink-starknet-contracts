@@ -13,8 +13,11 @@ zkLink starknet core contracts, which is `cairo1` compatible.
       - [Installing `protostar`](#installing-protostar)
       - [Installing `starknet-devnet`](#installing-starknet-devnet)
     - [Configuring `VSCode` as an Editor](#configuring-vscode-as-an-editor)
-  - [Run tests](#run-tests)
-  - [Deploy contract](#deploy-contract)
+  - [Work with `zklink-starknet-contracts`](#work-with-zklink-starknet-contracts)
+    - [Build and Test](#build-and-test)
+    - [Deploy on localhost](#deploy-on-localhost)
+    - [Deploy on Testnet](#deploy-on-testnet)
+    - [Deploy on mainnet](#deploy-on-mainnet)
 
 ## Setting up local development environment
 
@@ -271,8 +274,34 @@ Last, open `VSCode` after installation，and set `Language Server Path`, which s
 
 <img src="https://raw.githubusercontent.com/zkcarter/picBed/main/markdown/extSettings.png" alt="image" style="zoom: 50%;" />
 
-## Run tests
+## Work with `zklink-starknet-contracts`
 
+First of all, you should active the cairo python virtual environment before you work with `zklink-starknet-contracts`.
 
+```bash
+pyenv active cairo_env
+```
 
-## Deploy contract
+### Build and Test
+
+To build an test `zklink-starknet-contracts`, you should run the following command in the root of this project:
+
+```bash
+# build
+scarb build
+
+# test
+scarb run test
+```
+
+### Deploy on localhost
+
+TODO
+
+### Deploy on Testnet
+
+TODO
+
+### Deploy on mainnet
+
+TODO
