@@ -1,3 +1,3 @@
 mod bytes;
-mod pow2;
+mod math;
 mod utils;
