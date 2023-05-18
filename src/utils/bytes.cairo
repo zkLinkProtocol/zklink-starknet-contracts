@@ -190,11 +190,12 @@ impl BytesImpl of BytesTrait {
         }
 
         // read full array element for sub_bytes
-        let mut new_offset = offset;
+        let mut offset = offset;
         let mut sub_bytes_full_array_len = size / BYTES_PER_ELEMENT;
         loop {
-            let (new_offset, value) = self.read_u128(new_offset, BYTES_PER_ELEMENT);
+            let (new_offset, value) = self.read_u128(offset, BYTES_PER_ELEMENT);
             array.append(value);
+            offset = new_offset;
             sub_bytes_full_array_len -= 1;
             if sub_bytes_full_array_len == 0 {
                 break();
@@ -206,13 +207,14 @@ impl BytesImpl of BytesTrait {
         // 2. make last element full with padding 0;
         let sub_bytes_last_element_size = size % BYTES_PER_ELEMENT;
         if sub_bytes_last_element_size > 0 {
-            let (new_offset, value) = self.read_u128(new_offset, sub_bytes_last_element_size);
+            let (new_offset, value) = self.read_u128(offset, sub_bytes_last_element_size);
             let padding = BYTES_PER_ELEMENT - sub_bytes_last_element_size;
             let value = u128_join(value, 0, padding);
             array.append(value);
+            offset = new_offset;
         }
 
-        return (new_offset, BytesTrait::new(size, array));
+        return (offset, BytesTrait::new(size, array));
     }
 
     // read address from Bytes

@@ -88,5 +88,12 @@ fn test_bytes() {
     let (new_offset, value) = bytes.read_address(14);
     assert(new_offset == 46, 'read_address_offset');
     assert(value.into() == address, 'read_address_value');
+
     // read_bytes
+    let (new_offset, sub_bytes) = bytes.read_bytes(4, 37);
+    let sub_bytes_data = @sub_bytes.data;
+    assert(new_offset == 41, 'read_bytes_offset');
+    assert(*sub_bytes_data[0] == 0x05060708091011121314015401855d77, 'read_bytes_value_1');
+    assert(*sub_bytes_data[1] == 0x96176b05d160196ff92381eb7910f544, 'read_bytes_value_2');
+    assert(*sub_bytes_data[2] == 0x6c2e0e04e10000000000000000000000, 'read_bytes_value_3');
 }
