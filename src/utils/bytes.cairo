@@ -16,8 +16,6 @@ use zklink::utils::math::{
     usize_div_rem
 };
 
-use core::debug::PrintTrait;
-
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;
 

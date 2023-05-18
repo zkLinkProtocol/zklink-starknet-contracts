@@ -1,4 +1,6 @@
+use core::traits::Into;
 use core::array::ArrayTrait;
+use starknet::{ContractAddress, ContractAddressIntoFelt252};
 use zklink::utils::bytes::{
     Bytes,
     BytesTrait
@@ -6,7 +8,7 @@ use zklink::utils::bytes::{
 use debug::PrintTrait;
 
 #[test]
-#[available_gas(200000000)]
+#[available_gas(20000000)]
 fn test_bytes() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
@@ -51,10 +53,40 @@ fn test_bytes() {
     assert(*new_array[2] == 0x08091011121314, 'read_u128_array_2_value_3');
 
     // read_u256
-
+    let (new_offset, value) = bytes.read_u256(4);
+    assert(new_offset == 36, 'read_u256_1_offset');
+    assert(value.high == 0x05060708091011121314151601020304, 'read_u256_1_value_high');
+    assert(value.low == 0x05060708091011121314151601020304, 'read_u256_1_value_low');
+    
     // read_u256_array
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x16151413121110090807060504030201);
+    array.append(0x16151413121110090807060504030201);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x16151413121110090000000000000000);
+
+    let bytes = BytesTrait::new(88, array);
+
+    let (new_offset, new_array) = bytes.read_u256_array(7, 2);
+    assert(new_offset == 71, 'read_u256_array_offset');
+    assert(*new_array[0].high == 0x08091011121314151616151413121110, 'read_256_array_value_1_high');
+    assert(*new_array[0].low ==  0x09080706050403020116151413121110, 'read_256_array_value_1_low');
+    assert(*new_array[1].high == 0x09080706050403020101020304050607, 'read_256_array_value_2_high');
+    assert(*new_array[1].low ==  0x08091011121314151601020304050607, 'read_256_array_value_2_low');
 
     // read_address
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213140154);
+    array.append(0x01855d7796176b05d160196ff92381eb);
+    array.append(0x7910f5446c2e0e04e13db2194a4f0000);
 
+    let bytes = BytesTrait::new(46, array);
+    let address = 0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f;
+
+    let (new_offset, value) = bytes.read_address(14);
+    assert(new_offset == 46, 'read_address_offset');
+    assert(value.into() == address, 'read_address_value');
     // read_bytes
 }
