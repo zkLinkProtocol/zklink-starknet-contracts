@@ -40,9 +40,15 @@ fn test_bytes() {
     // read_u128_array
     let (new_offset, new_array) = bytes.read_u128_array(0, 3, 3);
     assert(new_offset == 9, 'read_u128_array_1_offset');
-    assert(*new_array[0] == 0x010203, 'read_u128_array_1_value');
-    // assert(*new_array[1] == 0x040506, 'read_u128_array_1_value');
-    // assert(*new_array[2] == 0x070809, 'read_u128_array_1_value');
+    assert(*new_array[0] == 0x010203, 'read_u128_array_1_value_1');
+    assert(*new_array[1] == 0x040506, 'read_u128_array_1_value_2');
+    assert(*new_array[2] == 0x070809, 'read_u128_array_1_value_3');
+
+    let (new_offset, new_array) = bytes.read_u128_array(9, 3, 7);
+    assert(new_offset == 30, 'read_u128_array_2_offset');
+    assert(*new_array[0] == 0x10111213141516, 'read_u128_array_2_value_1');
+    assert(*new_array[1] == 0x01020304050607, 'read_u128_array_2_value_2');
+    assert(*new_array[2] == 0x08091011121314, 'read_u128_array_2_value_3');
 
     // read_u256
 

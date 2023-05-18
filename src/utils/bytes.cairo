@@ -16,6 +16,8 @@ use zklink::utils::math::{
     usize_div_rem
 };
 
+use core::debug::PrintTrait;
+
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;
 
@@ -131,17 +133,18 @@ impl BytesImpl of BytesTrait {
         if array_length == 0 {
             return (offset, array);
         }
-        let mut new_offset = offset;
+        let mut offset = offset;
         let mut i = array_length;
         loop {
-            let (new_offset, value) = self.read_u128(new_offset, element_size);
+            let (new_offset, value) = self.read_u128(offset, element_size);
             array.append(value);
+            offset = new_offset;
             i -= 1;
             if i == 0 {
                 break();
             };
         };
-        (new_offset, array)
+        (offset, array)
     }
 
     // read a u256 from Bytes
@@ -165,17 +168,18 @@ impl BytesImpl of BytesTrait {
             return (offset, array);
         }
 
-        let mut new_offset = offset;
+        let mut offset = offset;
         let mut i = array_length;
         loop {
-            let (new_offset, value) = self.read_u256(new_offset);
+            let (new_offset, value) = self.read_u256(offset);
             array.append(value);
+            offset = new_offset;
             i -= 1;
             if i == 0 {
                 break();
             };
         };
-        (new_offset, array)
+        (offset, array)
     }
 
     // read sub Bytes from Bytes
