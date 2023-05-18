@@ -25,6 +25,7 @@ fn u128_div_rem(value: u128, div: u128) -> (u128, u128) {
 //  - letf: [0, size-1] of the origin u128
 //  - right: [size, end] of the origin u128 which size is (value_size - size)
 fn u128_split(value: u128, value_size: usize, size: usize) -> (u128, u128) {
+    assert(value_size <= 16, 'value_size can not be gt 16');
     assert(size <= value_size, 'size can not be gt value_size');
 
     if size == 0 {
@@ -459,11 +460,4 @@ fn felt252_fast_pow2(exp: usize) -> felt252 {
     else if exp == 249_usize { 904625697166532776746648320380374280103671755200316906558262375061821325312 }
     else if exp == 250_usize { 1809251394333065553493296640760748560207343510400633813116524750123642650624 }
     else { 0 }
-}
-
-#[test]
-#[available_gas(200000)]
-fn test_fast_pow2() {
-    assert(u128_fast_pow2(0) == 1, 'invalid result');
-    assert(u128_fast_pow2(127_usize) == 170141183460469231731687303715884105728_u128, 'invalid result');
 }

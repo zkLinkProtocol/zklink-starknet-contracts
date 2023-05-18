@@ -11,4 +11,4 @@ sierra-replace-ids = true
 
 [scripts]
 sierra = "cairo-compile . -r"
-test = "protostar test-cairo1"
+test = "protostar test"

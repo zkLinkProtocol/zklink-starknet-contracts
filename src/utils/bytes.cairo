@@ -125,12 +125,12 @@ impl BytesImpl of BytesTrait {
     }
 
     fn read_u128_array(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>) {
+        assert(offset + array_length * element_size <= *self.size, 'out of bound');
         let mut array = ArrayTrait::<u128>::new();
 
         if array_length == 0 {
             return (offset, array);
         }
-
         let mut new_offset = offset;
         let mut i = array_length;
         loop {
@@ -158,6 +158,7 @@ impl BytesImpl of BytesTrait {
 
     // read a u256 array from Bytes
     fn read_u256_array(self: @Bytes, offset: usize, array_length: usize) -> (usize, Array<u256>) {
+        assert(offset + array_length * 32 <= *self.size, 'out of bound');
         let mut array = ArrayTrait::<u256>::new();
         
         if array_length == 0 {
