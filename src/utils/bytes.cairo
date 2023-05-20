@@ -55,9 +55,21 @@ trait BytesTrait {
     // Locate offset in Bytes
     fn locate(offset: usize) -> (usize, usize);
     // Read value with size bytes from Bytes, and packed into u128
-    fn read_u128(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
+    fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
     // Read value with element_size bytes from Bytes, and packed into u128 array
-    fn read_u128_array(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>);
+    fn read_u128_array_packed(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>);
+    // Read a u8 from Bytes
+    fn read_u8(self: @Bytes, offset: usize) -> (usize, u8);
+    // Read a u16 from Bytes
+    fn read_u16(self: @Bytes, offset: usize) -> (usize, u16);
+    // Read a u32 from Bytes
+    fn read_u32(self: @Bytes, offset: usize) -> (usize, u32);
+    // Read a usize from Bytes
+    fn read_usize(self: @Bytes, offset: usize) -> (usize, usize);
+    // Read a u64 from Bytes
+    fn read_u64(self: @Bytes, offset: usize) -> (usize, u64);
+    // Read a u128 from Bytes
+    fn read_u128(self: @Bytes, offset: usize) -> (usize, u128);
     // Read a u256 from Bytes
     fn read_u256(self: @Bytes, offset: usize) -> (usize, u256);
     // Read a u256 array from Bytes
@@ -101,7 +113,7 @@ impl BytesImpl of BytesTrait {
     // Returns:
     //  - new_offset: next value offset in Bytes
     //  - value: the value packed into u128
-    fn read_u128(self: @Bytes, offset: usize, size: usize) -> (usize, u128) {
+    fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128) {
         // check
         assert(offset + size <= *self.size, 'out of bound');
         assert(size * 8 <= 128, 'too large');
@@ -124,7 +136,7 @@ impl BytesImpl of BytesTrait {
         }
     }
 
-    fn read_u128_array(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>) {
+    fn read_u128_array_packed(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>) {
         assert(offset + array_length * element_size <= *self.size, 'out of bound');
         let mut array = ArrayTrait::<u128>::new();
 
@@ -134,7 +146,7 @@ impl BytesImpl of BytesTrait {
         let mut offset = offset;
         let mut i = array_length;
         loop {
-            let (new_offset, value) = self.read_u128(offset, element_size);
+            let (new_offset, value) = self.read_u128_packed(offset, element_size);
             array.append(value);
             offset = new_offset;
             i -= 1;
@@ -145,14 +157,44 @@ impl BytesImpl of BytesTrait {
         (offset, array)
     }
 
+    // Read a u8 from Bytes
+    fn read_u8(self: @Bytes, offset: usize) -> (usize, u8) {
+        let (new_offset, value) = self.read_u128_packed(offset, 1);
+        (new_offset, value.try_into().unwrap())
+    }
+    // Read a u16 from Bytes
+    fn read_u16(self: @Bytes, offset: usize) -> (usize, u16) {
+        let (new_offset, value) = self.read_u128_packed(offset, 2);
+        (new_offset, value.try_into().unwrap())
+    }
+    // Read a u32 from Bytes
+    fn read_u32(self: @Bytes, offset: usize) -> (usize, u32) {
+        let (new_offset, value) = self.read_u128_packed(offset, 4);
+        (new_offset, value.try_into().unwrap())
+    }
+    // Read a usize from Bytes
+    fn read_usize(self: @Bytes, offset: usize) -> (usize, usize) {
+        let (new_offset, value) = self.read_u128_packed(offset, 8);
+        (new_offset, value.try_into().unwrap())
+    }
+    // Read a u64 from Bytes
+    fn read_u64(self: @Bytes, offset: usize) -> (usize, u64) {
+        let (new_offset, value) = self.read_u128_packed(offset, 8);
+        (new_offset, value.try_into().unwrap())
+    }
+
+    fn read_u128(self: @Bytes, offset: usize) -> (usize, u128) {
+        self.read_u128_packed(offset, 16)
+    }
+
     // read a u256 from Bytes
     fn read_u256(self: @Bytes, offset: usize) -> (usize, u256) {
         // check
         assert(offset + 32 <= *self.size, 'out of bound');
 
         let (element_index, element_offset) = BytesTrait::locate(offset);
-        let (new_offset, high) = self.read_u128(offset, 16);
-        let (new_offset, low) = self.read_u128(new_offset, 16);
+        let (new_offset, high) = self.read_u128(offset);
+        let (new_offset, low) = self.read_u128(new_offset);
 
         (new_offset, u256 { low, high })
     }
@@ -193,7 +235,7 @@ impl BytesImpl of BytesTrait {
         let mut offset = offset;
         let mut sub_bytes_full_array_len = size / BYTES_PER_ELEMENT;
         loop {
-            let (new_offset, value) = self.read_u128(offset, BYTES_PER_ELEMENT);
+            let (new_offset, value) = self.read_u128(offset);
             array.append(value);
             offset = new_offset;
             sub_bytes_full_array_len -= 1;
@@ -207,7 +249,7 @@ impl BytesImpl of BytesTrait {
         // 2. make last element full with padding 0;
         let sub_bytes_last_element_size = size % BYTES_PER_ELEMENT;
         if sub_bytes_last_element_size > 0 {
-            let (new_offset, value) = self.read_u128(offset, sub_bytes_last_element_size);
+            let (new_offset, value) = self.read_u128_packed(offset, sub_bytes_last_element_size);
             let padding = BYTES_PER_ELEMENT - sub_bytes_last_element_size;
             let value = u128_join(value, 0, padding);
             array.append(value);
