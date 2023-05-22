@@ -1,3 +1,4 @@
+use core::clone::Clone;
 use array::ArrayTrait;
 use core::traits::Into;
 use core::traits::TryInto;
@@ -15,6 +16,7 @@ use zklink::utils::math::{
     u128_sub_value,
     usize_div_rem
 };
+use zklink::utils::utils::u128_array_slice;
 
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;
@@ -78,6 +80,24 @@ trait BytesTrait {
     fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes);
     // Read a ContractAddress from Bytes
     fn read_address(self: @Bytes, offset: usize) -> (usize, ContractAddress);
+    // Write value with size bytes into Bytes, value is packed into u128
+    fn append_u128_packed(ref self: Bytes, value: u128, size: usize);
+    // Write u8 into Bytes
+    fn append_u8(ref self: Bytes, value: u8);
+    // Write u16 into Bytes
+    fn append_u16(ref self: Bytes, value: u16);
+    // Write u32 into Bytes
+    fn append_u32(ref self: Bytes, value: u32);
+    // Write usize into Bytes
+    fn append_usize(ref self: Bytes, value: usize);
+    // Write u64 into Bytes
+    fn append_u64(ref self: Bytes, value: u64);
+    // Write u128 into Bytes
+    fn append_u128(ref self: Bytes, value: u128);
+    // Write u256 into Bytes
+    fn append_u256(ref self: Bytes, value: u256);
+    // Write address into Bytes
+    fn append_address(ref self: Bytes, value: ContractAddress);
 }
 
 impl BytesImpl of BytesTrait {
@@ -90,6 +110,7 @@ impl BytesImpl of BytesTrait {
 
     fn new_empty() -> Bytes {
         let mut data = ArrayTrait::<u128>::new();
+        data.append(0);
         Bytes {
             size: 0_usize,
             data: data
@@ -264,5 +285,73 @@ impl BytesImpl of BytesTrait {
         let (new_offset, value) = self.read_u256(offset);
         let address: felt252 = value.high.into() * felt252_fast_pow2(128) + value.low.into();
         (new_offset, address.try_into().unwrap())
+    }
+
+    // Write value with size bytes into Bytes, value is packed into u128
+    fn append_u128_packed(ref self: Bytes, value: u128, size: usize) {
+        assert(size <= 16, 'size must be less than 16');
+
+        let Bytes {size: old_bytes_size, mut data} = self;
+
+        let (last_data_index, last_element_size) = BytesTrait::locate(old_bytes_size);
+        let (last_element_value, _) = u128_split(*data[last_data_index], 16, last_element_size);
+        if last_data_index > 0 {
+            data = u128_array_slice(@data, 0, last_data_index);
+        } else {
+            data = ArrayTrait::<u128>::new();
+        }
+        if last_element_size == 0 {
+            let padded_value = u128_join(value, 0, BYTES_PER_ELEMENT - size);
+            data.append(padded_value);
+        } else {
+            if size + last_element_size > BYTES_PER_ELEMENT {
+                let (left, right) = u128_split(value, size, BYTES_PER_ELEMENT - last_element_size);
+                let value_full = u128_join(last_element_value, left, BYTES_PER_ELEMENT - last_element_size);
+                let value_padded = u128_join(right, 0, 2 * BYTES_PER_ELEMENT - size - last_element_size);
+                data.append(value_full);
+                data.append(value_padded);
+            } else {
+                let value = u128_join(last_element_value, value, size);
+                let value_padded = u128_join(value, 0, BYTES_PER_ELEMENT - size - last_element_size);
+                data.append(value_padded);
+            }
+        }
+        self = Bytes { size: old_bytes_size + size, data }
+    }
+
+    // Write u8 into Bytes
+    fn append_u8(ref self: Bytes, value: u8) {
+        self.append_u128_packed(value.into(), 1)
+    }
+    // Write u16 into Bytes
+    fn append_u16(ref self: Bytes, value: u16) {
+        self.append_u128_packed(value.into(), 2)
+    }
+    // Write u32 into Bytes
+    fn append_u32(ref self: Bytes, value: u32) {
+        self.append_u128_packed(value.into(), 4)
+    }
+    // Write usize into Bytes
+    fn append_usize(ref self: Bytes, value: usize) {
+        self.append_u128_packed(value.into(), 4)
+    }
+    // Write u64 into Bytes
+    fn append_u64(ref self: Bytes, value: u64) {
+        self.append_u128_packed(value.into(), 8)
+    }
+    // Write u128 into Bytes
+    fn append_u128(ref self: Bytes, value: u128) {
+        self.append_u128_packed(value, 16)
+    }
+    // Write u256 into Bytes
+    fn append_u256(ref self: Bytes, value: u256) {
+        self.append_u128(value.high);
+        self.append_u128(value.low);
+    }
+    // Write address into Bytes
+    fn append_address(ref self: Bytes, value: ContractAddress) {
+        let address_felt256: felt252 = value.into();
+        let address_u256: u256 = address_felt256.into();
+        self.append_u256(address_u256)
     }
 }

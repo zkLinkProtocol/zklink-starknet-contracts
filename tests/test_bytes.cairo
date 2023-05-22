@@ -19,34 +19,34 @@ fn test_bytes() {
 
     // read_u128
     // TODO: over size
-    let (new_offset, value) = bytes.read_u128(0, 1);
+    let (new_offset, value) = bytes.read_u128_packed(0, 1);
     assert(new_offset == 1, 'read_u128_1_offset');
     assert(value == 0x01, 'read_u128_1_value');
 
-    let (new_offset, value) = bytes.read_u128(new_offset, 14);
+    let (new_offset, value) = bytes.read_u128_packed(new_offset, 14);
     assert(new_offset == 15, 'read_u128_2_offset');
     assert(value == 0x0203040506070809101112131415, 'read_u128_2_value');
 
-    let (new_offset, value) = bytes.read_u128(new_offset, 15);
+    let (new_offset, value) = bytes.read_u128_packed(new_offset, 15);
     assert(new_offset == 30, 'read_u128_3_offset');
     assert(value == 0x160102030405060708091011121314, 'read_u128_3_value');
 
-    let (new_offset, value) = bytes.read_u128(new_offset, 8);
+    let (new_offset, value) = bytes.read_u128_packed(new_offset, 8);
     assert(new_offset == 38, 'read_u128_3_offset');
     assert(value == 0x1516010203040506, 'read_u128_3_value');
 
-    let (new_offset, value) = bytes.read_u128(new_offset, 4);
+    let (new_offset, value) = bytes.read_u128_packed(new_offset, 4);
     assert(new_offset == 42, 'read_u128_3_offset');
     assert(value == 0x07080910, 'read_u128_3_value');
     
     // read_u128_array
-    let (new_offset, new_array) = bytes.read_u128_array(0, 3, 3);
+    let (new_offset, new_array) = bytes.read_u128_array_packed(0, 3, 3);
     assert(new_offset == 9, 'read_u128_array_1_offset');
     assert(*new_array[0] == 0x010203, 'read_u128_array_1_value_1');
     assert(*new_array[1] == 0x040506, 'read_u128_array_1_value_2');
     assert(*new_array[2] == 0x070809, 'read_u128_array_1_value_3');
 
-    let (new_offset, new_array) = bytes.read_u128_array(9, 3, 7);
+    let (new_offset, new_array) = bytes.read_u128_array_packed(9, 3, 7);
     assert(new_offset == 30, 'read_u128_array_2_offset');
     assert(*new_array[0] == 0x10111213141516, 'read_u128_array_2_value_1');
     assert(*new_array[1] == 0x01020304050607, 'read_u128_array_2_value_2');
@@ -96,4 +96,22 @@ fn test_bytes() {
     assert(*sub_bytes_data[0] == 0x05060708091011121314015401855d77, 'read_bytes_value_1');
     assert(*sub_bytes_data[1] == 0x96176b05d160196ff92381eb7910f544, 'read_bytes_value_2');
     assert(*sub_bytes_data[2] == 0x6c2e0e04e10000000000000000000000, 'read_bytes_value_3');
+
+    // append_u128_packed
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080900000000000000);
+    let mut bytes = BytesTrait::new(9, array);
+
+    bytes.append_u128_packed(0x101112131415161718, 9);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 18, 'append_u128_packed_size_1');
+    assert(*data[0] == 0x01020304050607080910111213141516, 'append_u128_packed_1_value_1');
+    assert(*data[1] == 0x17180000000000000000000000000000, 'append_u128_packed_1_value_2');
+
+    let mut bytes = BytesTrait::new_empty();
+
+    bytes.append_u128_packed(0x101112131415161718, 9);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 9, 'append_u128_packed_2_size');
+    assert(*data[0] == 0x10111213141516171800000000000000, 'append_u128_packed_2_value_1');
 }

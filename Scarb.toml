@@ -4,11 +4,11 @@ version = "0.1.0"
 description = "zklink starknet core contracts, cairo1.0 compatible"
 homepage = "https://zk.link/"
 
-[[target.starknet-contract]]
-
 [cairo]
 sierra-replace-ids = true
 
 [scripts]
 sierra = "cairo-compile . -r"
 test = "cairo-test ."
+
+[[target.starknet-contract]]
