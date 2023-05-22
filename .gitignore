@@ -1,3 +1,4 @@
 target/
 build/
 .protostar_cache/
+tests/test_example.cairo

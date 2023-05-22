@@ -8,8 +8,11 @@ mod Operations {
         Bytes,
         BytesTrait
     };
+    use zklink::utils::utils::{
+        u256_to_u160,
+    };
     // zkLink circuit operation type
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, PartialEq)]
     enum OpType {
         Noop: (),           // 0
         Deposit: (),        // 1 L1 op
@@ -83,6 +86,8 @@ mod Operations {
     const SUB_ACCOUNT_ID_BYTES: usize = 1;
     // amount: u128, 16 bytes
     const AMOUNT_BYTES: usize = 16;
+    // pubKeyHash: felt252, 20 bytes
+    const PUBKEY_HASH_BYTES: usize = 20;
 
     // Priority operations: Deposit, FullExit
     #[derive(Copy, Drop)]
@@ -97,11 +102,11 @@ mod Operations {
         fn readFromPubdata(pubData: @Bytes) -> (usize, T);
         // Serialize operation to Bytes
         fn writeForPriorityQueue(self: @T) -> Bytes;
+        // Checks the peration is same as operation in priority queue
+        fn checkPriorityOperation(self: @T, priorityOperation: @PriorityOperation);
     }
 
-    // Deposit operation in pubdata: 59 bytes(with opType)
-    const PACKED_DEPOSIT_PUBDATA_BYTES: usize = 59;
-    // Deposit operation: 58 bytes(without opType)
+    // Deposit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop)]
     struct Deposit {
         chainId: u8,        // 1 byte, deposit from which chain that identified by l2 chain id
@@ -115,7 +120,9 @@ mod Operations {
 
     impl DepositOperation of OperationTrait<Deposit> {
         fn readFromPubdata(pubData: @Bytes) -> (usize, Deposit) {
-            let (offset, chainId) = pubData.read_u8(OP_TYPE_BYTES);
+            // uint8 opType, present in pubdata, ignored at serialization
+            let mut offset = OP_TYPE_BYTES;
+            let (offset, chainId) = pubData.read_u8(offset);
             let (offset, accountId) = pubData.read_u32(offset);
             let (offset, subAccountId) = pubData.read_u8(offset);
             let (offset, tokenId) = pubData.read_u16(offset);
@@ -136,11 +143,258 @@ mod Operations {
         }
 
         fn writeForPriorityQueue(self: @Deposit) -> Bytes {
+            let opType = OpType::Deposit(());
             let mut pubData = BytesTrait::new_empty();
+            pubData.append_u8(opType.into());
+            pubData.append_u8(*self.chainId);
+            pubData.append_u32(0);              // accountId (ignored during hash calculation)
+            pubData.append_u8(*self.subAccountId);
+            pubData.append_u16(*self.tokenId);
+            pubData.append_u16(*self.targetTokenId);
+            pubData.append_u128(*self.amount);
+            pubData.append_u256(*self.owner);
 
             pubData
         }
+
+        // Checks the peration is same as operation in priority queue
+        fn checkPriorityOperation(self: @Deposit, priorityOperation: @PriorityOperation) {
+            assert(*priorityOperation.opType == OpType::Deposit(()), 'OP: not deposit');
+            assert(u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation.hashedPubData, 'OP: invalid deposit hash');
+        }
     }
 
+    // FullExit operation: 58 bytes(59 with opType)
+    #[derive(Copy, Drop)]
+    struct FullExit {
+        chainId: u8,        // 1 byte, withdraw to which chain that identified by l2 chain id
+        accountId: u32,     // 4 bytes, the account id to withdraw from
+        subAccountId: u8,   // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
+        owner: u256,        // 32 bytes, the address that own the account at l2
+        tokenId: u16,       // 2 bytes, the token that withdraw to l1
+        srcTokenId: u16,    // 2 bytes, the token that deducted in l2
+        amount: u128,       // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
+    }
 
+    impl FullExitOperation of OperationTrait<FullExit> {
+        fn readFromPubdata(pubData: @Bytes) -> (usize, FullExit) {
+            // uint8 opType, present in pubdata, ignored at serialization
+            let mut offset = OP_TYPE_BYTES;
+            let (offset, chainId) = pubData.read_u8(offset);
+            let (offset, accountId) = pubData.read_u32(offset);
+            let (offset, subAccountId) = pubData.read_u8(offset);
+            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, tokenId) = pubData.read_u16(offset);
+            let (offset, srcTokenId) = pubData.read_u16(offset);
+            let (offset, amount) = pubData.read_u128(offset);
+
+            let fullExit = FullExit {
+                chainId: chainId,
+                accountId: accountId,
+                subAccountId: subAccountId,
+                owner: owner,
+                tokenId: tokenId,
+                srcTokenId: srcTokenId,
+                amount: amount
+            };
+            (offset, fullExit)
+        }
+
+        fn writeForPriorityQueue(self: @FullExit) -> Bytes {
+            let opType = OpType::FullExit(());
+            let mut pubData = BytesTrait::new_empty();
+            pubData.append_u8(opType.into());
+            pubData.append_u8(*self.chainId);
+            pubData.append_u32(*self.accountId);
+            pubData.append_u8(*self.subAccountId);
+            pubData.append_u256(*self.owner);
+            pubData.append_u16(*self.tokenId);
+            pubData.append_u16(*self.srcTokenId);
+            pubData.append_u128(0);            // amount (ignored during hash calculation)
+
+            pubData
+        }
+
+        // Checks the peration is same as operation in priority queue
+        fn checkPriorityOperation(self: @FullExit, priorityOperation: @PriorityOperation) {
+            assert(*priorityOperation.opType == OpType::FullExit(()), 'OP: not fullExit');
+            assert(u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation.hashedPubData, 'OP: invalid fullExit hash');
+        }
+    }
+
+    // Withdraw operation: 61 bytes
+    #[derive(Copy, Drop)]
+    struct Withdraw {
+        chainId: u8,                // 1 byte, which chain the withdraw happened
+        accountId: u32,             // 4 bytes, the account id to withdraw from
+        tokenId: u16,               // 2 bytes, the token that to withdraw
+        amount: u128,               // 16 bytes, the token amount to withdraw
+        owner: u256,                // 32 bytes, the address to receive token
+        nonce: u32,                 // 4 bytes, zero means normal withdraw, not zero means fast withdraw and the value is the account nonce
+        fastWithdrawFeeRate: u16,   // 2 bytes, fast withdraw fee rate taken by accepter
+    }
+
+    impl WithdrawOperation of OperationTrait<Withdraw> {
+        // Withdraw operation pubdata looks like this:
+        //  opType, u8, ignored at serialization
+        //  chainId,
+        //  accountId,
+        //  subAccountId, u8, ignored at serialization
+        //  tokenId,
+        //  srcTokenId, u16, ignored at serialization
+        //  amount,
+        //  fee, u16, ignored at serialization
+        //  owner,
+        //  nonce,
+        //  fastWithdrawFeeRate
+        fn readFromPubdata(pubData: @Bytes) -> (usize, Withdraw) {
+            // uint8 opType, present in pubdata, ignored at serialization
+            let offset = OP_TYPE_BYTES;
+            let (offset, chainId) = pubData.read_u8(offset);
+            let (offset, accountId) = pubData.read_u32(offset);
+            // uint8 subAccountId, present in pubdata, ignored at serialization
+            let offset = offset + SUB_ACCOUNT_ID_BYTES;
+            let (offset, tokenId) = pubData.read_u16(offset);
+            // uint16 srcTokenId, the token that decreased in l2, present in pubdata, ignored at serialization
+            let offset = offset + TOKEN_BYTES;
+            let (offset, amount) = pubData.read_u128(offset);
+            // uint16 fee, present in pubdata, ignored at serialization
+            let offset = offset + FEE_BYTES;
+            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, nonce) = pubData.read_u32(offset);
+            let (offset, fastWithdrawFeeRate) = pubData.read_u16(offset);
+
+            let withdraw = Withdraw {
+                chainId: chainId,
+                accountId: accountId,
+                tokenId: tokenId,
+                amount: amount,
+                owner: owner,
+                nonce: nonce,
+                fastWithdrawFeeRate: fastWithdrawFeeRate
+            };
+            (offset, withdraw)
+        }
+
+        // Do nothing
+        fn writeForPriorityQueue(self: @Withdraw) -> Bytes {
+            BytesTrait::new_empty()
+        }
+        // Do nothing
+        fn checkPriorityOperation(self: @Withdraw, priorityOperation: @PriorityOperation) {
+
+        }
+    }
+
+    // ForcedExit operation: 51 Bytes
+    #[derive(Copy, Drop)]
+    struct ForcedExit {
+        chainId: u8,        // 1 byte, which chain the force exit happened
+        tokenId: u16,       // 2 bytes, the token that to withdraw
+        amount: u128,       // 16 bytes, the token amount to withdraw
+        target: u256,       // 32 bytes, the address to receive token
+    }
+
+    impl ForcedExitOperatoin of OperationTrait<ForcedExit> {
+        // ForcedExit operation pubdata looks like this:
+        //  opType, u8, ignored at serialization
+        //  chainId,
+        //  initiatorAccountId, u32, ignored at serialization
+        //  initiatorSubAccountId, u8, ignored at serialization
+        //  targetAccountId, u32, ignored at serialization
+        //  targetSubAccountId, u8, ignored at serialization
+        //  tokenId,
+        //  srcTokenId, u16, ignored at serialization
+        //  feeTokenId, u16, ignored at serialization
+        //  amount,
+        //  fee, u16, ignored at serialization
+        //  target
+        fn readFromPubdata(pubData: @Bytes) -> (usize, ForcedExit) {
+            let offset = OP_TYPE_BYTES;
+            let (offset, chainId) = pubData.read_u8(offset);
+            // initiatorAccountId, u32, ignored at serialization
+            // initiatorSubAccountId, u8, ignored at serialization
+            // targetAccountId, u32, ignored at serialization
+            // targetSubAccountId, u8, ignored at serialization
+            let offset = offset + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES;
+            let (offset, tokenId) = pubData.read_u16(offset);
+            // srcTokenId, u16, ignored at serialization
+            // feeTokenId, u16, ignored at serialization
+            let offset = offset + TOKEN_BYTES + TOKEN_BYTES;
+            let (offset, amount) = pubData.read_u128(offset);
+            // fee, u16, ignored at serialization
+            let offset = offset + FEE_BYTES;
+            let (offset, target) = pubData.read_u256(offset);
+
+            let forcedExit = ForcedExit {
+                chainId: chainId,
+                tokenId: tokenId,
+                amount: amount,
+                target: target
+            };
+            (offset, forcedExit)
+        }
+
+        // Do nothing
+        fn writeForPriorityQueue(self: @ForcedExit) -> Bytes {
+            BytesTrait::new_empty()
+        }
+
+        // Do nothing
+        fn checkPriorityOperation(self: @ForcedExit, priorityOperation: @PriorityOperation) {
+
+        }
+    }
+
+    // ChangePubKey operation: 61 bytes
+    #[derive(Copy, Drop)]
+    struct ChangePubKey {
+        chainId: u8,                // 1 byte, which chain to verify(only one chain need to verify for gas saving)
+        accountId: u32,             // 4 bytes, the account that to change pubkey
+        pubKeyHash: felt252,        // 20 bytes, hash of the new rollup pubkey
+        owner: u256,                // 32 bytes, the owner that own this account
+        nonce: u32,                 // 4 bytes, the account nonce
+    }
+
+    impl ChangePubKeyOperation of OperationTrait<ChangePubKey> {
+        // ChangePubKey operation pubdata looks like this:
+        //  opType, u8, ignored at serialization
+        //  chainId,
+        //  accountId,
+        //  subAccountId, u8, ignored at serialization
+        //  pubKeyHash,
+        //  owner,
+        //  nonce,
+        //  tokenId, u16, ignored at serialization
+        //  fee, u16, ignored at serialization
+        fn readFromPubdata(pubData: @Bytes) -> (usize, ChangePubKey) {
+            let offset = OP_TYPE_BYTES;
+            let (offset, chainId) = pubData.read_u8(offset);
+            let (offset, accountId) = pubData.read_u32(offset);
+            // subAccountId, u8, ignored at serialization
+            let offset = offset + SUB_ACCOUNT_ID_BYTES;
+            let (offset, pubKeyHash) = pubData.read_felt252_packed(offset, PUBKEY_HASH_BYTES);
+            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, nonce) = pubData.read_u32(offset);
+
+            let changePubKey = ChangePubKey {
+                chainId: chainId,
+                accountId: accountId,
+                pubKeyHash: pubKeyHash,
+                owner: owner,
+                nonce: nonce
+            };
+            (offset, changePubKey)
+        }
+
+        // Do nothing
+        fn writeForPriorityQueue(self: @ChangePubKey) -> Bytes {
+            BytesTrait::new_empty()
+        }
+
+        // Do nothing
+        fn checkPriorityOperation(self: @ChangePubKey, priorityOperation: @PriorityOperation) {
+
+        }
+    }
 }

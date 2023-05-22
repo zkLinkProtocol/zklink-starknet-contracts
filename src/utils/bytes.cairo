@@ -17,6 +17,7 @@ use zklink::utils::math::{
     usize_div_rem
 };
 use zklink::utils::utils::u128_array_slice;
+use zklink::utils::keccak_u128s::keccak_u128s_be;
 
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;
@@ -25,7 +26,7 @@ const BYTES_PER_ELEMENT: usize = 16;
 //              We use size to represent the number of bytes in Bytes.
 //              We use length to represent the number of elements in Bytes.
 
-// Bytes is a cairo implementation of solidity Bytes.
+// Bytes is a cairo implementation of solidity Bytes in Big-endian.
 // It is a dynamic array of u128, where each element contains 16 bytes.
 // To save cost, the last element MUST be filled fully.
 // That's means that every element should and MUST contains 16 bytes.
@@ -60,6 +61,8 @@ trait BytesTrait {
     fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
     // Read value with element_size bytes from Bytes, and packed into u128 array
     fn read_u128_array_packed(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>);
+    // Read value with size bytes from Bytes, and packed into felt252
+    fn read_felt252_packed(self: @Bytes, offset: usize, size: usize) -> (usize, felt252);
     // Read a u8 from Bytes
     fn read_u8(self: @Bytes, offset: usize) -> (usize, u8);
     // Read a u16 from Bytes
@@ -98,6 +101,8 @@ trait BytesTrait {
     fn append_u256(ref self: Bytes, value: u256);
     // Write address into Bytes
     fn append_address(ref self: Bytes, value: ContractAddress);
+    // keccak hash
+    fn keccak(self: @Bytes) -> u256;
 }
 
 impl BytesImpl of BytesTrait {
@@ -176,6 +181,24 @@ impl BytesImpl of BytesTrait {
             };
         };
         (offset, array)
+    }
+
+    // Read value with size bytes from Bytes, and packed into felt252
+    fn read_felt252_packed(self: @Bytes, offset: usize, size: usize) -> (usize, felt252) {
+        // check
+        assert(offset + size <= *self.size, 'out of bound');
+        // Bytes unit is one byte
+        // felt252 can hold 31 bytes max
+        assert(size * 8 <= 248, 'too large');
+
+        if size <= 16 {
+            let (new_offset, value) = self.read_u128_packed(offset, size);
+            return (new_offset, value.into());
+        } else {
+            let (new_offset, low) = self.read_u128_packed(offset, 16);
+            let (new_offset, high) = self.read_u128_packed(new_offset, size - 16);
+            return (new_offset, u256{low, high}.try_into().unwrap());
+        }
     }
 
     // Read a u8 from Bytes
@@ -295,11 +318,8 @@ impl BytesImpl of BytesTrait {
 
         let (last_data_index, last_element_size) = BytesTrait::locate(old_bytes_size);
         let (last_element_value, _) = u128_split(*data[last_data_index], 16, last_element_size);
-        if last_data_index > 0 {
-            data = u128_array_slice(@data, 0, last_data_index);
-        } else {
-            data = ArrayTrait::<u128>::new();
-        }
+        data = u128_array_slice(@data, 0, last_data_index);
+
         if last_element_size == 0 {
             let padded_value = u128_join(value, 0, BYTES_PER_ELEMENT - size);
             data.append(padded_value);
@@ -353,5 +373,15 @@ impl BytesImpl of BytesTrait {
         let address_felt256: felt252 = value.into();
         let address_u256: u256 = address_felt256.into();
         self.append_u256(address_u256)
+    }
+
+    // keccak hash
+    fn keccak(self: @Bytes) -> u256 {
+        let (last_data_index, last_element_size) = BytesTrait::locate(*self.size);
+        // To cumpute hash, we should remove 0 padded
+        let (last_element_value, _) = u128_split(*self.data[last_data_index], 16, last_element_size);
+        let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
+        hash_data.append(last_element_value);
+        keccak_u128s_be(hash_data.span())
     }
 }

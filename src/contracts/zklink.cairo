@@ -65,7 +65,4 @@ mod Zklink {
         // priorityRequests: LegacyMap::<u64, >,
     }
 
-    #[event]
-
-
 }
