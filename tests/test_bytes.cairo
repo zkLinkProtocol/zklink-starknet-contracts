@@ -52,6 +52,12 @@ fn test_bytes() {
     assert(*new_array[1] == 0x01020304050607, 'read_u128_array_2_value_2');
     assert(*new_array[2] == 0x08091011121314, 'read_u128_array_2_value_3');
 
+    // read_felt252_packed
+    let (new_offset, value) = bytes.read_felt252_packed(13, 20);
+    value.print();
+    assert(new_offset == 33, 'read_felt252_1_offset');
+    assert(value == 0x1415160102030405060708091011121314151601, 'read_felt252_1_value');
+
     // read_u256
     let (new_offset, value) = bytes.read_u256(4);
     assert(new_offset == 36, 'read_u256_1_offset');

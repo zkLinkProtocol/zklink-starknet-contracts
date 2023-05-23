@@ -195,8 +195,8 @@ impl BytesImpl of BytesTrait {
             let (new_offset, value) = self.read_u128_packed(offset, size);
             return (new_offset, value.into());
         } else {
-            let (new_offset, low) = self.read_u128_packed(offset, 16);
-            let (new_offset, high) = self.read_u128_packed(new_offset, size - 16);
+            let (new_offset, high) = self.read_u128_packed(offset, size - 16);
+            let (new_offset, low) = self.read_u128_packed(new_offset, 16);
             return (new_offset, u256{low, high}.try_into().unwrap());
         }
     }
