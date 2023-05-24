@@ -12,6 +12,10 @@ mod DataStructures {
         storage_write_syscall,
         storage_address_from_base_and_offset
     };
+    use zklink::utils::bytes::{
+        Bytes,
+        BytesTrait
+    };
 
     #[derive(Copy, Drop, Serde)]
     struct RegisteredToken {
@@ -96,4 +100,65 @@ mod DataStructures {
         }
     }
     
+    #[derive(Copy, Drop, PartialEq)]
+    enum ChangePubkeyType {
+        ECRECOVER: (),
+        CREATE2: (),
+    }
+
+    // Data needed to process onchain operation from block public data.
+    // Onchain operations is operations that need some processing on L1: Deposits, Withdrawals, ChangePubKey.
+    #[derive(Drop, Serde)]
+    struct OnchainOperationData {
+        ethWitness: Bytes,      // Some external data that can be needed for operation processing
+        publicDataOffset: usize // Byte offset in public data for onchain operation
+    }
+
+    // Data needed to commit new block
+    // `publicData` contain pubdata of all chains when compressed is
+    // disabled or only current chain if compressed is enable
+    /// `onchainOperations` contain onchain ops of all chains when compressed is
+    // disabled or only current chain if compressed is enable
+    #[derive(Drop, Serde)]
+    struct CommitBlockInfo {
+        newStateHash: u256,
+        publicData: Bytes,
+        timestamp: u64,
+        onchainOperations: Array<OnchainOperationData>,
+        blockNumber: u64,
+        feeAccount: u32
+    }
+
+    #[derive(Drop, Serde)]
+    struct CompressedBlockExtraInfo {
+        publicDataHash: u256,                       // pubdata hash of all chains
+        offsetCommitmentHash: u256,                 // all chains pubdata offset commitment hash
+        onchainOperationPubdataHashs: Array<u256>   // onchain operation pubdata hash of the all other chains
+    }
+
+    // Data needed to execute committed and verified block
+    #[derive(Drop, Serde)]
+    struct ExecuteBlockInfo {
+        storedBlock: StoredBlockInfo,   // the block info that will be executed
+        pendingOnchainOpsPubdata: Bytes // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
+    }
+
+    // Token info stored in zkLink
+    #[derive(Drop, Serde)]
+    struct Token {
+        tokenId: u16,                   // token id defined by zkLink
+        tokenAddress: ContractAddress,  // token address in l1
+        decimals: u8,                   // token decimals in l1
+        standard: bool                  // if token a pure erc20 or not
+    }
+
+    // Recursive proof input data (individual commitments are constructed onchain)
+    #[derive(Drop, Serde)]
+    struct ProofInput {
+        recursiveInput: Array<u256>,
+        proof: Array<u256>,
+        commitments: Array<u256>,
+        vkIndexes: Array<u8>,
+        subproofsLimbs: Array<u256>
+    }
 }

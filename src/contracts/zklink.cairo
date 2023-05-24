@@ -1,24 +1,42 @@
+use core::traits::Into;
 #[contract]
 mod Zklink {
     use zeroable::Zeroable;
-    use starknet::ContractAddress;
-    use starknet::get_caller_address;
-    use starknet::get_block_info;
+    use starknet::{
+        ContractAddress,
+        get_contract_address,
+        get_caller_address,
+        get_block_info
+    };
 
-    use zklink::contracts::IERC20::IERC20Dispatcher;
-    use zklink::contracts::IERC20::IERC20LibraryDispatcher;
+    use zklink::libraries::IERC20::IERC20Dispatcher;
+    use zklink::libraries::IERC20::IERC20LibraryDispatcher;
+    use zklink::libraries::reentrancyguard::ReentrancyGuard;
 
-    use zklink::utils::bytes::{Bytes, BytesTrait};
+    use zklink::utils::bytes::{
+        Bytes,
+        BytesTrait
+    };
     use zklink::utils::operations::Operations::{
         OpType,
         OpTypeIntoU8,
         U8TryIntoOpType,
         PriorityOperation,
+        ChangePubKey,
+        Withdraw,
+        Deposit,
+        FullExit,
+        ForcedExit
     };
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken,
         BridgeInfo,
-        StoredBlockInfo
+        StoredBlockInfo,
+        CommitBlockInfo,
+        CompressedBlockExtraInfo,
+        ExecuteBlockInfo,
+        Token,
+        ProofInput
     };
     
     /// Storage
@@ -66,9 +84,9 @@ mod Zklink {
         exodusMode: bool,
 
         // internal
-        // Root-chain balances (per owner and token id, see packAddressAndTokenId) to withdraw
+        // Root-chain balances to withdraw, (owner, tokenId) => amount
         // the amount of pending balance need to recovery decimals when withdraw
-        pendingBalances: LegacyMap::<felt252, u128>,
+        pendingBalances: LegacyMap::<(ContractAddress, u16), u128>,
 
         // public
         // Flag indicates that a user has exited a certain token balance in the exodus mode
@@ -129,11 +147,11 @@ mod Zklink {
 
         // public
         // using map instead of array, index => BridgeInfo
-        bridges: LegacyMap::<u256, BridgeInfo>,
+        bridges: LegacyMap::<usize, BridgeInfo>,
 
         // public
         // 0 is reversed for non-exist bridge, existing bridges are indexed from 1
-        bridgeIndex: LegacyMap::<ContractAddress, u256>,
+        bridgeIndex: LegacyMap::<ContractAddress, usize>,
     }
 
     /// Events
@@ -203,11 +221,520 @@ mod Zklink {
 
     // New bridge added
     #[event]
-    fn AddBridge(bridge: ContractAddress, bridgeIndex: u256){}
+    fn AddBridge(bridge: ContractAddress, bridgeIndex: usize){}
 
     // Bridge update
     #[event]
-    fn UpdateBridge(bridgeIndex: u256, enableBridgeTo: bool, enableBridgeFrom: bool){}
+    fn UpdateBridge(bridgeIndex: usize, enableBridgeTo: bool, enableBridgeFrom: bool){}
 
+    // =================modifier functions=================
+
+    // Checks that current state not is exodus mode
+    #[inline(always)]
+    fn active() {
+        assert(!exodusMode::read(), '0');
+    }
+
+    // Checks that current state is exodus mode
+    #[inline(always)]
+    fn notActive() {
+        assert(exodusMode::read(), '1');
+    }
+
+    // Set logic contract must be called through proxy
+    #[inline(always)]
+    fn onlyDelegateCall() {
+        // TODO
+    }
     
+    // Check if msg sender is a governor
+    #[inline(always)]
+    fn onlyGovernor() {
+        assert(get_caller_address() == networkGovernor::read(), '3');
+    }
+
+    // Check if msg sender is a validator
+    #[inline(always)]
+    fn onlyValidator() {
+        assert(validators::read(get_caller_address()), '4');
+    }
+
+    // =================Upgrade interface=================
+    // TODO
+
+    // =================User interface=================
+
+    // Deposit ERC20 token to Layer 2 - transfer ERC20 tokens from user into contract, validate it, register deposit
+    // it MUST be ok to call other external functions within from this function
+    // when the token(eg. erc777) is not a pure erc20 token
+    // Parameters:
+    //  _token Token address
+    //  _amount Token amount
+    //  _zkLinkAddress The receiver Layer 2 address
+    //  _subAccountId The receiver sub account
+    //  _mapping If true and token has a mapping token, user will receive mapping token at l2
+    #[external]
+    fn depositERC20(_token: ContractAddress, _amount: u256, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
+        ReentrancyGuard::start();
+
+        ReentrancyGuard::end();
+    }
+
+    // Register full exit request - pack pubdata, add priority request
+    // Parameters:
+    //  _accountId Numerical id of the account
+    //  _subAccountId The exit sub account
+    //  _tokenId Token id
+    //  _mapping If true and token has a mapping token, user's mapping token balance will be decreased at l2
+    #[external]
+    fn requestFullExit(_accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool) {
+        ReentrancyGuard::start();
+        active();
+
+        ReentrancyGuard::end();
+    }
+
+    // Checks if Exodus mode must be entered. If true - enters exodus mode and emits ExodusMode event.
+    // Exodus mode must be entered in case of current ethereum block number is higher than the oldest
+    // of existed priority requests expiration block number.
+    #[external]
+    fn activateExodusMode() {
+        ReentrancyGuard::start();
+        active();
+
+        ReentrancyGuard::end();
+    }
+
+    // Withdraws token from ZkLink to root chain in case of exodus mode. User must provide proof that he owns funds
+    // Parameters:
+    //  _storedBlockInfo Last verified block
+    //  _owner Owner of the account
+    //  _accountId Id of the account in the tree
+    //  _subAccountId Id of the subAccount in the tree
+    //  _proof Proof
+    //  _withdrawTokenId The token want to withdraw in l1
+    //  _deductTokenId The token deducted in l2
+    //  _amount Amount for owner (must be total amount, not part of it) in l2
+    #[external]
+    fn performExodus(_storedBlockInfo: StoredBlockInfo, _owner: ContractAddress, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>) {
+        ReentrancyGuard::start();
+        notActive();
+
+        ReentrancyGuard::end();
+    }
+
+    // Accrues users balances from deposit priority requests in Exodus mode
+    // WARNING: Only for Exodus mode
+    // Canceling may take several separate transactions to be completed
+    // Parameters:
+    //  _n number of requests to process
+    //  _depositsPubdataSize deposit pubData size in bytes
+    //  _depositsPubdata deposit details
+    fn cancelOutstandingDepositsForExodusMode(_n: u64, _depositsPubdataSize: usize, _depositsPubdata: Array<u128>) {
+        ReentrancyGuard::start();
+        notActive();
+
+        ReentrancyGuard::end();
+    }
+
+    // Set data for changing pubkey hash using onchain authorization.
+    // Transaction author (msg.sender) should be L2 account address.
+    // New pubkey hash can be reset, to do that user should send two transactions:
+    //  1. First `setAuthPubkeyHash` transaction for already used `_nonce` will set timer.
+    //  2. After `AUTH_FACT_RESET_TIMELOCK` time is passed second `setAuthPubkeyHash` transaction will reset pubkey hash for `_nonce`.
+    // Parameters:
+    //  _pubkeyHash New pubkey hash
+    //  _nonce Nonce of the change pubkey L2 transaction
+    #[external]
+    fn setAuthPubkeyHash(_pubkeyHash: felt252, _nonce: u32) {
+        ReentrancyGuard::start();
+        active();
+
+        ReentrancyGuard::end();
+    }
+
+    // Withdraws tokens from zkLink contract to the owner
+    // NOTE: We will call ERC20.transfer(.., _amount), but if according to internal logic of ERC20 token zkLink contract
+    // balance will be decreased by value more then _amount we will try to subtract this value from user pending balance
+    // Parameters:
+    //  _owner Address of the tokens owner
+    //  _tokenId Token id
+    //  _amount Amount to withdraw to request.
+    // Returns:
+    //  The actual withdrawn amount
+    #[external]
+    fn withdrawPendingBalance(_owner: ContractAddress, _tokenId: u16, _amount: u128) -> u128 {
+        let amount = 0;
+        ReentrancyGuard::start();
+        
+
+        ReentrancyGuard::end();
+        amount
+    }
+
+    // Returns amount of tokens that can be withdrawn by `address` from zkLink contract
+    // Parameters:
+    //  _address Address of the tokens owner
+    //  _tokenId Token id
+    // Returns:
+    //  The pending balance(without recovery decimals) can be withdrawn
+    #[view]
+    fn getPendingBalance(_address: ContractAddress, _tokenId: u16) -> u128 {
+        pendingBalances::read((_address, _tokenId))
+    }   
+
+    // =================Validator interface=================
+
+    // Commit block
+    // 1. Checks onchain operations of all chains, timestamp.
+    // 2. Store block commitments, sync hash.
+    #[external]
+    fn commitBlocks(_lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>) {
+
+    }
+
+    // Commit compressed block
+    // 1. Checks onchain operations of current chain, timestamp.
+    // 2. Store block commitments, sync hash.
+    #[external]
+    fn commitCompressedBlocks(_lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>, _newBlocksExtraData: Array<CompressedBlockExtraInfo>) {
+
+    }
+
+    // Execute blocks, completing priority operations and processing withdrawals.
+    // 1. Processes all pending operations (Send Exits, Complete priority requests)
+    // 2. Finalizes block on Ethereum
+    #[external]
+    fn executeBlocks(_blocksData: Array<ExecuteBlockInfo>) {
+        ReentrancyGuard::start();
+        active();
+        onlyValidator();
+
+        ReentrancyGuard::end();
+    }
+
+    // =================Block interface====================
+
+    // Blocks commitment verification.
+    // Only verifies block commitments without any other processing
+    #[external]
+    fn proveBlocks(_committedBlocks: Array<StoredBlockInfo>, _proof: ProofInput) {
+        ReentrancyGuard::start();
+
+        ReentrancyGuard::end();
+    }
+
+    // Reverts unExecuted blocks
+    #[external]
+    fn revertBlocks(_blocksToRevert: Array<StoredBlockInfo>) {
+        ReentrancyGuard::start();
+        onlyValidator();
+
+        ReentrancyGuard::end();
+    }
+
+    // =================Cross chain block synchronization===============
+
+    // Combine the `progress` of the other chains of a `syncHash` with self
+    #[external]
+    fn receiveSynchronizationProgress(_syncHash: u256, _progress: u256) {
+
+    }
+
+    // Get synchronized progress of current chain known
+    #[view]
+    fn getSynchronizedProgress(_block: StoredBlockInfo) -> u256 {
+        u256{low: 0, high: 0}
+    }
+
+    // Check if received all syncHash from other chains at the block height
+    #[external]
+    fn syncBlocks(_block: StoredBlockInfo) {
+        ReentrancyGuard::start();
+
+        ReentrancyGuard::end();
+    }
+
+    // =================Fast withdraw and Accept===============
+
+    // Accepter accept a erc20 token fast withdraw, accepter will get a fee for profit
+    // Parameters:
+    //  accepter Accepter who accept a fast withdraw
+    //  accountId Account that request fast withdraw
+    //  receiver User receive token from accepter (the owner of withdraw operation)
+    //  tokenId Token id
+    //  amount The amount of withdraw operation
+    //  withdrawFeeRate Fast withdraw fee rate taken by accepter
+    //  nonce Account nonce, used to produce unique accept info
+    //  amountTransfer Amount that transfer from accepter to receiver
+    // may be a litter larger than the amount receiver received
+    #[external]
+    fn acceptERC20(_accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32, _amountTransfer: u128) {
+        ReentrancyGuard::start();
+
+        ReentrancyGuard::end();
+    }
+
+    // Return the accept allowance of broker
+    #[view]
+    fn brokerAllowance(_tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress) -> u128 {
+        brokerAllowances::read((_tokenId, _accepter, _broker))
+    }
+
+    // Give allowance to broker to call accept
+    // Parameters:
+    //  tokenId token that transfer to the receiver of accept request from accepter or broker
+    //  broker who are allowed to do accept by accepter(the msg.sender)
+    //  amount the accept allowance of broker
+    #[external]
+    fn brokerApprove(_tokenId: u16, _broker: ContractAddress, _amount: u128) -> bool {
+        true
+    }
+
+    fn _checkAccept(_accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32) -> (u128, u256, ContractAddress){
+        (0, u256{low: 0, high: 0}, Zeroable::zero())
+    }
+
+    // =================Governance interface===============
+
+    // Change current governor
+    // Parameters:
+    //  _newGovernor Address of the new governor
+    #[external]
+    fn changeGovernor(_newGovernor: ContractAddress) {
+        ReentrancyGuard::start();
+        onlyGovernor();
+
+        ReentrancyGuard::end();
+    }
+
+    // Add token to the list of networks tokens
+    // Parameters:
+    //  _tokenId Token id
+    //  _tokenAddress Address of the token
+    //  _decimals Token decimals of layer one
+    //  _standard If token is a standard erc20
+    #[external]
+    fn addToken(_tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8, _standard: bool) {
+        onlyGovernor();
+    }
+
+    // Add tokens to the list of networks tokens
+    // Parameters:
+    //  _tokenList Token list
+    #[external]
+    fn addTokens(_tokenList: Array<Token>) {
+
+    }
+
+    // Pause token deposits for the given token
+    // Parameters:
+    //  _tokenId Token id
+    //  _tokenPaused Token paused status
+    #[external]
+    fn setTokenPaused(_tokenId: u16, _tokenPaused: bool) {
+        onlyGovernor();
+    }
+
+    // Change validator status (active or not active)
+    // Parameters:
+    //  _validator Validator address
+    //  _active Active flag
+    #[external]
+    fn setValidator(_validator: ContractAddress, _active: bool) {
+        onlyGovernor();
+    }
+
+    // Add a new bridge
+    // Parameters:
+    //  bridge the bridge contract
+    // Returns:
+    //  the index of new bridge
+    #[external]
+    fn addBridge(_bridge: ContractAddress) -> usize {
+        onlyGovernor();
+        0
+    }
+
+    // Update bridge info
+    // If we want to remove a bridge(not compromised), we should firstly set `enableBridgeTo` to false
+    // and wait all messages received from this bridge and then set `enableBridgeFrom` to false.
+    // But when a bridge is compromised, we must set both `enableBridgeTo` and `enableBridgeFrom` to false immediately
+    // Parameters:
+    //  _index the bridge info index
+    //  _enableBridgeTo if set to false, bridge to will be disabled
+    //  _enableBridgeFrom if set to false, bridge from will be disabled
+    #[external]
+    fn updateBridge(_index: u256, _enableBridgeTo: bool, _enableBridgeFrom: bool) {
+        onlyGovernor();
+    }
+
+    // Get enableBridgeTo status
+    #[view]
+    fn isBridgeToEnabled(_bridge: ContractAddress) -> bool {
+        let index = bridgeIndex::read(_bridge) - 1;
+        bridges::read(index).enableBridgeTo
+    }
+
+    // Get enableBridgeFrom status
+    #[view]
+    fn isBridgeFromEnabled(_bridge: ContractAddress) -> bool {
+        let index = bridgeIndex::read(_bridge) - 1;
+        bridges::read(index).enableBridgeFrom
+    }
+
+    // =================Internal functions=================
+
+    // Deposit ERC20 token internal function
+    // Parameters:
+    //  _token Token address
+    //  _amount Token amount
+    //  _zkLinkAddress The receiver Layer 2 address
+    //  _subAccountId The receiver sub account
+    //  _mapping If true and token has a mapping token, user will receive mapping token at l2
+    fn deposit(_tokenAddress: ContractAddress, _amount: u128, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
+        active();
+
+    }
+
+    // Saves priority request in storage
+    // Calculates expiration block for request, store this request and emit NewPriorityRequest event
+    // Parameters:
+    //  _opType Rollup operation type
+    //  _pubData Operation pubdata
+    fn addPriorityRequest(_opType: OpType, _pubData: Bytes) {
+
+    }
+
+    // CommitBlocks internal function
+    // Parameters:
+    //  _lastCommittedBlockData
+    //  _newBlocksData
+    //  _compressed
+    //  _newBlocksExtraData
+    fn _commitBlocks(_lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>, _compressed: bool, _newBlocksExtraData: Array<CompressedBlockExtraInfo>) {
+        ReentrancyGuard::start();
+        active();
+        onlyValidator();
+
+        ReentrancyGuard::end();
+    }
+
+    // Process one block commit using previous block StoredBlockInfo,
+    // Parameters:
+    //  _previousBlock
+    //  _newBlock
+    //  _compressed
+    //  _newBlockExtra
+    // Returns:
+    //  new block StoredBlockInfo
+    // NOTE: Does not change storage (except events, so we can't mark it view)
+    fn commitOneBlock(_previousBlock: StoredBlockInfo, _newBlock: CommitBlockInfo, _compressed: bool, _newBlockExtra: CompressedBlockExtraInfo) -> StoredBlockInfo {
+        StoredBlockInfo{
+            blockNumber: 0,
+            priorityOperations: 0,
+            pendingOnchainOperationsHash: u256{low: 0, high: 0},
+            timestamp: 0,
+            stateHash: u256{low: 0, high: 0},
+            commitment: u256{low: 0, high: 0},
+            syncHash: u256{low: 0, high: 0}
+        }
+    }
+
+    // Gets operations packed in bytes array. Unpacks it and stores onchain operations.
+    // Priority operations must be committed in the same order as they are in the priority queue.
+    // NOTE: does not change storage! (only emits events)
+    // Parameters:
+    //  _newBlockData
+    // Returns:
+    //  processableOperationsHash - hash of the all operations of the current chain that needs to be executed  (Withdraws, ForcedExits, FullExits)
+    //  priorityOperationsProcessed - number of priority operations processed of the current chain in this block (Deposits, FullExits)
+    //  offsetsCommitment - array where 1 is stored in chunk where onchainOperation begins and other are 0 (used in commitments)
+    //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
+    fn collectOnchainOps(_newBlockData: CommitBlockInfo) -> (u256, u64, felt252, Array<u256>) {
+        (u256{low: 0, high: 0}, 0, 0, ArrayTrait::<u256>::new())
+    }
+
+    fn initOnchainOperationPubdataHashs() -> Array<u256> {
+        ArrayTrait::<u256>::new()
+    }
+
+    fn checkChainId(_chainId: u8) {
+
+    }
+
+    fn checkOnchainOp(_opType: OpType, _chainId: u8, _pubData: Bytes, _pubdataOffset: usize, _nextPriorityOpIdx: u64, _ethWitness: Bytes) -> (u64, Bytes, Bytes) {
+        (0, BytesTrait::new_empty(), BytesTrait::new_empty())
+    }
+
+    // Create synchronization hash for cross chain block verify
+    fn createSyncHash(_preBlockSyncHash: u256, _commitment: u256, _onchainOperationPubdataHashs: Array<u256>) -> u256 {
+        u256{low: 0, high: 0}
+    }
+
+    // Creates block commitment from its data
+    // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
+    fn createBlockCommitment(_previousBlock: StoredBlockInfo, _newBlockData: CommitBlockInfo, _compressed: bool, _newBlockExtraData: CompressedBlockExtraInfo, _offsetsCommitment: Bytes) -> u256 {
+        u256{low: 0, high: 0}
+    }
+
+    // Checks that change operation is correct
+    fn verifyChangePubkey(_ethWitness: Bytes, _changePk: ChangePubKey) -> bool {
+        false
+    }
+
+    // Checks that signature is valid for pubkey change message
+    fn verifyChangePubkeyECRECOVER(_ethWitness: Bytes, _changePk: ChangePubKey) -> bool {
+        false
+    }
+
+    // Checks that signature is valid for pubkey change message
+    fn verifyChangePubkeyCREATE2(_ethWitness: Bytes, _changePk: ChangePubKey) -> bool {
+        false
+    }
+
+    // Executes one block
+    // 1. Processes all pending operations (Send Exits, Complete priority requests)
+    // 2. Finalizes block on Ethereum
+    fn executeOneBlock(_blockExecuteData: ExecuteBlockInfo, _executedBlockIdx: usize) {
+
+    }
+
+    // Execute withdraw operation
+    fn executeWithdraw(op: Withdraw) {
+
+    }
+
+    // Execute force exit operation
+    fn executeForceExit(op: ForcedExit) {
+
+    }
+
+    // Execute full exit operation
+    fn executeFullExit(op: FullExit) {
+
+    }
+
+    // Try execute withdraw, if it fails - store withdraw to pendingBalances
+    // 1. Try to send token to _recipients
+    // 2. On failure: Increment _recipients balance to withdraw.
+    // Parameters:
+    //  _tokenId
+    //  _tokenAddress
+    //  _isTokenStandard
+    //  _decimals
+    //  _recipient
+    //  _amount
+    fn withdrawOrStore(_tokenId: u16, _tokenAddress: ContractAddress, _isTokenStandard: bool, _decimals: u8, _recipient: ContractAddress, _amount: u128) {
+
+    }
+
+    // Increase `_recipient` balance to withdraw
+    // Parameters:
+    //  _tokenId
+    //  _recipient
+    //  _amount amount that need to recovery decimals when withdraw
+    fn increasePendingBalance(_tokenId: u16, _recipient: ContractAddress, _amount: u128) {
+
+    }
 }
