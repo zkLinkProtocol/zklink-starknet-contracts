@@ -1,4 +1,4 @@
-mod Storage {
+mod DataStructures {
     use core::zeroable::Zeroable;
     use starknet::contract_address::{
         ContractAddress,

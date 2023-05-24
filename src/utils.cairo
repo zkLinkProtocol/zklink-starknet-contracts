@@ -1,7 +1,7 @@
 mod bytes;
 mod math;
 mod utils;
-mod keccak_u128s;
-mod storage;
+mod keccak;
 mod operations;
 mod constants;
+mod data_structures;

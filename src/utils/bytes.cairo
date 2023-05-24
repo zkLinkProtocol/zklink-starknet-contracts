@@ -17,7 +17,7 @@ use zklink::utils::math::{
     usize_div_rem
 };
 use zklink::utils::utils::u128_array_slice;
-use zklink::utils::keccak_u128s::keccak_u128s_be;
+use zklink::utils::keccak::keccak_u128s_be;
 
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;

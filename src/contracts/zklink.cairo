@@ -15,7 +15,7 @@ mod Zklink {
         U8TryIntoOpType,
         PriorityOperation,
     };
-    use zklink::utils::storage::Storage::{
+    use zklink::utils::data_structures::DataStructures::{
         RegisteredToken,
         BridgeInfo,
         StoredBlockInfo
