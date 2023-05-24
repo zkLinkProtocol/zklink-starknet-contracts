@@ -4,6 +4,14 @@
 mod Operations {
     use core::traits::Into;
     use core::traits::TryInto;
+    use starknet::{
+        StorageAccess,
+        StorageBaseAddress,
+        SyscallResult,
+        storage_read_syscall,
+        storage_write_syscall,
+        storage_address_from_base_and_offset
+    };
     use zklink::utils::bytes::{
         Bytes,
         BytesTrait
@@ -12,7 +20,7 @@ mod Operations {
         u256_to_u160,
     };
     // zkLink circuit operation type
-    #[derive(Copy, Drop, PartialEq)]
+    #[derive(Copy, Drop, PartialEq, Serde)]
     enum OpType {
         Noop: (),           // 0
         Deposit: (),        // 1 L1 op
@@ -90,11 +98,26 @@ mod Operations {
     const PUBKEY_HASH_BYTES: usize = 20;
 
     // Priority operations: Deposit, FullExit
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct PriorityOperation {
         hashedPubData: felt252,
         expirationBlock: u64,
         opType: OpType
+    }
+
+    // This trait impl is just for devlopment progress going on.
+    // TODO: remove this after StorageAccess support Array
+    impl PriorityOperationStorageAccess of StorageAccess<PriorityOperation> {
+        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<PriorityOperation> {
+            SyscallResult::Ok(PriorityOperation {
+                hashedPubData: 0,
+                expirationBlock: 0,
+                opType: OpType::Noop(())
+            })
+        }
+        fn write(address_domain: u32, base: StorageBaseAddress, value: PriorityOperation) -> SyscallResult<()> {
+            SyscallResult::Ok(())
+        }
     }
 
     trait OperationTrait<T> {

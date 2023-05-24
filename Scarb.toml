@@ -9,6 +9,6 @@ sierra-replace-ids = true
 
 [scripts]
 sierra = "cairo-compile . -r"
-test = "cairo-test ."
+test = "cairo-test --starknet ."
 
 [[target.starknet-contract]]

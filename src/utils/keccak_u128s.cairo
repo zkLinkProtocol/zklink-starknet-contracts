@@ -1,5 +1,5 @@
 use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
-// use core::integer::u128_byte_reverse;
+use core::integer::u128_byte_reverse;
 use core::traits::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
@@ -8,6 +8,12 @@ use core::keccak::{
     u128_split,
     add_padding
 };
+
+fn u256_reverse_endian(input: u256) -> u256 {
+    let low = u128_byte_reverse(input.high);
+    let high = u128_byte_reverse(input.low);
+    u256 { low, high }
+}
 
 // Computes the keccak256 of multiple uint128 values.
 // The values are interpreted as big-endian.
@@ -27,13 +33,11 @@ fn keccak_u128s_be(mut input: Span<u128>) -> u256 {
     };
 
     add_padding(ref keccak_input);
-    starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
+    u256_reverse_endian(starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall())
 }
 
 fn keccak_add_uint128_be(ref keccak_input: Array::<u64>, value: u128) {
-    // TODO: u128_byte_reverse is not support by Scarb
-    // let (high, low) = u128_split(u128_byte_reverse(value));
-    let (high, low) = u128_split(value);
+    let (high, low) = u128_split(u128_byte_reverse(value));
     keccak_input.append(low);
     keccak_input.append(high);
 }
