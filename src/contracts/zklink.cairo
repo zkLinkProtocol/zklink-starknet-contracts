@@ -21,7 +21,7 @@ mod Zklink {
         StoredBlockInfo
     };
     
-    
+    /// Storage
     struct Storage {
         // public
         // Verifier contract. Used to verify block proof and exit proof
@@ -136,4 +136,78 @@ mod Zklink {
         bridgeIndex: LegacyMap::<ContractAddress, u256>,
     }
 
+    /// Events
+    // Event emitted when a block is committed
+    #[event]
+    fn BlockCommit(blockNumber: u64){}
+
+    // Event emitted when a block is proven
+    #[event]
+    fn BlockProven(blockNumber: u64){}
+
+    // Event emitted when a block is executed
+    #[event]
+    fn BlockExecuted(blockNumber: u64){}
+
+    // Event emitted when user funds are withdrawn from the zkLink state and contract
+    #[event]
+    fn Withdrawal(tokenId: u16, amount: u128){}
+
+    // Event emitted when user funds are withdrawn from the zkLink state but not from contract
+    #[event]
+    fn WithdrawalPending(tokenId: u16, recepient: ContractAddress, amount: u128){}
+
+    // Event emitted when user sends a authentication fact (e.g. pub-key hash)
+    #[event]
+    fn FactAuth(sender: ContractAddress, nonce: u32, fact: felt252){}
+
+    // Event emitted when authentication fact reset clock start
+    #[event]
+    fn FactAuthResetTime(sender: ContractAddress, nonce: u32, time: u64){}
+
+    // Event emitted when blocks are reverted
+    #[event]
+    fn BlocksRevert(totalBlocksVerified: u32, totalBlocksCommitted: u32){}
+
+    // Exodus mode entered event
+    #[event]
+    fn ExodusMode(){}
+
+    // New priority request event. Emitted when a request is placed into mapping
+    #[event]
+    fn NewPriorityRequest(sender: ContractAddress, serialId: u64, opType: OpType, pubData: Bytes, expirationBlock: u64){}
+
+    // Event emitted when accepter accept a fast withdraw
+    #[event]
+    fn Accept(accepter: ContractAddress, accountId: u32, receiver: ContractAddress, tokenId: u16, amountSent: u128, amountReceive: u128){}
+
+    // Event emitted when set broker allowance
+    #[event]
+    fn BrokerApprove(tokenId: u16, owner: ContractAddress, spender: ContractAddress, amount: u128){}
+
+    // Token added to ZkLink net
+    #[event]
+    fn NewToken(tokenId: u16, token: ContractAddress){}
+
+    // Governor changed
+    #[event]
+    fn NewGovernor(governor: ContractAddress){}
+
+    // Validator's status updated
+    #[event]
+    fn ValidatorStatusUpdate(validatorAddress: ContractAddress, isActive: bool){}
+
+    // Token pause status update
+    #[event]
+    fn TokenPausedUpdate(tokenId: u16, paused: bool){}
+
+    // New bridge added
+    #[event]
+    fn AddBridge(bridge: ContractAddress, bridgeIndex: u256){}
+
+    // Bridge update
+    #[event]
+    fn UpdateBridge(bridgeIndex: u256, enableBridgeTo: bool, enableBridgeFrom: bool){}
+
+    
 }
