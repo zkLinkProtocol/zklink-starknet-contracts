@@ -9,7 +9,8 @@ mod Zklink {
         ContractAddress,
         get_contract_address,
         get_caller_address,
-        get_block_info
+        get_block_number,
+        get_block_timestamp
     };
 
     use zklink::libraries::IERC20::IERC20Dispatcher;
@@ -48,9 +49,13 @@ mod Zklink {
         U256TryIntoU128,
         u128_pow
     };
+    use zklink::utils::utils::{
+        u256_to_u160
+    };
     use zklink::utils::constants::{
         GLOBAL_ASSET_ACCOUNT_ADDRESS,
         MAX_SUB_ACCOUNT_ID,
+        PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
         CHAIN_ID,
         USD_TOKEN_ID,
@@ -681,7 +686,23 @@ mod Zklink {
     //  _opType Rollup operation type
     //  _pubData Operation pubdata
     fn addPriorityRequest(_opType: OpType, _pubData: Bytes) {
+        // Expiration block is: current block number + priority expiration delta
+        let expirationBlock = get_block_number() + PRIORITY_EXPIRATION;
+        let toprs = totalOpenPriorityRequests::read();
+        let nextPriorityRequestId = firstPriorityRequestId::read() + toprs;
+        let hashedPubData = u256_to_u160(_pubData.keccak());
 
+        let priorityRequest = PriorityOperation {
+            hashedPubData: hashedPubData,
+            expirationBlock: expirationBlock,
+            opType: _opType
+        };
+        priorityRequests::write(nextPriorityRequestId, priorityRequest);
+
+        let sender = get_caller_address();
+        NewPriorityRequest(sender, nextPriorityRequestId, _opType, _pubData, expirationBlock);
+
+        totalOpenPriorityRequests::write(toprs + 1);
     }
 
     // CommitBlocks internal function
