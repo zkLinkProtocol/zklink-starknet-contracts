@@ -53,11 +53,13 @@ mod Zklink {
         u256_to_u160
     };
     use zklink::utils::constants::{
-        GLOBAL_ASSET_ACCOUNT_ADDRESS,
+        MAX_ACCOUNT_ID,
         MAX_SUB_ACCOUNT_ID,
         PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
         CHAIN_ID,
+        GLOBAL_ASSET_ACCOUNT_ID,
+        GLOBAL_ASSET_ACCOUNT_ADDRESS,
         USD_TOKEN_ID,
         MIN_USD_STABLE_TOKEN_ID,
         MAX_USD_STABLE_TOKEN_ID,
@@ -315,6 +317,36 @@ mod Zklink {
     fn requestFullExit(_accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool) {
         ReentrancyGuard::start();
         active();
+        // Checks
+        // accountId and subAccountId MUST be valid
+        assert(_accountId <= MAX_ACCOUNT_ID & _accountId != GLOBAL_ASSET_ACCOUNT_ID, 'a0');
+        assert(_subAccountId <= MAX_SUB_ACCOUNT_ID, 'a1');
+        // token MUST be registered to ZkLink
+        let rt = tokens::read(_tokenId);
+        assert(rt.registered, 'a2');
+        // when full exit stable tokens (e.g. USDC, BUSD) with mapping, USD will be deducted from account
+        // and stable token will be transfer from zkLink contract to account address
+        // all other tokens don't support mapping
+        let mut srcTokenId = _tokenId;
+        if _mapping {
+            assert(_tokenId >= MIN_USD_STABLE_TOKEN_ID & _tokenId <= MAX_USD_STABLE_TOKEN_ID, 'a3');
+            srcTokenId = USD_TOKEN_ID;
+        }
+
+        // Effects
+        let sender = get_caller_address();
+        let op = FullExit {
+            chainId: CHAIN_ID,
+            accountId: _accountId,
+            subAccountId: _subAccountId,
+            owner: sender,              // Only the owner of account can fullExit for them self
+            tokenId: _tokenId,
+            srcTokenId: srcTokenId,
+            amount: 0,                  // unknown at this point
+        };
+
+        let pubData = op.writeForPriorityQueue();
+        addPriorityRequest(OpType::FullExit(()), pubData);
 
         ReentrancyGuard::end();
     }
@@ -621,8 +653,7 @@ mod Zklink {
         active();
         // checks
         // disable deposit to zero address or global asset account
-        assert(_zkLinkAddress != Zeroable::zero(), 'e1');
-        assert(_zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS, 'e1');
+        assert(_zkLinkAddress != Zeroable::zero() & _zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS, 'e1');
         // subAccountId MUST be valid
         assert(_subAccountId <= MAX_SUB_ACCOUNT_ID, 'e2');
         // token MUST be registered to ZkLink and deposit MUST be enabled
@@ -653,14 +684,12 @@ mod Zklink {
         // improve decimals before send to layer two
         _amount = improveDecimals(_amount, rt.decimals);
         // disable deposit with zero amount
-        assert(_amount > 0, 'e0');
-        assert(_amount <= MAX_DEPOSIT_AMOUNT, 'e0');
+        assert(_amount > 0 & _amount <= MAX_DEPOSIT_AMOUNT, 'e0');
 
         // only stable tokens(e.g. USDC, BUSD) support mapping to USD when deposit
         let mut targetTokenId = tokenId;
         if _mapping {
-            assert(tokenId >= MIN_USD_STABLE_TOKEN_ID, 'e5');
-            assert(tokenId <= MAX_USD_STABLE_TOKEN_ID, 'e5');
+            assert(tokenId >= MIN_USD_STABLE_TOKEN_ID & tokenId <= MAX_USD_STABLE_TOKEN_ID, 'e5');
             targetTokenId = USD_TOKEN_ID;
         }
 
