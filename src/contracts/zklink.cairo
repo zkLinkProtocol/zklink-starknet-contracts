@@ -1,7 +1,10 @@
-use core::traits::Into;
+use zklink::utils::operations::Operations::OperationTrait;
 #[contract]
 mod Zklink {
     use zeroable::Zeroable;
+    use core::traits::Into;
+    use core::traits::TryInto;
+    use core::option::OptionTrait;
     use starknet::{
         ContractAddress,
         get_contract_address,
@@ -10,7 +13,7 @@ mod Zklink {
     };
 
     use zklink::libraries::IERC20::IERC20Dispatcher;
-    use zklink::libraries::IERC20::IERC20LibraryDispatcher;
+    use zklink::libraries::IERC20::IERC20DispatcherTrait;
     use zklink::libraries::reentrancyguard::ReentrancyGuard;
 
     use zklink::utils::bytes::{
@@ -22,11 +25,13 @@ mod Zklink {
         OpTypeIntoU8,
         U8TryIntoOpType,
         PriorityOperation,
-        ChangePubKey,
-        Withdraw,
+        OperationTrait,
         Deposit,
+        DepositOperation,
         FullExit,
-        ForcedExit
+        ForcedExit,
+        Withdraw,
+        ChangePubKey,
     };
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken,
@@ -37,6 +42,21 @@ mod Zklink {
         ExecuteBlockInfo,
         Token,
         ProofInput
+    };
+    use zklink::utils::math::{
+        U128IntoU256,
+        U256TryIntoU128,
+        u128_pow
+    };
+    use zklink::utils::constants::{
+        GLOBAL_ASSET_ACCOUNT_ADDRESS,
+        MAX_SUB_ACCOUNT_ID,
+        MAX_DEPOSIT_AMOUNT,
+        CHAIN_ID,
+        USD_TOKEN_ID,
+        MIN_USD_STABLE_TOKEN_ID,
+        MAX_USD_STABLE_TOKEN_ID,
+        TOKEN_DECIMALS_OF_LAYER2,
     };
     
     /// Storage
@@ -274,9 +294,9 @@ mod Zklink {
     //  _subAccountId The receiver sub account
     //  _mapping If true and token has a mapping token, user will receive mapping token at l2
     #[external]
-    fn depositERC20(_token: ContractAddress, _amount: u256, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
+    fn depositERC20(_token: ContractAddress, _amount: u128, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
         ReentrancyGuard::start();
-
+        deposit(_token, _amount, _zkLinkAddress, _subAccountId, _mapping);
         ReentrancyGuard::end();
     }
 
@@ -330,7 +350,7 @@ mod Zklink {
     //  _n number of requests to process
     //  _depositsPubdataSize deposit pubData size in bytes
     //  _depositsPubdata deposit details
-    fn cancelOutstandingDepositsForExodusMode(_n: u64, _depositsPubdataSize: usize, _depositsPubdata: Array<u128>) {
+    fn cancelOutstandingDepositsForExodusMode(_n: u64, _depositsPubdata: Bytes) {
         ReentrancyGuard::start();
         notActive();
 
@@ -565,7 +585,7 @@ mod Zklink {
     //  _enableBridgeTo if set to false, bridge to will be disabled
     //  _enableBridgeFrom if set to false, bridge from will be disabled
     #[external]
-    fn updateBridge(_index: u256, _enableBridgeTo: bool, _enableBridgeFrom: bool) {
+    fn updateBridge(_index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool) {
         onlyGovernor();
     }
 
@@ -594,7 +614,65 @@ mod Zklink {
     //  _mapping If true and token has a mapping token, user will receive mapping token at l2
     fn deposit(_tokenAddress: ContractAddress, _amount: u128, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
         active();
+        // checks
+        // disable deposit to zero address or global asset account
+        assert(_zkLinkAddress != Zeroable::zero(), 'e1');
+        assert(_zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS, 'e1');
+        // subAccountId MUST be valid
+        assert(_subAccountId <= MAX_SUB_ACCOUNT_ID, 'e2');
+        // token MUST be registered to ZkLink and deposit MUST be enabled
+        let tokenId = tokenIds::read(_tokenAddress);
+        // 0 is a invalid token and MUST NOT register to zkLink contract
+        assert(tokenId != 0, 'e3');
+        let rt = tokens::read(tokenId);
+        assert(rt.registered, 'e3');
+        assert(!rt.paused, 'e4');
 
+        // transfer erc20 token from sender to zkLink contract
+        let sender = get_caller_address();
+        let this = get_contract_address();
+        let mut _amount = _amount;
+        if rt.standard {
+            IERC20Dispatcher {contract_address: _tokenAddress}.transfer_from(sender, this, _amount.into());
+        } else {
+            // support non-standard tokens
+            let balanceBefore = IERC20Dispatcher {contract_address: _tokenAddress}.balance_of(this);
+            // NOTE, the balance of this contract will be increased
+            // if the token is not a pure erc20 token, it could do anything within the transferFrom
+            // we MUST NOT use `token.balanceOf(address(this))` in any control structures
+            IERC20Dispatcher {contract_address: _tokenAddress}.transfer_from(sender, this, _amount.into());
+            let balanceAfter = IERC20Dispatcher {contract_address: _tokenAddress}.balance_of(this);
+            _amount = (balanceAfter - balanceBefore).try_into().unwrap();
+        }
+
+        // improve decimals before send to layer two
+        _amount = improveDecimals(_amount, rt.decimals);
+        // disable deposit with zero amount
+        assert(_amount > 0, 'e0');
+        assert(_amount <= MAX_DEPOSIT_AMOUNT, 'e0');
+
+        // only stable tokens(e.g. USDC, BUSD) support mapping to USD when deposit
+        let mut targetTokenId = tokenId;
+        if _mapping {
+            assert(tokenId >= MIN_USD_STABLE_TOKEN_ID, 'e5');
+            assert(tokenId <= MAX_USD_STABLE_TOKEN_ID, 'e5');
+            targetTokenId = USD_TOKEN_ID;
+        }
+
+        // Effects
+        // Priority Queue request
+        let op = Deposit {
+            chainId: CHAIN_ID,
+            accountId: 0,   // unknown at this point
+            subAccountId: _subAccountId,
+            tokenId: tokenId,
+            targetTokenId: targetTokenId,
+            amount: _amount,
+            owner: _zkLinkAddress
+        };
+
+        let pubData = op.writeForPriorityQueue();
+        addPriorityRequest(OpType::Deposit(()), pubData);
     }
 
     // Saves priority request in storage
@@ -736,5 +814,18 @@ mod Zklink {
     //  _amount amount that need to recovery decimals when withdraw
     fn increasePendingBalance(_tokenId: u16, _recipient: ContractAddress, _amount: u128) {
 
+    }
+
+    // improve decimals when deposit, for example, user deposit 2 USDC in ui, and the decimals of USDC is 6
+    // the `_amount` params when call contract will be 2 * 10^6
+    // because all token decimals defined in layer two is 18
+    // so the `_amount` in deposit pubdata should be 2 * 10^6 * 10^(18 - 6) = 2 * 10^18
+    fn improveDecimals(_amount: u128, _decimals: u8) -> u128 {
+        _amount * u128_pow(10, (TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
+    }
+
+    // recover decimals when withdraw, this is the opposite of improve decimals
+    fn recoveryDecimals(_amount: u128, _decimals: u8) -> u128 {
+        _amount / u128_pow(10, (TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
     }
 }

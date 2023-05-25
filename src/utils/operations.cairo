@@ -10,7 +10,8 @@ mod Operations {
         SyscallResult,
         storage_read_syscall,
         storage_write_syscall,
-        storage_address_from_base_and_offset
+        storage_address_from_base_and_offset,
+        ContractAddress
     };
     use zklink::utils::bytes::{
         Bytes,
@@ -132,13 +133,13 @@ mod Operations {
     // Deposit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop)]
     struct Deposit {
-        chainId: u8,        // 1 byte, deposit from which chain that identified by l2 chain id
-        accountId: u32,     // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
-        subAccountId: u8,   // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        tokenId: u16,       // 2 bytes, the token that registered to l2
-        targetTokenId: u16, // 2 bytes, the token that user increased in l2
-        amount: u128,       // 16 bytes, the token amount deposited to l2
-        owner: u256,        // 32 bytes, the address that receive deposited token at l2
+        chainId: u8,            // 1 byte, deposit from which chain that identified by l2 chain id
+        accountId: u32,         // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
+        subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
+        tokenId: u16,           // 2 bytes, the token that registered to l2
+        targetTokenId: u16,     // 2 bytes, the token that user increased in l2
+        amount: u128,           // 16 bytes, the token amount deposited to l2
+        owner: ContractAddress, // 32 bytes, the address that receive deposited token at l2
     }
 
     impl DepositOperation of OperationTrait<Deposit> {
@@ -151,7 +152,7 @@ mod Operations {
             let (offset, tokenId) = pubData.read_u16(offset);
             let (offset, targetTokenId) = pubData.read_u16(offset);
             let (offset, amount) = pubData.read_u128(offset);
-            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, owner) = pubData.read_address(offset);
 
             let deposit = Deposit {
                 chainId: chainId,
@@ -175,7 +176,7 @@ mod Operations {
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.targetTokenId);
             pubData.append_u128(*self.amount);
-            pubData.append_u256(*self.owner);
+            pubData.append_address(*self.owner);
 
             pubData
         }
@@ -190,13 +191,13 @@ mod Operations {
     // FullExit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop)]
     struct FullExit {
-        chainId: u8,        // 1 byte, withdraw to which chain that identified by l2 chain id
-        accountId: u32,     // 4 bytes, the account id to withdraw from
-        subAccountId: u8,   // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        owner: u256,        // 32 bytes, the address that own the account at l2
-        tokenId: u16,       // 2 bytes, the token that withdraw to l1
-        srcTokenId: u16,    // 2 bytes, the token that deducted in l2
-        amount: u128,       // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
+        chainId: u8,            // 1 byte, withdraw to which chain that identified by l2 chain id
+        accountId: u32,         // 4 bytes, the account id to withdraw from
+        subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
+        owner: ContractAddress, // 32 bytes, the address that own the account at l2
+        tokenId: u16,           // 2 bytes, the token that withdraw to l1
+        srcTokenId: u16,        // 2 bytes, the token that deducted in l2
+        amount: u128,           // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
     }
 
     impl FullExitOperation of OperationTrait<FullExit> {
@@ -206,7 +207,7 @@ mod Operations {
             let (offset, chainId) = pubData.read_u8(offset);
             let (offset, accountId) = pubData.read_u32(offset);
             let (offset, subAccountId) = pubData.read_u8(offset);
-            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, owner) = pubData.read_address(offset);
             let (offset, tokenId) = pubData.read_u16(offset);
             let (offset, srcTokenId) = pubData.read_u16(offset);
             let (offset, amount) = pubData.read_u128(offset);
@@ -230,7 +231,7 @@ mod Operations {
             pubData.append_u8(*self.chainId);
             pubData.append_u32(*self.accountId);
             pubData.append_u8(*self.subAccountId);
-            pubData.append_u256(*self.owner);
+            pubData.append_address(*self.owner);
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.srcTokenId);
             pubData.append_u128(0);            // amount (ignored during hash calculation)
@@ -252,7 +253,7 @@ mod Operations {
         accountId: u32,             // 4 bytes, the account id to withdraw from
         tokenId: u16,               // 2 bytes, the token that to withdraw
         amount: u128,               // 16 bytes, the token amount to withdraw
-        owner: u256,                // 32 bytes, the address to receive token
+        owner: ContractAddress,     // 32 bytes, the address to receive token
         nonce: u32,                 // 4 bytes, zero means normal withdraw, not zero means fast withdraw and the value is the account nonce
         fastWithdrawFeeRate: u16,   // 2 bytes, fast withdraw fee rate taken by accepter
     }
@@ -283,7 +284,7 @@ mod Operations {
             let (offset, amount) = pubData.read_u128(offset);
             // uint16 fee, present in pubdata, ignored at serialization
             let offset = offset + FEE_BYTES;
-            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, owner) = pubData.read_address(offset);
             let (offset, nonce) = pubData.read_u32(offset);
             let (offset, fastWithdrawFeeRate) = pubData.read_u16(offset);
 
@@ -312,10 +313,10 @@ mod Operations {
     // ForcedExit operation: 51 Bytes
     #[derive(Copy, Drop)]
     struct ForcedExit {
-        chainId: u8,        // 1 byte, which chain the force exit happened
-        tokenId: u16,       // 2 bytes, the token that to withdraw
-        amount: u128,       // 16 bytes, the token amount to withdraw
-        target: u256,       // 32 bytes, the address to receive token
+        chainId: u8,            // 1 byte, which chain the force exit happened
+        tokenId: u16,           // 2 bytes, the token that to withdraw
+        amount: u128,           // 16 bytes, the token amount to withdraw
+        target: ContractAddress // 32 bytes, the address to receive token
     }
 
     impl ForcedExitOperatoin of OperationTrait<ForcedExit> {
@@ -347,7 +348,7 @@ mod Operations {
             let (offset, amount) = pubData.read_u128(offset);
             // fee, u16, ignored at serialization
             let offset = offset + FEE_BYTES;
-            let (offset, target) = pubData.read_u256(offset);
+            let (offset, target) = pubData.read_address(offset);
 
             let forcedExit = ForcedExit {
                 chainId: chainId,
@@ -375,7 +376,7 @@ mod Operations {
         chainId: u8,                // 1 byte, which chain to verify(only one chain need to verify for gas saving)
         accountId: u32,             // 4 bytes, the account that to change pubkey
         pubKeyHash: felt252,        // 20 bytes, hash of the new rollup pubkey
-        owner: u256,                // 32 bytes, the owner that own this account
+        owner: ContractAddress,     // 32 bytes, the owner that own this account
         nonce: u32,                 // 4 bytes, the account nonce
     }
 
@@ -397,7 +398,7 @@ mod Operations {
             // subAccountId, u8, ignored at serialization
             let offset = offset + SUB_ACCOUNT_ID_BYTES;
             let (offset, pubKeyHash) = pubData.read_felt252_packed(offset, PUBKEY_HASH_BYTES);
-            let (offset, owner) = pubData.read_u256(offset);
+            let (offset, owner) = pubData.read_address(offset);
             let (offset, nonce) = pubData.read_u32(offset);
 
             let changePubKey = ChangePubKey {

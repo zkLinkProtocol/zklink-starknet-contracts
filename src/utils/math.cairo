@@ -1,3 +1,6 @@
+use core::traits::Into;
+use core::traits::TryInto;
+
 // usize div mod function
 // value = q * div + r
 fn usize_div_rem(value: usize, div: usize) -> (usize, usize) {
@@ -17,11 +20,11 @@ fn u128_div_rem(value: u128, div: u128) -> (u128, u128) {
 }
 
 // Split a u128 into two parts, [0, size-1] and [size, end]
-// Arguments:
+// Parameters:
 //  - value: data of u128
 //  - value_size: the size of `value` in bytes
 //  - size: the size of left part in bytes
-// Return:
+// Returns:
 //  - letf: [0, size-1] of the origin u128
 //  - right: [size, end] of the origin u128 which size is (value_size - size)
 fn u128_split(value: u128, value_size: usize, size: usize) -> (u128, u128) {
@@ -38,12 +41,12 @@ fn u128_split(value: u128, value_size: usize, size: usize) -> (u128, u128) {
 }
 
 // Read sub value from u128 just like substr in other language
-// Arguments:
+// Parameters:
 //  - value: data of u128
 //  - value_size: the size of data in bytes
 //  - offset: the offset of sub value
 //  - size: the size of sub value in bytes
-// Return:
+// Returns:
 //  - sub_value: the sub value of origin u128
 fn u128_sub_value(value: u128, value_size: usize, offset: usize, size: usize) -> u128 {
     assert(value_size != 0, 'value_size can not be 0');
@@ -60,16 +63,46 @@ fn u128_sub_value(value: u128, value_size: usize, offset: usize, size: usize) ->
 }
 
 // Join two u128 into one
-// Arguments:
+// Parameters:
 //  - left: the left part of u128
 //  - right: the right part of u128
 //  - right_size: the size of right part in bytes
-// Return:
+// Returns:
 //  - value: the joined u128
 fn u128_join(left: u128, right: u128, right_size: usize) -> u128 {
     let shit = u128_fast_pow2(right_size * 8);
     left * shit + right
 }
+
+impl U128IntoU256 of Into<u128, u256> {
+    fn into(self: u128) -> u256 {
+        u256{low: self, high: 0}
+    }
+}
+
+impl U256TryIntoU128 of TryInto<u256, u128> {
+    fn try_into(self: u256) -> Option<u128> {
+        if self.high == 0 {
+            return Option::Some(self.low);
+        } else {
+            return Option::None(());
+        }
+    }
+}
+
+// common u128 pow
+fn u128_pow(base: u128, mut exp: u128) -> u128 {
+    let mut res = 1;
+    loop {
+        if exp == 0 {
+            break res;
+        } else {
+            res = base * res;
+        }
+        exp = exp - 1;
+    }
+}
+
 
 // u128 fast pow2 function
 // TODO: Now cairo match just support 0, future we use fast pow2 will be better

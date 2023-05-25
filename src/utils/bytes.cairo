@@ -306,7 +306,7 @@ impl BytesImpl of BytesTrait {
     // read address from Bytes
     fn read_address(self: @Bytes, offset: usize) -> (usize, ContractAddress) {
         let (new_offset, value) = self.read_u256(offset);
-        let address: felt252 = value.high.into() * felt252_fast_pow2(128) + value.low.into();
+        let address: felt252 = value.try_into().unwrap();
         (new_offset, address.try_into().unwrap())
     }
 
