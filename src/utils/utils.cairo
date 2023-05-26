@@ -4,6 +4,7 @@ use core::traits::TryInto;
 use option::OptionTrait;
 use zklink::utils::math::{
     u128_split,
+    u128_join,
     felt252_fast_pow2
 };
 use zklink::utils::bytes::{
@@ -55,5 +56,18 @@ fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
     // append _bytes
     hash_data.append_all(ref bytes_data);
     hash_data.append(last_element_value);
+    keccak_u128s_be(hash_data.span())
+}
+
+// hash ChangePubKey.pubKeyHash(u160, 20 bytes, packed into felt252)
+fn pubKeyHash(_pubKeyHash: felt252) -> u256 {
+    let mut hash_data: Array<u128> = ArrayTrait::new();
+    let _pubKeyHash: u256 = _pubKeyHash.into();
+    let (l, r) = u128_split(_pubKeyHash.low, 16, 12);
+    let high = u128_join(_pubKeyHash.high, l, 12);
+
+    hash_data.append(high);
+    hash_data.append(r);
+
     keccak_u128s_be(hash_data.span())
 }

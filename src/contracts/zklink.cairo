@@ -11,6 +11,7 @@ mod Zklink {
     use core::array::ArrayTrait;
     use core::dict::{Felt252DictTrait, Felt252DictEntryTrait};
     use box::BoxTrait;
+    use clone::Clone;
     use starknet::{
         ContractAddress,
         get_contract_address,
@@ -41,9 +42,13 @@ mod Zklink {
         Deposit,
         DepositOperation,
         FullExit,
+        FullExitOperation,
         ForcedExit,
+        ForcedExitOperatoin,
         Withdraw,
+        WithdrawOperation,
         ChangePubKey,
+        ChangePubKeyOperation
     };
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken,
@@ -66,24 +71,17 @@ mod Zklink {
     };
     use zklink::utils::utils::{
         concatHash,
+        pubKeyHash
     };
     use zklink::utils::constants::{
-        EMPTY_STRING_KECCAK,
-        CHUNK_BYTES,
-        MAX_ACCOUNT_ID,
-        MAX_SUB_ACCOUNT_ID,
+        EMPTY_STRING_KECCAK, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
+        CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES, FULL_EXIT_BYTES,
         PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
-        CHAIN_ID,
-        MIN_CHAIN_ID,
-        MAX_CHAIN_ID,
-        ALL_CHAINS,
+        CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS,
         ENABLE_COMMIT_COMPRESSED_BLOCK,
-        GLOBAL_ASSET_ACCOUNT_ID,
-        GLOBAL_ASSET_ACCOUNT_ADDRESS,
-        USD_TOKEN_ID,
-        MIN_USD_STABLE_TOKEN_ID,
-        MAX_USD_STABLE_TOKEN_ID,
+        GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
+        USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
         TOKEN_DECIMALS_OF_LAYER2,
     };
     
@@ -951,7 +949,59 @@ mod Zklink {
     }
 
     fn checkOnchainOp(_opType: OpType, _chainId: u8, _pubData: @Bytes, _pubdataOffset: usize, _nextPriorityOpIdx: u64, _ethWitness: @Bytes) -> (u64, Bytes, Bytes) {
-        (0, BytesTrait::new_empty(), BytesTrait::new_empty())
+        let mut priorityOperationsProcessed: u64 = 0;
+        let mut processablePubData: Bytes = BytesTrait::new_empty();
+        let mut opPubData: Bytes = BytesTrait::new_empty();
+        // ignore check if ops are not part of the current chain
+        if _opType == OpType::Deposit(()) {
+            let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
+            if _chainId == CHAIN_ID {
+                let (_, op) = DepositOperation::readFromPubdata(@opPubData_internal);
+                op.checkPriorityOperation(@priorityRequests::read(_nextPriorityOpIdx));
+                priorityOperationsProcessed = 1;
+            }
+            opPubData = opPubData_internal;
+        } else if _opType == OpType::ChangePubKey(()) {
+            let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
+            if _chainId == CHAIN_ID {
+                let (_, op) = ChangePubKeyOperation::readFromPubdata(@opPubData_internal);
+                if *_ethWitness.size != 0 {
+                    let valid: bool = verifyChangePubkey(_ethWitness, @op);
+                    assert(valid, 'k0');
+                } else {
+                    let valid: bool = authFacts::read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
+                    assert(valid, 'k1');
+                }
+            }
+            opPubData = opPubData_internal;
+        } else {
+            if _opType == OpType::Withdraw(()) {
+                let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
+                opPubData = opPubData_internal;
+            } else if _opType == OpType::ForcedExit(()) {
+                let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
+                opPubData = opPubData_internal;
+            } else if _opType == OpType::FullExit(()) {
+                let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                if _chainId == CHAIN_ID {
+                    let (_, op) = FullExitOperation::readFromPubdata(@opPubData_internal);
+                    op.checkPriorityOperation(@priorityRequests::read(_nextPriorityOpIdx));
+                    priorityOperationsProcessed = 1;
+                }
+                opPubData = opPubData_internal;
+            } else {
+                // revert("k2")
+                panic_with_felt252('k2');
+            }
+
+            if (_chainId == CHAIN_ID) {
+                // clone opPubData here instead of return its reference
+                // because opPubData and processablePubData will be consumed in later concatHash
+                processablePubData = opPubData.clone();
+            }
+        }
+        
+        (priorityOperationsProcessed, opPubData, processablePubData)
     }
 
     // Create synchronization hash for cross chain block verify
@@ -966,17 +1016,17 @@ mod Zklink {
     }
 
     // Checks that change operation is correct
-    fn verifyChangePubkey(_ethWitness: Bytes, _changePk: ChangePubKey) -> bool {
+    fn verifyChangePubkey(_ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
         false
     }
 
     // Checks that signature is valid for pubkey change message
-    fn verifyChangePubkeyECRECOVER(_ethWitness: Bytes, _changePk: ChangePubKey) -> bool {
+    fn verifyChangePubkeyECRECOVER(_ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
         false
     }
 
     // Checks that signature is valid for pubkey change message
-    fn verifyChangePubkeyCREATE2(_ethWitness: Bytes, _changePk: ChangePubKey) -> bool {
+    fn verifyChangePubkeyCREATE2(_ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
         false
     }
 
