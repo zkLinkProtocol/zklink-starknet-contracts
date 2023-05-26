@@ -6,6 +6,12 @@ use zklink::utils::math::{
     u128_split,
     felt252_fast_pow2
 };
+use zklink::utils::bytes::{
+    Bytes,
+    BytesTrait
+};
+use zklink::utils::keccak::keccak_u128s_be;
+use zklink::utils::array_ext::ArrayTraitExt;
 
 
 // https://github.com/keep-starknet-strange/alexandria/blob/main/alexandria/data_structures/src/data_structures.cairo
@@ -32,12 +38,22 @@ fn u128_array_slice(src: @Array<u128>, mut begin: usize, end: usize) -> Array<u1
     slice
 }
 
-const U256_TO_U160_MASK: u256 = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
-// Take the 20-byte(u160) low-order bits of u256 and store them into felt252.
-fn u256_to_u160(src: u256) -> felt252 {
-    // TODO: use try_into
-    // (src & U256_TO_U160_MASK).try_into().unwrap()
-    let value: u256 = src & U256_TO_U160_MASK;
-    let value: felt252 = value.high.into() * felt252_fast_pow2(128) + value.low.into();
-    value
+// new_hash = hash(old_hash + bytes)
+fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
+    let mut hash_data: Array<u128> = ArrayTrait::new();
+
+    // append _hash
+    hash_data.append(_hash.high);
+    hash_data.append(_hash.low);
+
+    // process _bytes
+    let (last_data_index, last_element_size) = BytesTrait::locate(*_bytes.size);
+    let mut bytes_data = u128_array_slice(_bytes.data, 0, last_data_index);
+    // To cumpute hash, we should remove 0 padded
+    let (last_element_value, _) = u128_split(*_bytes.data[last_data_index], 16, last_element_size);
+    
+    // append _bytes
+    hash_data.append_all(ref bytes_data);
+    hash_data.append(last_element_value);
+    keccak_u128s_be(hash_data.span())
 }

@@ -56,10 +56,11 @@ mod Zklink {
         U256TryIntoU128,
         u128_pow,
         felt252_fast_pow2,
-        u256_pow2
+        u256_pow2,
+        u256_to_u160
     };
     use zklink::utils::utils::{
-        u256_to_u160
+        concatHash,
     };
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK,
@@ -826,9 +827,9 @@ mod Zklink {
     //  offsetsCommitment - array where 1 is stored in chunk where onchainOperation begins and other are 0 (used in commitments)
     //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
     fn collectOnchainOps(_newBlockData: @CommitBlockInfo) -> (u256, u64, u256, Array<u256>) {
-        let pubData = *_newBlockData.publicData;
+        let pubData = _newBlockData.publicData;
         // pubdata length must be a multiple of CHUNK_BYTES
-        assert(pubData.size % CHUNK_BYTES == 0, 'h0');
+        assert(*pubData.size % CHUNK_BYTES == 0, 'h0');
         
         // Init return values
         // TODO: change to 0_256
@@ -844,10 +845,10 @@ mod Zklink {
             if i == _newBlockData.onchainOperations.len() {
                 break();
             }
-            let onchainOpData = *_newBlockData.onchainOperations[i];
-            let pubdataOffset = onchainOpData.publicDataOffset;
+            let onchainOpData = _newBlockData.onchainOperations[i];
+            let pubdataOffset = *onchainOpData.publicDataOffset;
             
-            assert(pubdataOffset + 1 < pubData.size, 'h1');
+            assert(pubdataOffset + 1 < *pubData.size, 'h1');
             assert(pubdataOffset % CHUNK_BYTES == 0, 'h2');
 
             {
@@ -863,8 +864,19 @@ mod Zklink {
             let (_, chainId) = pubData.read_u8(pubdataOffset + 1);
             checkChainId(chainId);
 
-            let (_, opType) = ReadBytes::<OpType>::read(@pubData, pubdataOffset);
+            let (_, opType) = ReadBytes::<OpType>::read(pubData, pubdataOffset);
 
+            let nextPriorityOpIndex: u64 = uncommittedPriorityRequestsOffset + priorityOperationsProcessed;
+            
+            let (newPriorityProceeded, opPubData, processablePubData) = checkOnchainOp(
+                opType,
+                chainId,
+                pubData,
+                pubdataOffset,
+                nextPriorityOpIndex,
+                onchainOpData.ethWitness);
+
+            priorityOperationsProcessed += newPriorityProceeded;
             i += 1;
         };
         
@@ -888,7 +900,7 @@ mod Zklink {
                 break();
             }
             let chainIndex: u256 = felt252_fast_pow2(i.into() - 1).into();
-            if chainIndex & ALL_CHAINS == chainIndex {
+            if (chainIndex & ALL_CHAINS) == chainIndex {
                 onchainOperationPubdataHashs.append(EMPTY_STRING_KECCAK);
             } else {
                 onchainOperationPubdataHashs.append(u256{low: 0, high: 0});
@@ -904,10 +916,10 @@ mod Zklink {
         // revert if invalid chain id exist
         // for example, when `ALL_CHAINS` = 13(1 << 0 | 1 << 2 | 1 << 3), it means 2(1 << 2 - 1) is a invalid chainId
         let chainIndex: u256 = u256_pow2(_chainId.into() - 1);
-        assert(chainIndex & ALL_CHAINS == chainIndex, 'i2');
+        assert((chainIndex & ALL_CHAINS) == chainIndex, 'i2');
     }
 
-    fn checkOnchainOp(_opType: OpType, _chainId: u8, _pubData: Bytes, _pubdataOffset: usize, _nextPriorityOpIdx: u64, _ethWitness: Bytes) -> (u64, Bytes, Bytes) {
+    fn checkOnchainOp(_opType: OpType, _chainId: u8, _pubData: @Bytes, _pubdataOffset: usize, _nextPriorityOpIdx: u64, _ethWitness: @Bytes) -> (u64, Bytes, Bytes) {
         (0, BytesTrait::new_empty(), BytesTrait::new_empty())
     }
 
@@ -997,6 +1009,7 @@ mod Zklink {
 
     // Returns the keccak hash of the ABI-encoded StoredBlockInfo
     fn hashStoredBlockInfo(_storedBlockInfo: StoredBlockInfo) -> u256 {
-        _storedBlockInfo.into().keccak()
+        let bytes: Bytes = _storedBlockInfo.into();
+        bytes.keccak()
     }
 }

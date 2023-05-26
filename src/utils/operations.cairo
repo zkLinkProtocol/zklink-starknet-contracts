@@ -19,9 +19,10 @@ mod Operations {
         BytesTrait,
         ReadBytes,
     };
-    use zklink::utils::utils::{
+    use zklink::utils::math::{
         u256_to_u160,
     };
+    
     // zkLink circuit operation type
     #[derive(Copy, Drop, PartialEq, Serde)]
     enum OpType {
