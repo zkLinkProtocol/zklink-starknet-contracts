@@ -4,6 +4,7 @@
 mod Operations {
     use core::traits::Into;
     use core::traits::TryInto;
+    use core::option::OptionTrait;
     use starknet::{
         StorageAccess,
         StorageBaseAddress,
@@ -15,7 +16,8 @@ mod Operations {
     };
     use zklink::utils::bytes::{
         Bytes,
-        BytesTrait
+        BytesTrait,
+        ReadBytes,
     };
     use zklink::utils::utils::{
         u256_to_u160,
@@ -32,6 +34,14 @@ mod Operations {
         ChangePubKey: (),   // 6 L2 op
         ForcedExit: (),     // 7 L2 op
         OrderMatching: ()   // 8 L2 op
+    }
+
+    impl OpTypeReadBytes of ReadBytes<OpType> {
+        fn read(bytes: @Bytes, offset: usize) -> (usize, OpType) {
+            let (new_offset, opType) = bytes.read_u8(offset);
+            let opType = opType.try_into().unwrap();
+            (new_offset, opType)
+        }
     }
 
     impl OpTypeIntoU8 of Into<OpType, u8> {
@@ -52,9 +62,7 @@ mod Operations {
 
     impl U8TryIntoOpType of TryInto<u8, OpType> {
         fn try_into(self: u8) -> Option<OpType> {
-            if self == 0 {
-                Option::Some(OpType::Noop(()))
-            } else if self == 1 {
+            if self == 1 {
                 Option::Some(OpType::Deposit(()))
             } else if self == 2 {
                 Option::Some(OpType::TransferToNew(()))

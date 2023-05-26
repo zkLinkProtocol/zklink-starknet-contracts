@@ -1,5 +1,6 @@
 use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
-use core::integer::u128_byte_reverse;
+// TODO: import u128_byte_reverse
+// use core::integer::u128_byte_reverse;
 use core::traits::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
@@ -8,6 +9,11 @@ use core::keccak::{
     u128_split,
     add_padding
 };
+
+// TODO: remove this FAKE function
+fn u128_byte_reverse(input: u128) -> u128 {
+    input
+} 
 
 fn u256_reverse_endian(input: u256) -> u256 {
     let low = u128_byte_reverse(input.high);

@@ -91,7 +91,7 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
 }
 
 // common u128 pow
-fn u128_pow(base: u128, mut exp: u128) -> u128 {
+fn u128_pow(base: u128, mut exp: usize) -> u128 {
     let mut res = 1;
     loop {
         if exp == 0 {
@@ -100,6 +100,30 @@ fn u128_pow(base: u128, mut exp: u128) -> u128 {
             res = base * res;
         }
         exp = exp - 1;
+    }
+}
+
+// common 256 pow2
+fn u256_pow2(mut exp: usize) -> u256 {
+    // TODO: change to 1_256
+    let mut res: u256 = u256{low: 1, high: 0};
+    loop {
+        if exp == 0 {
+            break res;
+        } else {
+            // TODO: change to 2_256
+            res = u256{low: 2, high: 0} * res;
+        }
+        exp = exp - 1;
+    }
+}
+
+// min u8
+fn u8_min(l: u8, r: u8) -> u8 {
+    if l <= r {
+        return l;
+    } else {
+        return r;
     }
 }
 

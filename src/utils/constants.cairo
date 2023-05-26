@@ -80,6 +80,10 @@ const MAX_DEPOSIT_AMOUNT: u128 = 20282409603651670423947251286015;
 // TODO: check before deploy
 const CHAIN_ID: u8 = 10;
 
+// Min chain id defined by ZkLink
+// TODO: check before deploy
+const MIN_CHAIN_ID: u8 = 1;
+
 // Max chain id defined by ZkLink
 // TODO: check before deploy
 const MAX_CHAIN_ID: u8 = 10;

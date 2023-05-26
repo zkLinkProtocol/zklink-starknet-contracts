@@ -1,5 +1,6 @@
 mod DataStructures {
     use core::zeroable::Zeroable;
+    use core::traits::Into;
     use starknet::contract_address::{
         ContractAddress,
         ContractAddressZeroable,
@@ -79,6 +80,20 @@ mod DataStructures {
         stateHash: u256,                    // Root hash of the rollup state
         commitment: u256,                   // Verified input for the ZkLink circuit
         syncHash: u256                      // Used for cross chain block verify
+    }
+
+    impl StoredBlockInfoIntoBytes of Into<StoredBlockInfo, Bytes> {
+        fn into(self: StoredBlockInfo) -> Bytes {
+            let mut bytes = BytesTrait::new_empty();
+            bytes.append_u64(self.blockNumber);
+            bytes.append_u64(self.priorityOperations);
+            bytes.append_u256(self.pendingOnchainOperationsHash);
+            bytes.append_u64(self.timestamp);
+            bytes.append_u256(self.stateHash);
+            bytes.append_u256(self.commitment);
+
+            bytes
+        }
     }
 
     // This trait impl is just for devlopment progress going on.

@@ -1,16 +1,20 @@
-use zklink::utils::operations::Operations::OperationTrait;
 #[contract]
 mod Zklink {
     use zeroable::Zeroable;
     use core::traits::Into;
     use core::traits::TryInto;
     use core::option::OptionTrait;
+    use core::array::ArrayTrait;
+    use box::BoxTrait;
     use starknet::{
         ContractAddress,
         get_contract_address,
         get_caller_address,
-        get_block_number,
-        get_block_timestamp
+        // TODO: import get_block_number
+        // get_block_number,
+        get_block_info,
+        // TODO: import get_block_timestamp
+        // get_block_timestamp
     };
 
     use zklink::libraries::IERC20::IERC20Dispatcher;
@@ -19,11 +23,13 @@ mod Zklink {
 
     use zklink::utils::bytes::{
         Bytes,
-        BytesTrait
+        BytesTrait,
+        ReadBytes
     };
     use zklink::utils::operations::Operations::{
         OpType,
         OpTypeIntoU8,
+        OpTypeReadBytes,
         U8TryIntoOpType,
         PriorityOperation,
         OperationTrait,
@@ -38,6 +44,7 @@ mod Zklink {
         RegisteredToken,
         BridgeInfo,
         StoredBlockInfo,
+        StoredBlockInfoIntoBytes,
         CommitBlockInfo,
         CompressedBlockExtraInfo,
         ExecuteBlockInfo,
@@ -47,17 +54,25 @@ mod Zklink {
     use zklink::utils::math::{
         U128IntoU256,
         U256TryIntoU128,
-        u128_pow
+        u128_pow,
+        felt252_fast_pow2,
+        u256_pow2
     };
     use zklink::utils::utils::{
         u256_to_u160
     };
     use zklink::utils::constants::{
+        EMPTY_STRING_KECCAK,
+        CHUNK_BYTES,
         MAX_ACCOUNT_ID,
         MAX_SUB_ACCOUNT_ID,
         PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
         CHAIN_ID,
+        MIN_CHAIN_ID,
+        MAX_CHAIN_ID,
+        ALL_CHAINS,
+        ENABLE_COMMIT_COMPRESSED_BLOCK,
         GLOBAL_ASSET_ACCOUNT_ID,
         GLOBAL_ASSET_ACCOUNT_ADDRESS,
         USD_TOKEN_ID,
@@ -86,7 +101,7 @@ mod Zklink {
 
         // public
         // Total number of committed blocks i.e. blocks[totalBlocksCommitted] points at the latest committed block
-        totalBlocksCommitted: u32,
+        totalBlocksCommitted: u64,
 
         // public
         // Total number of requests
@@ -212,7 +227,7 @@ mod Zklink {
 
     // Event emitted when blocks are reverted
     #[event]
-    fn BlocksRevert(totalBlocksVerified: u32, totalBlocksCommitted: u32){}
+    fn BlocksRevert(totalBlocksVerified: u32, totalBlocksCommitted: u64){}
 
     // Exodus mode entered event
     #[event]
@@ -447,7 +462,8 @@ mod Zklink {
     // 2. Store block commitments, sync hash.
     #[external]
     fn commitBlocks(_lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>) {
-
+        let mut _newBlocksExtraData: Array<CompressedBlockExtraInfo> = ArrayTrait::new();
+        _commitBlocks(_lastCommittedBlockData, _newBlocksData, false, _newBlocksExtraData);
     }
 
     // Commit compressed block
@@ -716,7 +732,8 @@ mod Zklink {
     //  _pubData Operation pubdata
     fn addPriorityRequest(_opType: OpType, _pubData: Bytes) {
         // Expiration block is: current block number + priority expiration delta
-        let expirationBlock = get_block_number() + PRIORITY_EXPIRATION;
+        // TODO: use get_block_number
+        let expirationBlock = get_block_info().unbox().block_number + PRIORITY_EXPIRATION;
         let toprs = totalOpenPriorityRequests::read();
         let nextPriorityRequestId = firstPriorityRequestId::read() + toprs;
         let hashedPubData = u256_to_u160(_pubData.keccak());
@@ -744,7 +761,21 @@ mod Zklink {
         ReentrancyGuard::start();
         active();
         onlyValidator();
+        // Checks
+        assert(_newBlocksData.len() > 0, 'f0');
+        assert(storedBlockHashes::read(totalBlocksCommitted::read()) == hashStoredBlockInfo(_lastCommittedBlockData), 'f1');
 
+        // Effects
+        let mut i = 0;
+        let mut _lastCommittedBlockData = _lastCommittedBlockData;
+        loop {
+            if i == _newBlocksData.len() {
+                break();
+            }
+            _lastCommittedBlockData = commitOneBlock(_lastCommittedBlockData, _newBlocksData[i], _compressed, _newBlocksExtraData[i]);
+
+            i += 1;
+        };
         ReentrancyGuard::end();
     }
 
@@ -757,7 +788,22 @@ mod Zklink {
     // Returns:
     //  new block StoredBlockInfo
     // NOTE: Does not change storage (except events, so we can't mark it view)
-    fn commitOneBlock(_previousBlock: StoredBlockInfo, _newBlock: CommitBlockInfo, _compressed: bool, _newBlockExtra: CompressedBlockExtraInfo) -> StoredBlockInfo {
+    fn commitOneBlock(_previousBlock: StoredBlockInfo, _newBlock: @CommitBlockInfo, _compressed: bool, _newBlockExtra: @CompressedBlockExtraInfo) -> StoredBlockInfo {
+        assert(*_newBlock.blockNumber == _previousBlock.blockNumber + 1, 'g0');
+        assert(!_compressed | ENABLE_COMMIT_COMPRESSED_BLOCK, 'g1');
+        // Check timestamp of the new block
+        assert(*_newBlock.timestamp >= _previousBlock.timestamp, 'g2');
+
+        // Check onchain operations
+        let (
+            pendingOnchainOperationsHash,
+            priorityReqCommitted,
+            onchainOpsOffsetCommitment,
+            onchainOperationPubdataHashs
+        ) = collectOnchainOps(_newBlock);
+
+
+
         StoredBlockInfo{
             blockNumber: 0,
             priorityOperations: 0,
@@ -779,16 +825,86 @@ mod Zklink {
     //  priorityOperationsProcessed - number of priority operations processed of the current chain in this block (Deposits, FullExits)
     //  offsetsCommitment - array where 1 is stored in chunk where onchainOperation begins and other are 0 (used in commitments)
     //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
-    fn collectOnchainOps(_newBlockData: CommitBlockInfo) -> (u256, u64, felt252, Array<u256>) {
-        (u256{low: 0, high: 0}, 0, 0, ArrayTrait::<u256>::new())
+    fn collectOnchainOps(_newBlockData: @CommitBlockInfo) -> (u256, u64, u256, Array<u256>) {
+        let pubData = *_newBlockData.publicData;
+        // pubdata length must be a multiple of CHUNK_BYTES
+        assert(pubData.size % CHUNK_BYTES == 0, 'h0');
+        
+        // Init return values
+        // TODO: change to 0_256
+        let mut offsetsCommitment: u256 = u256{low: 0, high: 0}; // use a u256 instead of Bytes to save gas
+        let mut priorityOperationsProcessed: u64 = 0;
+        let mut onchainOperationPubdataHashs: Array<u256> = initOnchainOperationPubdataHashs();
+        let mut processableOperationsHash: u256 = EMPTY_STRING_KECCAK;
+
+        let uncommittedPriorityRequestsOffset = firstPriorityRequestId::read() + totalCommittedPriorityRequests::read();
+
+        let mut i = 0;
+        loop {
+            if i == _newBlockData.onchainOperations.len() {
+                break();
+            }
+            let onchainOpData = *_newBlockData.onchainOperations[i];
+            let pubdataOffset = onchainOpData.publicDataOffset;
+            
+            assert(pubdataOffset + 1 < pubData.size, 'h1');
+            assert(pubdataOffset % CHUNK_BYTES == 0, 'h2');
+
+            {
+                let chunkId: u32 = pubdataOffset / CHUNK_BYTES;
+                let chunkIdCommitment = u256_pow2(chunkId);
+                // offset commitment should be empty
+                // TODO: change to 0_256
+                assert((offsetsCommitment & chunkIdCommitment) == u256{low: 0, high: 0}, 'h3');
+                offsetsCommitment = offsetsCommitment | chunkIdCommitment;
+            }
+
+            // chainIdOffset = pubdataOffset + 1
+            let (_, chainId) = pubData.read_u8(pubdataOffset + 1);
+            checkChainId(chainId);
+
+            let (_, opType) = ReadBytes::<OpType>::read(@pubData, pubdataOffset);
+
+            i += 1;
+        };
+        
+        
+        (
+            processableOperationsHash,
+            priorityOperationsProcessed,
+            offsetsCommitment,
+            onchainOperationPubdataHashs
+        )
     }
 
     fn initOnchainOperationPubdataHashs() -> Array<u256> {
-        ArrayTrait::<u256>::new()
+        // overflow is impossible, max(MAX_CHAIN_ID + 1) = 256
+        // use index of onchainOperationPubdataHashs as chain id
+        // index start from [0, MIN_CHAIN_ID - 1] left unused
+        let mut onchainOperationPubdataHashs: Array<u256> = ArrayTrait::new();
+        let mut i = MIN_CHAIN_ID;
+        loop {
+            if i > MAX_CHAIN_ID {
+                break();
+            }
+            let chainIndex: u256 = felt252_fast_pow2(i.into() - 1).into();
+            if chainIndex & ALL_CHAINS == chainIndex {
+                onchainOperationPubdataHashs.append(EMPTY_STRING_KECCAK);
+            } else {
+                onchainOperationPubdataHashs.append(u256{low: 0, high: 0});
+            }
+            i += 1;
+        };
+
+        onchainOperationPubdataHashs
     }
 
     fn checkChainId(_chainId: u8) {
-
+        assert(_chainId >= MIN_CHAIN_ID & _chainId <= MAX_CHAIN_ID, 'i1');
+        // revert if invalid chain id exist
+        // for example, when `ALL_CHAINS` = 13(1 << 0 | 1 << 2 | 1 << 3), it means 2(1 << 2 - 1) is a invalid chainId
+        let chainIndex: u256 = u256_pow2(_chainId.into() - 1);
+        assert(chainIndex & ALL_CHAINS == chainIndex, 'i2');
     }
 
     fn checkOnchainOp(_opType: OpType, _chainId: u8, _pubData: Bytes, _pubdataOffset: usize, _nextPriorityOpIdx: u64, _ethWitness: Bytes) -> (u64, Bytes, Bytes) {
@@ -877,5 +993,10 @@ mod Zklink {
     // recover decimals when withdraw, this is the opposite of improve decimals
     fn recoveryDecimals(_amount: u128, _decimals: u8) -> u128 {
         _amount / u128_pow(10, (TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
+    }
+
+    // Returns the keccak hash of the ABI-encoded StoredBlockInfo
+    fn hashStoredBlockInfo(_storedBlockInfo: StoredBlockInfo) -> u256 {
+        _storedBlockInfo.into().keccak()
     }
 }

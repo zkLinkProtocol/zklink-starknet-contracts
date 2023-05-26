@@ -1,3 +1,4 @@
+use core::traits::Into;
 use core::array::ArrayTrait;
 use core::traits::TryInto;
 use option::OptionTrait;
@@ -34,5 +35,9 @@ fn u128_array_slice(src: @Array<u128>, mut begin: usize, end: usize) -> Array<u1
 const U256_TO_U160_MASK: u256 = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
 // Take the 20-byte(u160) low-order bits of u256 and store them into felt252.
 fn u256_to_u160(src: u256) -> felt252 {
-    (src & U256_TO_U160_MASK).try_into().unwrap()
+    // TODO: use try_into
+    // (src & U256_TO_U160_MASK).try_into().unwrap()
+    let value: u256 = src & U256_TO_U160_MASK;
+    let value: felt252 = value.high.into() * felt252_fast_pow2(128) + value.low.into();
+    value
 }
