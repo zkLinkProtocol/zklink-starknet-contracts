@@ -97,7 +97,7 @@ mod Zklink {
 
         // public
         // Total number of executed blocks i.e. blocks[totalBlocksExecuted] points at the latest executed block (block 0 is genesis)
-        totalBlocksExecuted: u32,
+        totalBlocksExecuted: u64,
 
         // public
         // First open priority request id
@@ -126,7 +126,7 @@ mod Zklink {
 
         // public
         // Latest synchronized block height
-        totalBlocksSynchronized: u32,
+        totalBlocksSynchronized: u64,
 
         // public
         // Flag indicates that exodus (mass exit) mode is triggered
@@ -479,7 +479,7 @@ mod Zklink {
     // 2. Store block commitments, sync hash.
     #[external]
     fn commitCompressedBlocks(_lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>, _newBlocksExtraData: Array<CompressedBlockExtraInfo>) {
-
+        _commitBlocks(_lastCommittedBlockData, _newBlocksData, true, _newBlocksExtraData);
     }
 
     // Execute blocks, completing priority operations and processing withdrawals.
@@ -490,6 +490,30 @@ mod Zklink {
         ReentrancyGuard::start();
         active();
         onlyValidator();
+
+        let nBlocks: u64 = _blocksData.len().into();
+        assert(nBlocks > 0, 'd0');
+
+        assert(totalBlocksExecuted::read() + nBlocks <= totalBlocksSynchronized::read(), 'd1');
+
+        let mut priorityRequestsExecuted = 0;
+        let mut i: usize = 0;
+        loop {
+            if i.into() == nBlocks {
+                break();
+            }
+            executeOneBlock(_blocksData[i], i);
+            priorityRequestsExecuted += *_blocksData[i].storedBlock.priorityOperations;
+            i += 1;
+        };
+
+        firstPriorityRequestId::write(firstPriorityRequestId::read() + priorityRequestsExecuted);
+        totalCommittedPriorityRequests::write(totalCommittedPriorityRequests::read() - priorityRequestsExecuted);
+        totalOpenPriorityRequests::write(totalOpenPriorityRequests::read() - priorityRequestsExecuted);
+
+        totalBlocksExecuted::write(totalBlocksExecuted::read() + nBlocks);
+
+        BlockExecuted(*_blocksData[(nBlocks - 1).try_into().unwrap()].storedBlock.blockNumber);
 
         ReentrancyGuard::end();
     }
@@ -1102,7 +1126,7 @@ mod Zklink {
     // Executes one block
     // 1. Processes all pending operations (Send Exits, Complete priority requests)
     // 2. Finalizes block on Ethereum
-    fn executeOneBlock(_blockExecuteData: ExecuteBlockInfo, _executedBlockIdx: usize) {
+    fn executeOneBlock(_blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: usize) {
 
     }
 
