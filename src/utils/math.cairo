@@ -74,6 +74,18 @@ fn u128_join(left: u128, right: u128, right_size: usize) -> u128 {
     left * shit + right
 }
 
+impl U32IntoU256 of Into<u32, u256> {
+    fn into(self: u32) -> u256 {
+        u256{low: self.into(), high: 0}
+    }
+}
+
+impl U64IntoU256 of Into<u64, u256> {
+    fn into(self: u64) -> u256 {
+        u256{low: self.into(), high: 0}
+    }
+}
+
 impl U128IntoU256 of Into<u128, u256> {
     fn into(self: u128) -> u256 {
         u256{low: self, high: 0}

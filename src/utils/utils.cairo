@@ -83,6 +83,21 @@ fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
     keccak_u128s_be(hash_data.span())
 }
 
+// Returns new_hash = hash(a + b)
+fn concatTwoHash(a: u256, b: u256) -> u256 {
+    let mut hash_data: Array<u128> = ArrayTrait::new();
+
+    // append a
+    hash_data.append(a.high);
+    hash_data.append(a.low);
+
+    // append b
+    hash_data.append(b.high);
+    hash_data.append(b.low);
+
+    keccak_u128s_be(hash_data.span())
+}
+
 // hash ChangePubKey.pubKeyHash(u160, 20 bytes, packed into felt252)
 fn pubKeyHash(_pubKeyHash: felt252) -> u256 {
     let mut hash_data: Array<u128> = ArrayTrait::new();

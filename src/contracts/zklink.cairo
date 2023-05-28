@@ -63,6 +63,8 @@ mod Zklink {
         ProofInput
     };
     use zklink::utils::math::{
+        U32IntoU256,
+        U64IntoU256,
         U128IntoU256,
         U256TryIntoU128,
         u128_pow,
@@ -72,7 +74,8 @@ mod Zklink {
     };
     use zklink::utils::utils::{
         concatHash,
-        pubKeyHash
+        pubKeyHash,
+        concatTwoHash
     };
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
@@ -801,25 +804,41 @@ mod Zklink {
 
         // Check onchain operations
         let (
-            pendingOnchainOperationsHash,
+            pendingOnchainOpsHash,
             priorityReqCommitted,
             onchainOpsOffsetCommitment,
-            onchainOpPubdataHashsHigh,
-            onchainOpPubdataHashsLow
+            mut onchainOpPubdataHashsHigh,
+            mut onchainOpPubdataHashsLow
         ) = collectOnchainOps(_newBlock);
 
         // Create block commitment for verification proof
         let commitment: u256 = createBlockCommitment(_previousBlock, _newBlock, _compressed, _newBlockExtra, onchainOpsOffsetCommitment);
 
+        // Create synchronization hash for cross chain block verify
+        if _compressed {
+            let mut i = MIN_CHAIN_ID;
+            loop {
+                if i > MAX_CHAIN_ID {
+                    break();
+                }
+
+                if i != CHAIN_ID {
+                    // TODO: update dict
+                }
+                i += 1;
+            };
+        }
+
+        let syncHash = createSyncHash(*_previousBlock.syncHash, commitment, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow);
 
         StoredBlockInfo{
-            blockNumber: 0,
-            priorityOperations: 0,
-            pendingOnchainOperationsHash: u256{low: 0, high: 0},
-            timestamp: 0,
-            stateHash: u256{low: 0, high: 0},
-            commitment: u256{low: 0, high: 0},
-            syncHash: u256{low: 0, high: 0}
+            blockNumber: *_newBlock.blockNumber,
+            priorityOperations: priorityReqCommitted,
+            pendingOnchainOperationsHash: pendingOnchainOpsHash,
+            timestamp: *_newBlock.timestamp,
+            stateHash: *_newBlock.newStateHash,
+            commitment: commitment,
+            syncHash: syncHash
         }
     }
 
@@ -919,7 +938,7 @@ mod Zklink {
             if i > MAX_CHAIN_ID {
                 break();
             }
-            let chainIndex: u256 = felt252_fast_pow2(i.into() - 1).into();
+            let chainIndex: u256 = u256_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
                 onchainOpPubdataHashsHigh.insert(i.into(), EMPTY_STRING_KECCAK.high);
                 onchainOpPubdataHashsLow.insert(i.into(), EMPTY_STRING_KECCAK.low);
@@ -1004,14 +1023,52 @@ mod Zklink {
     }
 
     // Create synchronization hash for cross chain block verify
-    fn createSyncHash(_preBlockSyncHash: u256, _commitment: u256, _onchainOperationPubdataHashs: Array<u256>) -> u256 {
-        u256{low: 0, high: 0}
+    fn createSyncHash(_preBlockSyncHash: u256, _commitment: u256, ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>, ref _onchainOpPubdataHashsLow: Felt252Dict<u128>) -> u256 {
+        let mut syncHash = concatTwoHash(_preBlockSyncHash, _commitment);
+        let mut i = MIN_CHAIN_ID;
+        loop {
+            if i > MAX_CHAIN_ID {
+                break();
+            }
+            let chainIndex: u256 = u256_pow2(i.into() - 1);
+            if (chainIndex & ALL_CHAINS) == chainIndex {
+                let onchainOperationPubdataHash = u256{
+                    low: _onchainOpPubdataHashsLow.get(i.into()),
+                    high: _onchainOpPubdataHashsHigh.get(i.into())
+                };
+                syncHash = concatTwoHash(syncHash, onchainOperationPubdataHash);
+            }
+            i += 1;
+        };
+        syncHash
     }
 
     // Creates block commitment from its data
     // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
     fn createBlockCommitment(_previousBlock: @StoredBlockInfo, _newBlockData: @CommitBlockInfo, _compressed: bool, _newBlockExtraData: @CompressedBlockExtraInfo, _offsetsCommitment: u256) -> u256 {
-        u256{low: 0, high: 0}
+        let offsetsCommitmentHash = if !_compressed {
+            let mut offsetsCommitmentBytes = BytesTrait::new_empty();
+            offsetsCommitmentBytes.append_u256(_offsetsCommitment);
+            offsetsCommitmentBytes.sha256()
+        } else {
+            *(_newBlockExtraData.offsetCommitmentHash)
+        };
+
+        let newBlockPubDataHash = if !_compressed {
+            _newBlockData.publicData.sha256()
+        } else {
+            *(_newBlockExtraData.publicDataHash)
+        };
+        let mut BlockCommitmentBytes = BytesTrait::new_empty();
+        BlockCommitmentBytes.append_u256((*_newBlockData.blockNumber).into());
+        BlockCommitmentBytes.append_u256((*_newBlockData.feeAccount).into());
+        BlockCommitmentBytes.append_u256((*_previousBlock.stateHash));
+        BlockCommitmentBytes.append_u256((*_newBlockData.newStateHash));
+        BlockCommitmentBytes.append_u256((*_newBlockData.timestamp).into());
+        BlockCommitmentBytes.append_u256(newBlockPubDataHash);
+        BlockCommitmentBytes.append_u256(offsetsCommitmentHash);
+
+        BlockCommitmentBytes.sha256()
     }
 
     // Checks that change operation is correct
