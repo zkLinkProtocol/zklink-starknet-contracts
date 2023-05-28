@@ -117,7 +117,7 @@ mod Zklink {
 
         // public
         // Total blocks proven
-        totalBlocksProven: u32,
+        totalBlocksProven: u64,
 
         // public
         // Total number of committed requests.
@@ -782,8 +782,21 @@ mod Zklink {
             }
             _lastCommittedBlockData = commitOneBlock(@_lastCommittedBlockData, _newBlocksData[i], _compressed, _newBlocksExtraData[i]);
 
+            // forward `totalCommittedPriorityRequests` because it's will be reused in the next `commitOneBlock`
+            totalCommittedPriorityRequests::write(totalCommittedPriorityRequests::read() + _lastCommittedBlockData.priorityOperations);
+            storedBlockHashes::write(_lastCommittedBlockData.blockNumber, hashStoredBlockInfo(_lastCommittedBlockData));
             i += 1;
         };
+        assert(totalCommittedPriorityRequests::read() <= totalOpenPriorityRequests::read(), 'f2');
+
+        totalBlocksCommitted::write(totalBlocksCommitted::read() + _newBlocksData.len().into());
+
+        // If enable compressed commit then we can ignore prove and ensure that block is correct by sync
+        if (_compressed & ENABLE_COMMIT_COMPRESSED_BLOCK) {
+            totalBlocksProven::write(totalBlocksCommitted::read());
+        }
+
+        BlockCommit(_lastCommittedBlockData.blockNumber);
         ReentrancyGuard::end();
     }
 
