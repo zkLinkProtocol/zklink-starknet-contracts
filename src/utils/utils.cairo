@@ -15,6 +15,30 @@ use zklink::utils::keccak::keccak_u128s_be;
 use zklink::utils::array_ext::ArrayTraitExt;
 
 
+fn u8_array_to_u256(arr: Span<u8>) -> u256 {
+    let mut i = 0;
+    let mut high: u128 = 0;
+    let mut low: u128 = 0;
+    // process high
+    loop {
+        if i == 16 {
+            break();
+        }
+        high = u128_join(high, (*arr[i]).into(), 1);
+        i += 1;
+    };
+    // process low
+    loop {
+        if i == 16 {
+            break();
+        }
+        low = u128_join(low, (*arr[i]).into(), 1);
+        i += 1;
+    };
+
+    u256{low, high}
+}
+
 // https://github.com/keep-starknet-strange/alexandria/blob/main/alexandria/data_structures/src/data_structures.cairo
 /// Returns the slice of an array.
 /// * `arr` - The array to slice.

@@ -16,8 +16,12 @@ use zklink::utils::math::{
     u128_sub_value,
     usize_div_rem
 };
-use zklink::utils::utils::u128_array_slice;
+use zklink::utils::utils::{
+    u128_array_slice,
+    u8_array_to_u256
+};
 use zklink::utils::keccak::keccak_u128s_be;
+use zklink::utils::sha256::sha256;
 
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;
@@ -110,6 +114,8 @@ trait BytesTrait {
     fn append_address(ref self: Bytes, value: ContractAddress);
     // keccak hash
     fn keccak(self: @Bytes) -> u256;
+    // sha256 hash
+    fn sha256(self: @Bytes) -> u256;
 }
 
 impl BytesImpl of BytesTrait {
@@ -395,5 +401,24 @@ impl BytesImpl of BytesTrait {
         let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
         hash_data.append(last_element_value);
         keccak_u128s_be(hash_data.span())
+    }
+
+    // sha256 hash
+    fn sha256(self: @Bytes) -> u256 {
+        let mut hash_data: Array<u8> = ArrayTrait::new();
+        let mut i: usize = 0;
+        let mut offset: usize = 0;
+        loop {
+            if i == *self.size {
+                break();
+            }
+            let (new_offset, hash_data_item) = self.read_u8(offset);
+            hash_data.append(hash_data_item);
+            offset = new_offset;
+            i += 1;
+        };
+        
+        let output: Array<u8> = sha256(hash_data);
+        u8_array_to_u256(output.span())
     }
 }
