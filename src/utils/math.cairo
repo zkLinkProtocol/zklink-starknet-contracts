@@ -1,5 +1,5 @@
-use core::traits::Into;
-use core::traits::TryInto;
+use traits::Into;
+use traits::TryInto;
 
 // usize div mod function
 // value = q * div + r

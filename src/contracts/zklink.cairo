@@ -1,15 +1,16 @@
 #[contract]
 mod Zklink {
     use zeroable::Zeroable;
-    use core::traits::{
+    use traits::{
         Into,
         TryInto,
         Index,
         Default
     };
-    use core::option::OptionTrait;
-    use core::array::ArrayTrait;
-    use core::dict::{Felt252DictTrait, Felt252DictEntryTrait};
+    use option::OptionTrait;
+    use array::ArrayTrait;
+    use dict::Felt252DictTrait;
+    use dict::Felt252DictEntryTrait;
     use box::BoxTrait;
     use clone::Clone;
     use starknet::{
@@ -776,7 +777,7 @@ mod Zklink {
             if i == _newBlocksData.len() {
                 break();
             }
-            _lastCommittedBlockData = commitOneBlock(_lastCommittedBlockData, _newBlocksData[i], _compressed, _newBlocksExtraData[i]);
+            _lastCommittedBlockData = commitOneBlock(@_lastCommittedBlockData, _newBlocksData[i], _compressed, _newBlocksExtraData[i]);
 
             i += 1;
         };
@@ -792,11 +793,11 @@ mod Zklink {
     // Returns:
     //  new block StoredBlockInfo
     // NOTE: Does not change storage (except events, so we can't mark it view)
-    fn commitOneBlock(_previousBlock: StoredBlockInfo, _newBlock: @CommitBlockInfo, _compressed: bool, _newBlockExtra: @CompressedBlockExtraInfo) -> StoredBlockInfo {
-        assert(*_newBlock.blockNumber == _previousBlock.blockNumber + 1, 'g0');
+    fn commitOneBlock(_previousBlock: @StoredBlockInfo, _newBlock: @CommitBlockInfo, _compressed: bool, _newBlockExtra: @CompressedBlockExtraInfo) -> StoredBlockInfo {
+        assert(*_newBlock.blockNumber == *_previousBlock.blockNumber + 1, 'g0');
         assert(!_compressed | ENABLE_COMMIT_COMPRESSED_BLOCK, 'g1');
         // Check timestamp of the new block
-        assert(*_newBlock.timestamp >= _previousBlock.timestamp, 'g2');
+        assert(*_newBlock.timestamp >= *_previousBlock.timestamp, 'g2');
 
         // Check onchain operations
         let (
@@ -807,6 +808,8 @@ mod Zklink {
             onchainOpPubdataHashsLow
         ) = collectOnchainOps(_newBlock);
 
+        // Create block commitment for verification proof
+        let commitment: u256 = createBlockCommitment(_previousBlock, _newBlock, _compressed, _newBlockExtra, onchainOpsOffsetCommitment);
 
 
         StoredBlockInfo{
@@ -882,10 +885,7 @@ mod Zklink {
 
             priorityOperationsProcessed += newPriorityProceeded;
             // group onchain operations pubdata hash by chain id
-            let (
-                mut onchainOpPubdataHashsHigh,
-                mut onchainOpPubdataHashsLow
-            ) = updateOnchainOperationPubdataHashs(chainId, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow, @opPubData);
+            updateOnchainOperationPubdataHashs(chainId, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow, @opPubData);
 
             if processablePubData.size > 0 {
                 processableOperationsHash = concatHash(processableOperationsHash, @processablePubData);
@@ -929,7 +929,7 @@ mod Zklink {
         (onchainOpPubdataHashsHigh, onchainOpPubdataHashsLow)
     }
 
-    fn updateOnchainOperationPubdataHashs(_chainId: u8, ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>, ref _onchainOpPubdataHashsLow: Felt252Dict<u128>, _opPubData: @Bytes) -> (Felt252Dict<u128>, Felt252Dict<u128>){
+    fn updateOnchainOperationPubdataHashs(_chainId: u8, ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>, ref _onchainOpPubdataHashsLow: Felt252Dict<u128>, _opPubData: @Bytes) {
         let (high_entry, high_value) = _onchainOpPubdataHashsHigh.entry(_chainId.into());
         let (low_entry, low_value) = _onchainOpPubdataHashsLow.entry(_chainId.into());
         let old_hash = u256{high: high_value, low: low_value};
@@ -937,7 +937,6 @@ mod Zklink {
 
         _onchainOpPubdataHashsHigh = high_entry.finalize(newHash.high);
         _onchainOpPubdataHashsLow = low_entry.finalize(newHash.low);
-        (_onchainOpPubdataHashsHigh, _onchainOpPubdataHashsLow)
     }
 
     fn checkChainId(_chainId: u8) {
@@ -1011,7 +1010,7 @@ mod Zklink {
 
     // Creates block commitment from its data
     // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
-    fn createBlockCommitment(_previousBlock: StoredBlockInfo, _newBlockData: CommitBlockInfo, _compressed: bool, _newBlockExtraData: CompressedBlockExtraInfo, _offsetsCommitment: Bytes) -> u256 {
+    fn createBlockCommitment(_previousBlock: @StoredBlockInfo, _newBlockData: @CommitBlockInfo, _compressed: bool, _newBlockExtraData: @CompressedBlockExtraInfo, _offsetsCommitment: u256) -> u256 {
         u256{low: 0, high: 0}
     }
 

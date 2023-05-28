@@ -1,5 +1,5 @@
-use core::traits::Into;
-use core::array::ArrayTrait;
+use traits::Into;
+use array::ArrayTrait;
 use starknet::{ContractAddress, ContractAddressIntoFelt252};
 use zklink::utils::bytes::{
     Bytes,

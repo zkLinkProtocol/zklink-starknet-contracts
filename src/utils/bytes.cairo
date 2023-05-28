@@ -1,8 +1,8 @@
-use core::clone::Clone;
+use clone::Clone;
 use array::ArrayTrait;
-use core::traits::Into;
-use core::traits::TryInto;
-use core::option::OptionTrait;
+use traits::Into;
+use traits::TryInto;
+use option::OptionTrait;
 use starknet::{
     ContractAddress,
     Felt252TryIntoContractAddress

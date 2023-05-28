@@ -1,10 +1,10 @@
 use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
 // TODO: import u128_byte_reverse
-// use core::integer::u128_byte_reverse;
-use core::traits::TryInto;
+// use integer::u128_byte_reverse;
+use traits::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
-use core::keccak::{
+use keccak::{
     u128_to_u64,
     u128_split,
     add_padding

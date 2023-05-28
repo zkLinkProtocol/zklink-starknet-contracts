@@ -1,6 +1,6 @@
 mod DataStructures {
-    use core::zeroable::Zeroable;
-    use core::traits::Into;
+    use zeroable::Zeroable;
+    use traits::Into;
     use starknet::contract_address::{
         ContractAddress,
         ContractAddressZeroable,

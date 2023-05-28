@@ -2,9 +2,9 @@
 // Circuit ops and their pubdata (chunks * bytes)
 
 mod Operations {
-    use core::traits::Into;
-    use core::traits::TryInto;
-    use core::option::OptionTrait;
+    use traits::Into;
+    use traits::TryInto;
+    use option::OptionTrait;
     use starknet::{
         StorageAccess,
         StorageBaseAddress,
