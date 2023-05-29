@@ -17,12 +17,11 @@ mod Zklink {
         ContractAddress,
         get_contract_address,
         get_caller_address,
-        // TODO: import get_block_number
-        // get_block_number,
         get_block_info,
-        // TODO: import get_block_timestamp
-        // get_block_timestamp
+        get_block_timestamp
     };
+    // TODO: corelib import error
+    use core::starknet::info::get_block_number;
 
     use zklink::libraries::IERC20::IERC20Dispatcher;
     use zklink::libraries::IERC20::IERC20DispatcherTrait;
@@ -381,6 +380,8 @@ mod Zklink {
     fn activateExodusMode() {
         ReentrancyGuard::start();
         active();
+        let blockNumber = get_block_number();
+        let trigger: bool = false;
 
         ReentrancyGuard::end();
     }
@@ -765,8 +766,7 @@ mod Zklink {
     //  _pubData Operation pubdata
     fn addPriorityRequest(_opType: OpType, _pubData: Bytes) {
         // Expiration block is: current block number + priority expiration delta
-        // TODO: use get_block_number
-        let expirationBlock = get_block_info().unbox().block_number + PRIORITY_EXPIRATION;
+        let expirationBlock = get_block_number() + PRIORITY_EXPIRATION;
         let toprs = totalOpenPriorityRequests::read();
         let nextPriorityRequestId = firstPriorityRequestId::read() + toprs;
         let hashedPubData = u256_to_u160(_pubData.keccak());
@@ -861,7 +861,11 @@ mod Zklink {
                 }
 
                 if i != CHAIN_ID {
-                    // TODO: update dict
+                    let (high_entry, _) = onchainOpPubdataHashsHigh.entry(i.into());
+                    let (low_entry, _) = onchainOpPubdataHashsLow.entry(i.into());
+
+                    onchainOpPubdataHashsHigh = high_entry.finalize(*_newBlockExtra.onchainOperationPubdataHashs[i.into()].high);
+                    onchainOpPubdataHashsLow = low_entry.finalize(*_newBlockExtra.onchainOperationPubdataHashs[i.into()].low);
                 }
                 i += 1;
             };
@@ -896,8 +900,7 @@ mod Zklink {
         assert(pubData.size() % CHUNK_BYTES == 0, 'h0');
         
         // Init return values
-        // TODO: change to 0_256
-        let mut offsetsCommitment: u256 = u256{low: 0, high: 0}; // use a u256 instead of Bytes to save gas
+        let mut offsetsCommitment: u256 = 0; // use a u256 instead of Bytes to save gas
         let mut priorityOperationsProcessed: u64 = 0;
         let (mut onchainOpPubdataHashsHigh, mut onchainOpPubdataHashsLow) = initOnchainOperationPubdataHashs();
         let mut processableOperationsHash: u256 = EMPTY_STRING_KECCAK;
@@ -919,8 +922,7 @@ mod Zklink {
                 let chunkId: u32 = pubdataOffset / CHUNK_BYTES;
                 let chunkIdCommitment = u256_pow2(chunkId);
                 // offset commitment should be empty
-                // TODO: change to 0_256
-                assert((offsetsCommitment & chunkIdCommitment) == u256{low: 0, high: 0}, 'h3');
+                assert((offsetsCommitment & chunkIdCommitment) == 0, 'h3');
                 offsetsCommitment = offsetsCommitment | chunkIdCommitment;
             }
 

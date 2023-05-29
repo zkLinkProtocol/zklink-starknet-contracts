@@ -217,10 +217,7 @@ impl BytesImpl of BytesTrait {
         } else {
             let (new_offset, high) = self.read_u128_packed(offset, size - 16);
             let (new_offset, low) = self.read_u128_packed(new_offset, 16);
-            // TODO: use try_into
-            // return (new_offset, u256{low, high}.try_into().unwrap());
-            let value = high.into() * felt252_fast_pow2(128) + low.into();
-            return (new_offset, value);
+            return (new_offset, u256{low, high}.try_into().unwrap());
         }
     }
 
@@ -329,9 +326,7 @@ impl BytesImpl of BytesTrait {
     // read address from Bytes
     fn read_address(self: @Bytes, offset: usize) -> (usize, ContractAddress) {
         let (new_offset, value) = self.read_u256(offset);
-        // TODO: use try_into
-        // let address: felt252 = value.try_into().unwrap();
-        let address: felt252 = value.high.into() * felt252_fast_pow2(128) + value.low.into();
+        let address: felt252 = value.try_into().unwrap();
         (new_offset, address.try_into().unwrap())
     }
 

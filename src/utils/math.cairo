@@ -1,5 +1,6 @@
 use traits::Into;
 use traits::TryInto;
+use option::OptionTrait;
 
 // usize div mod function
 // value = q * div + r
@@ -117,14 +118,12 @@ fn u128_pow(base: u128, mut exp: usize) -> u128 {
 
 // common 256 pow2
 fn u256_pow2(mut exp: usize) -> u256 {
-    // TODO: change to 1_256
-    let mut res: u256 = u256{low: 1, high: 0};
+    let mut res: u256 = 1;
     loop {
         if exp == 0 {
             break res;
         } else {
-            // TODO: change to 2_256
-            res = u256{low: 2, high: 0} * res;
+            res = 2 * res;
         }
         exp = exp - 1;
     }
@@ -142,11 +141,7 @@ fn u8_min(l: u8, r: u8) -> u8 {
 const U256_TO_U160_MASK: u256 = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
 // Take the 20-byte(u160) low-order bits of u256 and store them into felt252.
 fn u256_to_u160(src: u256) -> felt252 {
-    // TODO: use try_into
-    // (src & U256_TO_U160_MASK).try_into().unwrap()
-    let value: u256 = src & U256_TO_U160_MASK;
-    let value: felt252 = value.high.into() * felt252_fast_pow2(128) + value.low.into();
-    value
+    (src & U256_TO_U160_MASK).try_into().unwrap()
 }
 
 
