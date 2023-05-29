@@ -138,6 +138,15 @@ fn u8_min(l: u8, r: u8) -> u8 {
     }
 }
 
+// min u64
+fn u64_min(l: u64, r: u64) -> u64 {
+    if l <= r {
+        return l;
+    } else {
+        return r;
+    }
+}
+
 const U256_TO_U160_MASK: u256 = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
 // Take the 20-byte(u160) low-order bits of u256 and store them into felt252.
 fn u256_to_u160(src: u256) -> felt252 {

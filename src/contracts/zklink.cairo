@@ -69,7 +69,8 @@ mod Zklink {
         u128_pow,
         felt252_fast_pow2,
         u256_pow2,
-        u256_to_u160
+        u256_to_u160,
+        u64_min
     };
     use zklink::utils::utils::{
         concatHash,
@@ -433,9 +434,45 @@ mod Zklink {
     //  _n number of requests to process
     //  _depositsPubdataSize deposit pubData size in bytes
     //  _depositsPubdata deposit details
-    fn cancelOutstandingDepositsForExodusMode(_n: u64, _depositsPubdata: Bytes) {
+    fn cancelOutstandingDepositsForExodusMode(_n: u64, _depositsPubdata: Array<Bytes>) {
         ReentrancyGuard::start();
         notActive();
+        // Checks
+        let toProcess: u64 = u64_min(totalOpenPriorityRequests::read(), _n);
+        assert(toProcess > 0, 'A0');
+
+        // Effects
+        let mut currentDepositIdx: usize = 0;
+        // overflow is impossible, firstPriorityRequestId >= 0 and toProcess > 0
+        let mut lastPriorityRequestId: u64 = firstPriorityRequestId::read() + toProcess - 1;
+        let mut id: u64 = firstPriorityRequestId::read();
+        loop {
+            if id > lastPriorityRequestId {
+                break ();
+            }
+
+            let pr: PriorityOperation = priorityRequests::read(id);
+            if pr.opType == OpType::Deposit(()) {
+                let depositPubdata = _depositsPubdata[currentDepositIdx];
+                let depositPubdataHash: felt252 = u256_to_u160(depositPubdata.keccak());
+                assert(depositPubdataHash == pr.hashedPubData, 'A1');
+                currentDepositIdx += 1;
+
+                let (_, op) = DepositOperation::readFromPubdata(depositPubdata);
+                increaseBalanceToWithdraw(op.tokenId, op.owner, op.amount);
+            }
+
+            // TODO: delete priority request
+            // after return back deposited token to user, delete the priorityRequest to avoid redundant cancel
+            // other priority requests(ie. FullExit) are also be deleted because they are no used anymore
+            // and we can get gas reward for free these slots
+            // delete priorityRequests[id];
+
+            id += 1;
+        };
+
+        firstPriorityRequestId::write(firstPriorityRequestId::read() + toProcess);
+        totalOpenPriorityRequests::write(totalOpenPriorityRequests::read() - toProcess);
 
         ReentrancyGuard::end();
     }
