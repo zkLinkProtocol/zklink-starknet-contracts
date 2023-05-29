@@ -892,7 +892,7 @@ mod Zklink {
     fn collectOnchainOps(_newBlockData: @CommitBlockInfo) -> (u256, u64, u256, Felt252Dict<u128>, Felt252Dict<u128>) {
         let pubData = _newBlockData.publicData;
         // pubdata length must be a multiple of CHUNK_BYTES
-        assert(*pubData.size % CHUNK_BYTES == 0, 'h0');
+        assert(pubData.size() % CHUNK_BYTES == 0, 'h0');
         
         // Init return values
         // TODO: change to 0_256
@@ -911,7 +911,7 @@ mod Zklink {
             let onchainOpData = _newBlockData.onchainOperations[i];
             let pubdataOffset = *onchainOpData.publicDataOffset;
             
-            assert(pubdataOffset + 1 < *pubData.size, 'h1');
+            assert(pubdataOffset + 1 < pubData.size(), 'h1');
             assert(pubdataOffset % CHUNK_BYTES == 0, 'h2');
 
             {
@@ -943,7 +943,7 @@ mod Zklink {
             // group onchain operations pubdata hash by chain id
             updateOnchainOperationPubdataHashs(chainId, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow, @opPubData);
 
-            if processablePubData.size > 0 {
+            if processablePubData.size() > 0 {
                 processableOperationsHash = concatHash(processableOperationsHash, @processablePubData);
             }
 
@@ -1020,7 +1020,7 @@ mod Zklink {
             let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
             if _chainId == CHAIN_ID {
                 let (_, op) = ChangePubKeyOperation::readFromPubdata(@opPubData_internal);
-                if *_ethWitness.size != 0 {
+                if _ethWitness.size() != 0 {
                     let valid: bool = verifyChangePubkey(_ethWitness, @op);
                     assert(valid, 'k0');
                 } else {

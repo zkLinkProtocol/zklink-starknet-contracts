@@ -68,6 +68,8 @@ trait BytesTrait {
     fn new_empty() -> Bytes;
     // Locate offset in Bytes
     fn locate(offset: usize) -> (usize, usize);
+    // Get Bytes size
+    fn size(self: @Bytes) -> usize;
     // Read value with size bytes from Bytes, and packed into u128
     fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
     // Read value with element_size bytes from Bytes, and packed into u128 array
@@ -145,6 +147,11 @@ impl BytesImpl of BytesTrait {
         usize_div_rem(offset, BYTES_PER_ELEMENT)
     }
 
+    // Get Bytes size
+    fn size(self: @Bytes) -> usize {
+        *self.size
+    }
+
     // Read value with size bytes from Bytes, and packed into u128
     // Arguments:
     //  - offset: the offset in Bytes
@@ -154,7 +161,7 @@ impl BytesImpl of BytesTrait {
     //  - value: the value packed into u128
     fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128) {
         // check
-        assert(offset + size <= *self.size, 'out of bound');
+        assert(offset + size <= self.size(), 'out of bound');
         assert(size * 8 <= 128, 'too large');
 
         // check value in one element or two
@@ -176,7 +183,7 @@ impl BytesImpl of BytesTrait {
     }
 
     fn read_u128_array_packed(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>) {
-        assert(offset + array_length * element_size <= *self.size, 'out of bound');
+        assert(offset + array_length * element_size <= self.size(), 'out of bound');
         let mut array = ArrayTrait::<u128>::new();
 
         if array_length == 0 {
@@ -199,7 +206,7 @@ impl BytesImpl of BytesTrait {
     // Read value with size bytes from Bytes, and packed into felt252
     fn read_felt252_packed(self: @Bytes, offset: usize, size: usize) -> (usize, felt252) {
         // check
-        assert(offset + size <= *self.size, 'out of bound');
+        assert(offset + size <= self.size(), 'out of bound');
         // Bytes unit is one byte
         // felt252 can hold 31 bytes max
         assert(size * 8 <= 248, 'too large');
@@ -250,7 +257,7 @@ impl BytesImpl of BytesTrait {
     // read a u256 from Bytes
     fn read_u256(self: @Bytes, offset: usize) -> (usize, u256) {
         // check
-        assert(offset + 32 <= *self.size, 'out of bound');
+        assert(offset + 32 <= self.size(), 'out of bound');
 
         let (element_index, element_offset) = BytesTrait::locate(offset);
         let (new_offset, high) = self.read_u128(offset);
@@ -261,7 +268,7 @@ impl BytesImpl of BytesTrait {
 
     // read a u256 array from Bytes
     fn read_u256_array(self: @Bytes, offset: usize, array_length: usize) -> (usize, Array<u256>) {
-        assert(offset + array_length * 32 <= *self.size, 'out of bound');
+        assert(offset + array_length * 32 <= self.size(), 'out of bound');
         let mut array = ArrayTrait::<u256>::new();
         
         if array_length == 0 {
@@ -285,7 +292,7 @@ impl BytesImpl of BytesTrait {
     // read sub Bytes from Bytes
     fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes) {
         // check
-        assert(offset + size <= *self.size, 'out of bound');
+        assert(offset + size <= self.size(), 'out of bound');
         let mut array = ArrayTrait::<u128>::new();
         if size == 0 {
             return (offset, BytesTrait::new(0, array));
@@ -395,7 +402,7 @@ impl BytesImpl of BytesTrait {
 
     // keccak hash
     fn keccak(self: @Bytes) -> u256 {
-        let (last_data_index, last_element_size) = BytesTrait::locate(*self.size);
+        let (last_data_index, last_element_size) = BytesTrait::locate(self.size());
         // To cumpute hash, we should remove 0 padded
         let (last_element_value, _) = u128_split(*self.data[last_data_index], 16, last_element_size);
         let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
@@ -409,7 +416,7 @@ impl BytesImpl of BytesTrait {
         let mut i: usize = 0;
         let mut offset: usize = 0;
         loop {
-            if i == *self.size {
+            if i == self.size() {
                 break();
             }
             let (new_offset, hash_data_item) = self.read_u8(offset);

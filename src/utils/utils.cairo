@@ -72,7 +72,7 @@ fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
     hash_data.append(_hash.low);
 
     // process _bytes
-    let (last_data_index, last_element_size) = BytesTrait::locate(*_bytes.size);
+    let (last_data_index, last_element_size) = BytesTrait::locate(_bytes.size());
     let mut bytes_data = u128_array_slice(_bytes.data, 0, last_data_index);
     // To cumpute hash, we should remove 0 padded
     let (last_element_value, _) = u128_split(*_bytes.data[last_data_index], 16, last_element_size);
