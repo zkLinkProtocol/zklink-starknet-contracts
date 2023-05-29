@@ -381,7 +381,13 @@ mod Zklink {
         ReentrancyGuard::start();
         active();
         let blockNumber = get_block_number();
-        let trigger: bool = false;
+        let expirationBlock = priorityRequests::read(firstPriorityRequestId::read()).expirationBlock;
+        let trigger: bool = ((blockNumber >= expirationBlock) & (expirationBlock != 0));
+
+        if trigger {
+            exodusMode::write(true);
+            ExodusMode();
+        }
 
         ReentrancyGuard::end();
     }
@@ -400,6 +406,23 @@ mod Zklink {
     fn performExodus(_storedBlockInfo: StoredBlockInfo, _owner: ContractAddress, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>) {
         ReentrancyGuard::start();
         notActive();
+
+        // checks
+        // performed exodus MUST not be already exited
+        assert(!performedExodus::read((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId)), 'y0');
+        // incorrect stored block info
+        assert(storedBlockHashes::read(totalBlocksExecuted::read()) == hashStoredBlockInfo(_storedBlockInfo), 'y1');
+        // exit proof MUST be correct
+        // TODO: impl fake verifier proof contract
+        let proofCorrect: bool = true;
+        assert(proofCorrect, 'y2');
+
+        // Effects
+        performedExodus::write((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId), true);
+
+        increaseBalanceToWithdraw::write((_owner, _withdrawTokenId), _amount);
+
+        WithdrawalPending(_withdrawTokenId, _owner, _amount);
 
         ReentrancyGuard::end();
     }
