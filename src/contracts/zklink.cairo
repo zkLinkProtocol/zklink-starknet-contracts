@@ -8,7 +8,7 @@ mod Zklink {
         Default
     };
     use option::OptionTrait;
-    use array::ArrayTrait;
+    use array::{ArrayTrait, SpanTrait};
     use dict::Felt252DictTrait;
     use dict::Felt252DictEntryTrait;
     use box::BoxTrait;
@@ -491,6 +491,7 @@ mod Zklink {
         active();
         onlyValidator();
 
+        let _blocksData = _blocksData.span();
         let nBlocks: u64 = _blocksData.len().into();
         assert(nBlocks > 0, 'd0');
 
@@ -503,7 +504,7 @@ mod Zklink {
                 break();
             }
             executeOneBlock(_blocksData[i], i);
-            priorityRequestsExecuted += *_blocksData[i].storedBlock.priorityOperations;
+            priorityRequestsExecuted += *(_blocksData[i].storedBlock.priorityOperations);
             i += 1;
         };
 
@@ -513,7 +514,7 @@ mod Zklink {
 
         totalBlocksExecuted::write(totalBlocksExecuted::read() + nBlocks);
 
-        BlockExecuted(*_blocksData[(nBlocks - 1).try_into().unwrap()].storedBlock.blockNumber);
+        BlockExecuted(*(_blocksData[(nBlocks - 1).try_into().unwrap()].storedBlock.blockNumber));
 
         ReentrancyGuard::end();
     }
