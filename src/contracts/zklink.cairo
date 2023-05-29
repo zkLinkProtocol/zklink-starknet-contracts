@@ -70,7 +70,8 @@ mod Zklink {
         felt252_fast_pow2,
         u256_pow2,
         u256_to_u160,
-        u64_min
+        u64_min,
+        u128_min,
     };
     use zklink::utils::utils::{
         concatHash,
@@ -82,6 +83,7 @@ mod Zklink {
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES, FULL_EXIT_BYTES,
         PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
+        AUTH_FACT_RESET_TIMELOCK,
         CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS,
         ENABLE_COMMIT_COMPRESSED_BLOCK,
         GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
@@ -330,6 +332,21 @@ mod Zklink {
         ReentrancyGuard::end();
     }
 
+    // Sends tokens
+    // NOTE: will revert if transfer call fails or rollup balance difference (before and after transfer) is bigger than _maxAmount
+    // This function is used to allow tokens to spend zkLink contract balance up to amount that is requested
+    // Parameters:
+    //  _token Token address
+    //  _to Address of recipient
+    //  _amount Amount of tokens to transfer
+    //  _maxAmount Maximum possible amount of tokens to transfer to this account
+    //  _isStandard If token is a standard erc20
+    //  withdrawnAmount The really amount than will be debited from user
+    #[external]
+    fn transferERC20(_token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool, _withdrawnAmount: u128) -> u128 {
+        0
+    }
+
     // Register full exit request - pack pubdata, add priority request
     // Parameters:
     //  _accountId Numerical id of the account
@@ -490,6 +507,24 @@ mod Zklink {
         ReentrancyGuard::start();
         active();
 
+        let sender = get_caller_address();
+        if authFacts::read((sender, _nonce)) == 0 {
+            authFacts::write((sender, _nonce), pubKeyHash(_pubkeyHash));
+            FactAuth(sender, _nonce, _pubkeyHash);
+        } else {
+            let currentResetTimer: u64 = authFactsResetTimer::read((sender, _nonce));
+            let timestamp = get_block_timestamp();
+            if currentResetTimer == 0 {
+                authFactsResetTimer::write((sender, _nonce), timestamp);
+                FactAuthResetTime(sender, _nonce, timestamp);
+            } else {
+                assert((timestamp - currentResetTimer) >= AUTH_FACT_RESET_TIMELOCK, 'B1');
+                authFactsResetTimer::write((sender, _nonce), 0);
+                authFacts::write((sender, _nonce), pubKeyHash(_pubkeyHash));
+                FactAuth(sender, _nonce, _pubkeyHash);
+            }
+        }
+
         ReentrancyGuard::end();
     }
 
@@ -504,8 +539,21 @@ mod Zklink {
     //  The actual withdrawn amount
     #[external]
     fn withdrawPendingBalance(_owner: ContractAddress, _tokenId: u16, _amount: u128) -> u128 {
-        let amount = 0;
         ReentrancyGuard::start();
+
+        // Checks
+        let rt: RegisteredToken = tokens::read(_tokenId);
+        assert(rt.registered, 'b0');
+
+        // Set the available amount to withdraw
+        let balance: u128 = pendingBalances::read((_owner, _tokenId));
+        let withdrawBalance = recoveryDecimals(balance, rt.decimals);
+        let mut amount = u128_min(_amount, withdrawBalance);
+        assert(amount > 0, 'b1');
+
+        // Interactions
+        let tokenAddress: ContractAddress = rt.tokenAddress;
+
         
 
         ReentrancyGuard::end();
