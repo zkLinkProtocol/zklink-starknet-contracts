@@ -420,8 +420,7 @@ mod Zklink {
         // Effects
         performedExodus::write((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId), true);
 
-        increaseBalanceToWithdraw::write((_owner, _withdrawTokenId), _amount);
-
+        increaseBalanceToWithdraw(_withdrawTokenId, _owner, _amount);
         WithdrawalPending(_withdrawTokenId, _owner, _amount);
 
         ReentrancyGuard::end();
@@ -1191,7 +1190,13 @@ mod Zklink {
     //  _recipient
     //  _amount amount that need to recovery decimals when withdraw
     fn increasePendingBalance(_tokenId: u16, _recipient: ContractAddress, _amount: u128) {
+        increaseBalanceToWithdraw(_tokenId, _recipient, _amount);
+        WithdrawalPending(_tokenId, _recipient, _amount);
+    }
 
+    fn increaseBalanceToWithdraw(_tokenId: u16, _recipient: ContractAddress, _amount: u128) {
+        let balance: u128 = pendingBalances::read((_recipient, _tokenId));
+        pendingBalances::write((_recipient, _tokenId), balance + _amount);
     }
 
     // improve decimals when deposit, for example, user deposit 2 USDC in ui, and the decimals of USDC is 6
