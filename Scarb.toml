@@ -13,6 +13,5 @@ sierra-replace-ids = true
 [scripts]
 sierra = "cairo-compile . -r"
 test = "cairo-test --starknet ."
-build = "starknet-compile -c zklink::contracts::zklink::Zklink . ./target/dev/Zklink.json"
 
 [[target.starknet-contract]]

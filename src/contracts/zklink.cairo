@@ -886,7 +886,8 @@ mod Zklink {
             expirationBlock: expirationBlock,
             opType: _opType
         };
-        priorityRequests::write(nextPriorityRequestId, priorityRequest);
+        // TODO: uncomment it when impl real priorityRequests StorageAccess
+        // priorityRequests::write(nextPriorityRequestId, priorityRequest);
 
         let sender = get_caller_address();
         NewPriorityRequest(sender, nextPriorityRequestId, _opType, _pubData, expirationBlock);
