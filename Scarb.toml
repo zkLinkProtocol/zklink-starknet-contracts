@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "zklink starknet core contracts, cairo1.0 compatible"
 homepage = "https://zk.link/"
 
+[dependencies]
+starknet = ">=1.1.0"
+
 [cairo]
 sierra-replace-ids = true
 
