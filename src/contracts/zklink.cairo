@@ -1,3 +1,10 @@
+use starknet::ContractAddress;
+#[abi]
+trait IZklink {
+    #[external]
+    fn transferERC20(_token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool) -> u128;
+}
+
 #[contract]
 mod Zklink {
     use zeroable::Zeroable;
@@ -24,6 +31,9 @@ mod Zklink {
     };
     // TODO: corelib import error
     use core::starknet::info::get_block_number;
+
+    use super::IZklinkDispatcher;
+    use super::IZklinkDispatcherTrait;
 
     use zklink::libraries::IERC20::IERC20Dispatcher;
     use zklink::libraries::IERC20::IERC20DispatcherTrait;
@@ -345,8 +355,24 @@ mod Zklink {
     //  _isStandard If token is a standard erc20
     //  withdrawnAmount The really amount than will be debited from user
     #[external]
-    fn transferERC20(_token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool, _withdrawnAmount: u128) -> u128 {
-        0
+    fn transferERC20(_token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool) -> u128 {
+        let sender = get_caller_address();
+        let contract_address = get_contract_address();
+        assert(sender == contract_address, 'n0');
+
+        // most tokens are standard, fewer query token balance can save gas
+        if _isStandard {
+            IERC20Dispatcher {contract_address: _token}.transfer(_to, _amount.into());
+            return _amount;
+        } else {
+            let balanceBefore = IERC20Dispatcher {contract_address: _token}.balance_of(contract_address);
+            IERC20Dispatcher {contract_address: _token}.transfer(_to, _amount.into());
+            let balanceAfter = IERC20Dispatcher {contract_address: _token}.balance_of(contract_address);
+            let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
+            assert(balanceDiff > 0, 'n1'); // transfer is considered successful only if the balance of the contract decreased after transfer
+            assert(balanceDiff <= _maxAmount, 'n2'); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
+            return balanceDiff;
+        }
     }
 
     // Register full exit request - pack pubdata, add priority request
@@ -555,8 +581,11 @@ mod Zklink {
 
         // Interactions
         let tokenAddress: ContractAddress = rt.tokenAddress;
-
+        let contract_address = get_contract_address();
+        amount = IZklinkDispatcher {contract_address}.transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
         
+        pendingBalances::write((_owner, _tokenId), balance - improveDecimals(amount, rt.decimals));
+        Withdrawal(_tokenId, amount);
 
         ReentrancyGuard::end();
         amount
@@ -1274,7 +1303,27 @@ mod Zklink {
     //  _recipient
     //  _amount
     fn withdrawOrStore(_tokenId: u16, _tokenAddress: ContractAddress, _isTokenStandard: bool, _decimals: u8, _recipient: ContractAddress, _amount: u128) {
+        if _amount == 0 {
+            return ();
+        }
 
+        // recover withdraw amount and add dust to pending balance
+        let withdrawAmount: u128 = recoveryDecimals(_amount, _decimals);
+        let dustAmount: u128 = _amount - improveDecimals(withdrawAmount, _decimals);
+        let mut sent = false;
+        let contract_address = get_contract_address();
+
+        IZklinkDispatcher {contract_address}.transferERC20(_tokenAddress, _recipient, withdrawAmount, withdrawAmount, _isTokenStandard);
+        sent = true;
+
+        if sent {
+            Withdrawal(_tokenId, withdrawAmount);
+            if dustAmount > 0 {
+                increasePendingBalance(_tokenId, _recipient, dustAmount);
+            }
+        } else {
+            increasePendingBalance(_tokenId, _recipient, _amount);
+        }
     }
 
     // Increase `_recipient` balance to withdraw
