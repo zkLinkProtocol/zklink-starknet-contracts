@@ -15,6 +15,8 @@ mod Zklink {
     use clone::Clone;
     use starknet::{
         ContractAddress,
+        contract_address_const,
+        Felt252TryIntoContractAddress,
         get_contract_address,
         get_caller_address,
         get_block_info,
@@ -810,7 +812,8 @@ mod Zklink {
         active();
         // checks
         // disable deposit to zero address or global asset account
-        assert(_zkLinkAddress != Zeroable::zero() & _zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS, 'e1');
+        assert(_zkLinkAddress != contract_address_const::<0>(), 'e1');
+        assert(_zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS.try_into().unwrap(), 'e1');
         // subAccountId MUST be valid
         assert(_subAccountId <= MAX_SUB_ACCOUNT_ID, 'e2');
         // token MUST be registered to ZkLink and deposit MUST be enabled
@@ -902,6 +905,7 @@ mod Zklink {
         active();
         onlyValidator();
         // Checks
+        let _newBlocksData = _newBlocksData.span();
         assert(_newBlocksData.len() > 0, 'f0');
         assert(storedBlockHashes::read(totalBlocksCommitted::read()) == hashStoredBlockInfo(_lastCommittedBlockData), 'f1');
 
@@ -924,7 +928,7 @@ mod Zklink {
         totalBlocksCommitted::write(totalBlocksCommitted::read() + _newBlocksData.len().into());
 
         // If enable compressed commit then we can ignore prove and ensure that block is correct by sync
-        if (_compressed & ENABLE_COMMIT_COMPRESSED_BLOCK) {
+        if (_compressed & (ENABLE_COMMIT_COMPRESSED_BLOCK == 1)) {
             totalBlocksProven::write(totalBlocksCommitted::read());
         }
 
@@ -943,7 +947,10 @@ mod Zklink {
     // NOTE: Does not change storage (except events, so we can't mark it view)
     fn commitOneBlock(_previousBlock: @StoredBlockInfo, _newBlock: @CommitBlockInfo, _compressed: bool, _newBlockExtra: @CompressedBlockExtraInfo) -> StoredBlockInfo {
         assert(*_newBlock.blockNumber == *_previousBlock.blockNumber + 1, 'g0');
-        assert(!_compressed | ENABLE_COMMIT_COMPRESSED_BLOCK, 'g1');
+        // There is not bool <=> felt252 in Cairo, so we define ENABLE_COMMIT_COMPRESSED_BLOCK in felt252
+        // if true is 1, else is 0.
+        // So we can get commit compressed block enabled by `ENABLE_COMMIT_COMPRESSED_BLOCK == 1`
+        assert(!_compressed | (ENABLE_COMMIT_COMPRESSED_BLOCK == 1), 'g1');
         // Check timestamp of the new block
         assert(*_newBlock.timestamp >= *_previousBlock.timestamp, 'g2');
 
@@ -980,7 +987,7 @@ mod Zklink {
 
         let syncHash = createSyncHash(*_previousBlock.syncHash, commitment, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow);
 
-        StoredBlockInfo{
+        StoredBlockInfo {
             blockNumber: *_newBlock.blockNumber,
             priorityOperations: priorityReqCommitted,
             pendingOnchainOperationsHash: pendingOnchainOpsHash,
