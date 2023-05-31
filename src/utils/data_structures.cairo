@@ -160,7 +160,7 @@ mod DataStructures {
     }
 
     // Token info stored in zkLink
-    #[derive(Drop, Serde)]
+    #[derive(Drop, Copy, Serde)]
     struct Token {
         tokenId: u16,                   // token id defined by zkLink
         tokenAddress: ContractAddress,  // token address in l1

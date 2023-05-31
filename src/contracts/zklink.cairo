@@ -93,7 +93,7 @@ mod Zklink {
         concatTwoHash
     };
     use zklink::utils::constants::{
-        EMPTY_STRING_KECCAK, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
+        EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES, FULL_EXIT_BYTES,
         PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
@@ -101,9 +101,9 @@ mod Zklink {
         AUTH_FACT_RESET_TIMELOCK,
         CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
         ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
+        TOKEN_DECIMALS_OF_LAYER2,
         GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
         USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
-        TOKEN_DECIMALS_OF_LAYER2,
     };
     
     /// Storage
@@ -214,7 +214,12 @@ mod Zklink {
 
         // public
         // using map instead of array, index => BridgeInfo
+        // bridgeIndex[bridgeAddress] - 1 => BridgeInfo
         bridges: LegacyMap::<usize, BridgeInfo>,
+
+        // public
+        // bridges length
+        bridgesLength: usize,
 
         // public
         // 0 is reversed for non-exist bridge, existing bridges are indexed from 1
@@ -915,6 +920,12 @@ mod Zklink {
         ReentrancyGuard::start();
         onlyGovernor();
 
+        assert(_newGovernor != Zeroable::zero(), 'H');
+        if _newGovernor != networkGovernor::read() {
+            networkGovernor::write(_newGovernor);
+            NewGovernor(_newGovernor);
+        }
+
         ReentrancyGuard::end();
     }
 
@@ -927,6 +938,26 @@ mod Zklink {
     #[external]
     fn addToken(_tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8, _standard: bool) {
         onlyGovernor();
+
+        // token id MUST be in a valid range
+        assert(_tokenId > 0, 'I0');
+        assert(_tokenId <= MAX_AMOUNT_OF_REGISTERED_TOKENS, 'I0');
+        // token MUST be not zero address
+        assert(_tokenAddress != Zeroable::zero(), 'I1');
+        // revert duplicate register
+        let mut rt: RegisteredToken = tokens::read(_tokenId);
+        assert(!rt.registered, 'I2');
+        assert(tokenIds::read(_tokenAddress) == 0, 'I2');
+        // token decimals of layer one MUST not be larger than decimals defined in layer two
+        assert(_decimals <= TOKEN_DECIMALS_OF_LAYER2, 'I3');
+
+        rt.registered = true;
+        rt.tokenAddress = _tokenAddress;
+        rt.decimals = _decimals;
+        rt.standard = _standard;
+        tokens::write(_tokenId, rt);
+        tokenIds::write(_tokenAddress, _tokenId);
+        NewToken(_tokenId, _tokenAddress);
     }
 
     // Add tokens to the list of networks tokens
@@ -934,7 +965,15 @@ mod Zklink {
     //  _tokenList Token list
     #[external]
     fn addTokens(_tokenList: Array<Token>) {
-
+        let mut i: usize = 0;
+        loop {
+            if i == _tokenList.len() {
+                break ();
+            }
+            let _token: Token = *_tokenList[i];
+            addToken(_token.tokenId, _token.tokenAddress, _token.decimals, _token.standard);
+            i += 1;
+        };
     }
 
     // Pause token deposits for the given token
@@ -944,6 +983,15 @@ mod Zklink {
     #[external]
     fn setTokenPaused(_tokenId: u16, _tokenPaused: bool) {
         onlyGovernor();
+
+        let mut rt: RegisteredToken = tokens::read(_tokenId);
+        assert(rt.registered, 'K');
+
+        if rt.paused != _tokenPaused {
+            rt.paused = _tokenPaused;
+            tokens::write(_tokenId, rt);
+            TokenPausedUpdate(_tokenId, _tokenPaused);
+        }
     }
 
     // Change validator status (active or not active)
@@ -953,6 +1001,10 @@ mod Zklink {
     #[external]
     fn setValidator(_validator: ContractAddress, _active: bool) {
         onlyGovernor();
+        if validators::read(_validator) != _active {
+            validators::write(_validator, _active);
+            ValidatorStatusUpdate(_validator, _active);
+        }
     }
 
     // Add a new bridge
@@ -963,7 +1015,26 @@ mod Zklink {
     #[external]
     fn addBridge(_bridge: ContractAddress) -> usize {
         onlyGovernor();
-        0
+        
+        assert(_bridge != Zeroable::zero(), 'L0');
+        // the index of non-exist bridge is zero
+        assert(bridgeIndex::read(_bridge) == 0, 'L1');
+
+        let info: BridgeInfo = BridgeInfo {
+            bridge: _bridge,
+            enableBridgeTo: true,
+            enableBridgeFrom: true,
+        };
+
+        let mut length = bridgesLength::read();
+        length += 1;
+        bridgesLength::write(length);
+        bridges::write(length, info);
+        bridgeIndex::write(_bridge, length);
+
+        AddBridge(_bridge, length);
+
+        length
     }
 
     // Update bridge info
@@ -977,6 +1048,14 @@ mod Zklink {
     #[external]
     fn updateBridge(_index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool) {
         onlyGovernor();
+
+        assert(_index < bridgesLength::read(), 'M');
+        let mut info: BridgeInfo = bridges::read(_index);
+        info.enableBridgeTo = _enableBridgeTo;
+        info.enableBridgeFrom = _enableBridgeFrom;
+        bridges::write(_index, info);
+
+        UpdateBridge(_index, _enableBridgeTo, _enableBridgeFrom);
     }
 
     // Get enableBridgeTo status
