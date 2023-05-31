@@ -138,6 +138,15 @@ fn u8_min(l: u8, r: u8) -> u8 {
     }
 }
 
+// min u32
+fn u32_min(l: u32, r: u32) -> u32 {
+    if l <= r {
+        return l;
+    } else {
+        return r;
+    }
+}
+
 // min u64
 fn u64_min(l: u64, r: u64) -> u64 {
     if l <= r {

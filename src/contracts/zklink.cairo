@@ -34,7 +34,8 @@ mod Zklink {
 
     use super::IZklinkDispatcher;
     use super::IZklinkDispatcherTrait;
-
+    use zklink::libraries::IVerifier::IVerifierDispatcher;
+    use zklink::libraries::IVerifier::IVerifierDispatcherTrait;
     use zklink::libraries::IERC20::IERC20Dispatcher;
     use zklink::libraries::IERC20::IERC20DispatcherTrait;
     use zklink::libraries::reentrancyguard::ReentrancyGuard;
@@ -82,6 +83,7 @@ mod Zklink {
         felt252_fast_pow2,
         u256_pow2,
         u256_to_u160,
+        u32_min,
         u64_min,
         u128_min,
     };
@@ -95,6 +97,7 @@ mod Zklink {
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES, FULL_EXIT_BYTES,
         PRIORITY_EXPIRATION,
         MAX_DEPOSIT_AMOUNT,
+        MAX_PROOF_COMMITMENT, INPUT_MASK,
         AUTH_FACT_RESET_TIMELOCK,
         CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS,
         ENABLE_COMMIT_COMPRESSED_BLOCK,
@@ -249,7 +252,7 @@ mod Zklink {
 
     // Event emitted when blocks are reverted
     #[event]
-    fn BlocksRevert(totalBlocksVerified: u32, totalBlocksCommitted: u64){}
+    fn BlocksRevert(totalBlocksVerified: u64, totalBlocksCommitted: u64){}
 
     // Exodus mode entered event
     #[event]
@@ -665,6 +668,49 @@ mod Zklink {
     #[external]
     fn proveBlocks(_committedBlocks: Array<StoredBlockInfo>, _proof: ProofInput) {
         ReentrancyGuard::start();
+        // Checks
+        let ProofInput {
+            recursiveInput,
+            proof,
+            vkIndexes,
+            commitments,
+            subproofsLimbs
+        } = _proof;
+        let mut currentTotalBlocksProven: u64 = totalBlocksProven::read();
+        let mut i: usize = 0;
+        let commitments_span = commitments.span();
+        loop {
+            if i == _committedBlocks.len() {
+                break ();
+            }
+
+            currentTotalBlocksProven += 1;
+            assert(hashStoredBlockInfo(*_committedBlocks[i]) == storedBlockHashes::read(currentTotalBlocksProven), 'x0');
+
+            // commitment of proof produced by zk has only 253 significant bits
+            // 'commitment & INPUT_MASK' is used to set the highest 3 bits to 0 and leave the rest unchanged
+            assert(*commitments_span[i] <= MAX_PROOF_COMMITMENT, 'x1');
+            assert(*commitments_span[i] == (*_committedBlocks[i].commitment & INPUT_MASK), 'x1');
+
+            i += 1;
+        };
+
+        // Effects
+        assert(currentTotalBlocksProven <= totalBlocksCommitted::read(), 'x2');
+        totalBlocksProven::write(currentTotalBlocksProven);
+
+        // Interactions
+        let contract_address: ContractAddress = verifier::read();
+        let success: bool = IVerifierDispatcher {contract_address}.verifyAggregatedBlockProof(
+            recursiveInput,
+            proof,
+            vkIndexes,
+            commitments,
+            subproofsLimbs,
+        );
+        assert(success, 'x3');
+
+        BlockProven(currentTotalBlocksProven);
 
         ReentrancyGuard::end();
     }
@@ -674,6 +720,40 @@ mod Zklink {
     fn revertBlocks(_blocksToRevert: Array<StoredBlockInfo>) {
         ReentrancyGuard::start();
         onlyValidator();
+
+        let mut blocksCommitted: u64 = totalBlocksCommitted::read();
+        let blocksToRevert: u32 = u32_min(_blocksToRevert.len(), (blocksCommitted - totalBlocksExecuted::read()).try_into().unwrap());
+        let mut revertedPriorityRequests: u64 = 0;
+        let mut i: usize = 0;
+
+        loop {
+            if i == blocksToRevert {
+                break ();
+            }
+
+            let storedBlockInfo: StoredBlockInfo = *_blocksToRevert[i];
+            assert(storedBlockHashes::read(blocksCommitted) == hashStoredBlockInfo(storedBlockInfo), 'c');
+
+            // TODO: delete storedBlockHashes[blocksCommitted];
+            // delete storedBlockHashes[blocksCommitted];
+
+            blocksCommitted -= 1;
+            revertedPriorityRequests += storedBlockInfo.priorityOperations;
+
+            i += 1;
+        };
+
+        totalBlocksCommitted::write(blocksCommitted);
+        totalCommittedPriorityRequests::write(totalCommittedPriorityRequests::read() - revertedPriorityRequests);
+
+        if (totalBlocksCommitted::read() < totalBlocksProven::read()) {
+            totalBlocksProven::write(totalBlocksCommitted::read());
+        }
+        if (totalBlocksProven::read() < totalBlocksSynchronized::read()) {
+            totalBlocksSynchronized::write(totalBlocksProven::read());
+        }
+
+        BlocksRevert(totalBlocksExecuted::read(), blocksCommitted);
 
         ReentrancyGuard::end();
     }

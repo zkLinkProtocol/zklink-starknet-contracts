@@ -1,6 +1,7 @@
 mod DataStructures {
     use zeroable::Zeroable;
     use traits::Into;
+    use clone::Clone;
     use starknet::contract_address::{
         ContractAddress,
         ContractAddressZeroable,
@@ -168,7 +169,7 @@ mod DataStructures {
     }
 
     // Recursive proof input data (individual commitments are constructed onchain)
-    #[derive(Drop, Serde)]
+    #[derive(Drop, Serde, Clone)]
     struct ProofInput {
         recursiveInput: Array<u256>,
         proof: Array<u256>,
