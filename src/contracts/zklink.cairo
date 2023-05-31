@@ -99,7 +99,7 @@ mod Zklink {
         MAX_DEPOSIT_AMOUNT,
         MAX_PROOF_COMMITMENT, INPUT_MASK,
         AUTH_FACT_RESET_TIMELOCK,
-        CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS,
+        CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
         ENABLE_COMMIT_COMPRESSED_BLOCK,
         GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
         USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
@@ -763,19 +763,43 @@ mod Zklink {
     // Combine the `progress` of the other chains of a `syncHash` with self
     #[external]
     fn receiveSynchronizationProgress(_syncHash: u256, _progress: u256) {
+        let sender = get_caller_address();
+        assert(isBridgeFromEnabled(sender), 'C');
 
+        synchronizedChains::write(_syncHash, synchronizedChains::read(_syncHash) | _progress);
     }
 
     // Get synchronized progress of current chain known
     #[view]
     fn getSynchronizedProgress(_block: StoredBlockInfo) -> u256 {
-        u256{low: 0, high: 0}
+        // `ALL_CHAINS` will be upgraded when we add a new chain
+        // and all blocks that confirm synchronized will return the latest progress flag
+        let mut progress: u256 = 0;
+        if _block.blockNumber <= totalBlocksSynchronized::read() {
+            progress = ALL_CHAINS;
+        } else {
+            progress = synchronizedChains::read(_block.syncHash);
+            // combine the current chain if it has proven this block
+            if (_block.blockNumber <= totalBlocksProven::read()) & (hashStoredBlockInfo(_block) == storedBlockHashes::read(_block.blockNumber)) {
+                progress = progress | CHAIN_INDEX;
+            } else {
+                progress = progress & ~CHAIN_INDEX;
+            }
+        }
+        progress
     }
 
     // Check if received all syncHash from other chains at the block height
     #[external]
     fn syncBlocks(_block: StoredBlockInfo) {
         ReentrancyGuard::start();
+
+        let progress = getSynchronizedProgress(_block);
+        
+        assert(progress == ALL_CHAINS, 'D0');
+        assert(_block.blockNumber > totalBlocksSynchronized::read(), 'D1');
+
+        totalBlocksSynchronized::write(_block.blockNumber);
 
         ReentrancyGuard::end();
     }
