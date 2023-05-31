@@ -1518,22 +1518,102 @@ mod Zklink {
     // 1. Processes all pending operations (Send Exits, Complete priority requests)
     // 2. Finalizes block on Ethereum
     fn executeOneBlock(_blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: usize) {
+        // Ensure block was committed
+        assert(
+            hashStoredBlockInfo(*_blockExecuteData.storedBlock) ==
+            storedBlockHashes::read(*_blockExecuteData.storedBlock.blockNumber),
+            'm0');
+        assert(*_blockExecuteData.storedBlock.blockNumber == totalBlocksExecuted::read() + _executedBlockIdx.into() + 1, 'm1');
 
+        let mut pendingOnchainOpsHash: u256 = EMPTY_STRING_KECCAK;
+        let mut i: usize = 0;
+        loop {
+            if i == _blockExecuteData.pendingOnchainOpsPubdata.len() {
+                break ();
+            }
+
+            let pubData: @Bytes = _blockExecuteData.pendingOnchainOpsPubdata[i];
+
+            let (_, value) = pubData.read_u8(0);
+            let opType: OpType = value.try_into().unwrap();
+
+            // `pendingOnchainOpsPubdata` only contains ops of the current chain
+            // no need to check chain id
+
+            if opType == OpType::Withdraw(()) {
+                let (_, op) = WithdrawOperation::readFromPubdata(pubData);
+                executeWithdraw(op);
+            } else if opType == OpType::ForcedExit(()) {
+                let (_, op) = ForcedExitOperatoin::readFromPubdata(pubData);
+                executeForceExit(op);
+            } else if opType == OpType::FullExit(()) {
+                let (_, op) = FullExitOperation::readFromPubdata(pubData);
+                executeFullExit(op);
+            } else {
+                panic_with_felt252('m2');
+            }
+
+            pendingOnchainOpsHash = concatHash(pendingOnchainOpsHash, pubData);
+
+            i += 1;
+        };
+
+        assert(pendingOnchainOpsHash == *_blockExecuteData.storedBlock.pendingOnchainOperationsHash, 'm3');
     }
 
     // Execute withdraw operation
     fn executeWithdraw(op: Withdraw) {
+        // token MUST be registered
+        let rt: RegisteredToken = tokens::read(op.tokenId);
+        assert(rt.registered, 'o0');
 
+        // nonce > 0 means fast withdraw
+        if op.nonce > 0 {
+            // recover withdraw amount
+            let acceptAmount: u128 = recoveryDecimals(op.amount, rt.decimals);
+            let dustAmount: u128 = op.amount - improveDecimals(acceptAmount, rt.decimals);
+            let mut fwBytes: Bytes = BytesTrait::new_empty();
+            fwBytes.append_address(op.owner);
+            fwBytes.append_u16(op.tokenId);
+            fwBytes.append_u128(acceptAmount);
+            fwBytes.append_u16(op.fastWithdrawFeeRate);
+            fwBytes.append_u32(op.nonce);
+            let fwHash = fwBytes.keccak();
+            let accepter: ContractAddress = accepts::read((op.accountId, fwHash));
+
+            if accepter == Zeroable::zero() {
+                // receiver act as a accepter
+                accepts::write((op.accountId, fwHash), op.owner);
+                withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.owner, op.amount);
+            } else {
+                // just increase the pending balance of accepter
+                increasePendingBalance(op.tokenId, accepter, op.amount);
+                // add dust to owner
+                if dustAmount > 0 {
+                    increasePendingBalance(op.tokenId, op.owner, dustAmount);
+                }
+            }
+        } else {
+            withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.owner, op.amount);
+        }
     }
 
     // Execute force exit operation
     fn executeForceExit(op: ForcedExit) {
+        // token MUST be registered
+        let rt: RegisteredToken = tokens::read(op.tokenId);
+        assert(rt.registered, 'p0');
 
+        withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.target, op.amount);
     }
 
     // Execute full exit operation
     fn executeFullExit(op: FullExit) {
+        // token MUST be registered
+        let rt: RegisteredToken = tokens::read(op.tokenId);
+        assert(rt.registered, 'r0');
 
+        withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.owner, op.amount);
     }
 
     // Try execute withdraw, if it fails - store withdraw to pendingBalances

@@ -155,8 +155,8 @@ mod DataStructures {
     // Data needed to execute committed and verified block
     #[derive(Drop, Serde)]
     struct ExecuteBlockInfo {
-        storedBlock: StoredBlockInfo,   // the block info that will be executed
-        pendingOnchainOpsPubdata: Bytes // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
+        storedBlock: StoredBlockInfo,           // the block info that will be executed
+        pendingOnchainOpsPubdata: Array<Bytes>  // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
     }
 
     // Token info stored in zkLink
