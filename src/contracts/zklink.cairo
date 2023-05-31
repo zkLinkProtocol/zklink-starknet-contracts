@@ -100,7 +100,7 @@ mod Zklink {
         MAX_PROOF_COMMITMENT, INPUT_MASK,
         AUTH_FACT_RESET_TIMELOCK,
         CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
-        ENABLE_COMMIT_COMPRESSED_BLOCK,
+        ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
         GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
         USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
         TOKEN_DECIMALS_OF_LAYER2,
@@ -795,7 +795,7 @@ mod Zklink {
         ReentrancyGuard::start();
 
         let progress = getSynchronizedProgress(_block);
-        
+
         assert(progress == ALL_CHAINS, 'D0');
         assert(_block.blockNumber > totalBlocksSynchronized::read(), 'D1');
 
@@ -821,6 +821,33 @@ mod Zklink {
     fn acceptERC20(_accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32, _amountTransfer: u128) {
         ReentrancyGuard::start();
 
+        // Checks
+        let (mut amountReceive, hash, tokenAddress) = _checkAccept(_accepter, _accountId, _receiver, _tokenId, _amount, _withdrawFeeRate, _nonce);
+
+        // Effects
+        accepts::write((_accountId, hash), _accepter);
+
+        // Interactions
+        let receiverBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_receiver);
+        let accepterBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_accepter);
+        let success: bool = IERC20Dispatcher {contract_address: tokenAddress}.transfer_from(_accepter, _receiver, _amountTransfer.into());
+        // TODO: need check?
+        assert(success, 'H7');
+        let receiverBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_receiver);
+        let accepterBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_accepter);
+        let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore).try_into().unwrap();
+        assert(receiverBalanceDiff >= amountReceive, 'F0');
+        amountReceive = receiverBalanceDiff;
+        let amountSent: u128 = (accepterBalanceBefore - accepterBalanceAfter).try_into().unwrap();
+
+        let sender = get_caller_address();
+        if sender != _accepter {
+            assert(brokerAllowance(_tokenId, _accepter, sender) >= amountSent, 'F1');
+            brokerAllowances::write((_tokenId, _accepter, sender), brokerAllowances::read((_tokenId, _accepter, sender)) - amountSent);
+        }
+
+        Accept(_accepter, _accountId, _receiver, _tokenId, amountSent, amountReceive);
+
         ReentrancyGuard::end();
     }
 
@@ -837,11 +864,45 @@ mod Zklink {
     //  amount the accept allowance of broker
     #[external]
     fn brokerApprove(_tokenId: u16, _broker: ContractAddress, _amount: u128) -> bool {
+        assert(_broker != Zeroable::zero(), 'G');
+        let sender = get_caller_address();
+        brokerAllowances::write((_tokenId, sender, _broker), _amount);
+        BrokerApprove(_tokenId, sender, _broker, _amount);
         true
     }
 
     fn _checkAccept(_accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32) -> (u128, u256, ContractAddress){
-        (0, u256{low: 0, high: 0}, Zeroable::zero())
+        // accepter and receiver MUST be set and MUST not be the same
+        assert(_accepter != Zeroable::zero(), 'H0');
+        assert(_receiver != Zeroable::zero(), 'H1');
+        assert(_accepter != _receiver, 'H2');
+
+        // token MUST be registered to ZkLink
+        let rt: RegisteredToken = tokens::read(_tokenId);
+        assert(rt.registered, 'H3');
+
+        let tokenAddress = rt.tokenAddress;
+
+        // feeRate MUST be valid and MUST not be 100%
+        assert(_withdrawFeeRate <= MAX_ACCEPT_FEE_RATE, 'H4');
+        let amountReceive: u128 = _amount * ((MAX_ACCEPT_FEE_RATE - _withdrawFeeRate) / MAX_ACCEPT_FEE_RATE).into();
+
+        // nonce MUST not be zero
+        assert(_nonce > 0, 'H5');
+
+        // accept tx may be later than block exec tx(with user withdraw op)
+        let mut acceptBytes: Bytes = BytesTrait::new_empty();
+        acceptBytes.append_address(_receiver);
+        acceptBytes.append_u16(_tokenId);
+        acceptBytes.append_u128(_amount);
+        acceptBytes.append_u16(_withdrawFeeRate);
+        acceptBytes.append_u32(_nonce);
+
+        let hash = acceptBytes.keccak();
+
+        assert(accepts::read((_accountId, hash)) == Zeroable::zero(), 'H6');
+
+        (amountReceive, hash, tokenAddress)
     }
 
     // =================Governance interface===============
