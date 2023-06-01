@@ -335,6 +335,40 @@ mod Zklink {
 
     // =================Upgrade interface=================
     // TODO
+    #[constructor]
+    fn constructor(
+        _verifierAddress: ContractAddress,
+        _networkGovernor: ContractAddress,
+        _blockNumber: u64,
+        _timestamp: u64,
+        _stateHash: u256,
+        _commitment: u256,
+        _syncHash: u256
+    ) {
+        assert(_verifierAddress.is_non_zero(), 'i0');
+        assert(_networkGovernor.is_non_zero(), 'i1');
+
+        verifier::write(_verifierAddress);
+        networkGovernor::write(_networkGovernor);
+
+        let storedBlockZero = StoredBlockInfo {
+            blockNumber: _blockNumber,
+            priorityOperations: 0,
+            pendingOnchainOperationsHash: EMPTY_STRING_KECCAK,
+            timestamp: _timestamp,
+            stateHash: _stateHash,
+            commitment: _commitment,
+            syncHash: _syncHash
+        };
+
+        // TODO: uncomment this assert when cairo fix the `Difference in FunctionId` bug.
+        // https://github.com/starkware-libs/cairo/pull/3230
+        // storedBlockHashes::write(_blockNumber, hashStoredBlockInfo(storedBlockZero));
+        totalBlocksCommitted::write(_blockNumber);
+        totalBlocksProven::write(_blockNumber);
+        totalBlocksSynchronized::write(_blockNumber);
+        totalBlocksExecuted::write(_blockNumber);
+    }
 
     // =================User interface=================
 
