@@ -72,7 +72,9 @@ mod Zklink {
         CompressedBlockExtraInfo,
         ExecuteBlockInfo,
         Token,
-        ProofInput
+        ProofInput,
+        ChangePubkeyType,
+        ChangePubkeyTypeReadBytes
     };
     use zklink::utils::math::{
         U32IntoU256,
@@ -1501,17 +1503,19 @@ mod Zklink {
 
     // Checks that change operation is correct
     fn verifyChangePubkey(_ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
-        false
+        let (_, changePkType) = ChangePubkeyTypeReadBytes::read(_ethWitness, 0);
+        if changePkType == ChangePubkeyType::ECRECOVER(()) {
+            return verifyChangePubkeyECRECOVER(_ethWitness, _changePk);
+        } else {
+            return false;
+        }
     }
 
     // Checks that signature is valid for pubkey change message
     fn verifyChangePubkeyECRECOVER(_ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
-        false
-    }
-
-    // Checks that signature is valid for pubkey change message
-    fn verifyChangePubkeyCREATE2(_ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
-        false
+        // TODO: add impl when cairo secp256k1 added
+        // https://github.com/starkware-libs/cairo/blob/main/corelib/src/starknet/secp256k1.cairo
+        true
     }
 
     // Executes one block
@@ -1536,8 +1540,7 @@ mod Zklink {
 
             let pubData: @Bytes = _blockExecuteData.pendingOnchainOpsPubdata[i];
 
-            let (_, value) = pubData.read_u8(0);
-            let opType: OpType = value.try_into().unwrap();
+            let (_, opType) = OpTypeReadBytes::read(pubData, 0);
 
             // `pendingOnchainOpsPubdata` only contains ops of the current chain
             // no need to check chain id
