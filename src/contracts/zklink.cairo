@@ -1519,10 +1519,12 @@ mod Zklink {
     // 2. Finalizes block on Ethereum
     fn executeOneBlock(_blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: usize) {
         // Ensure block was committed
-        assert(
-            hashStoredBlockInfo(*_blockExecuteData.storedBlock) ==
-            storedBlockHashes::read(*_blockExecuteData.storedBlock.blockNumber),
-            'm0');
+        // TODO: uncomment this assert when cairo fix the `Difference in FunctionId` bug.
+        // https://github.com/starkware-libs/cairo/pull/3230
+        // assert(
+        //     hashStoredBlockInfo(*_blockExecuteData.storedBlock) ==
+        //     storedBlockHashes::read(*_blockExecuteData.storedBlock.blockNumber),
+        //     'm0');
         assert(*_blockExecuteData.storedBlock.blockNumber == totalBlocksExecuted::read() + _executedBlockIdx.into() + 1, 'm1');
 
         let mut pendingOnchainOpsHash: u256 = EMPTY_STRING_KECCAK;
