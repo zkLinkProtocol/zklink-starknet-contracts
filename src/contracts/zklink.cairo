@@ -1722,4 +1722,50 @@ mod Zklink {
         let bytes: Bytes = _storedBlockInfo.into();
         bytes.keccak()
     }
+
+    // =============Test Interface=============
+    // TODO: delete after test
+    #[external]
+    fn StoredBlockInfoTest(_blocksData: Array<StoredBlockInfo>, i: usize) -> u64 {
+        let blocksData = _blocksData.span();
+        *blocksData[i].timestamp
+    }
+
+    #[external]
+    fn CommitBlockInfoTest(_blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize {
+        let blocksData = _blocksData.span();
+        *blocksData[i].onchainOperations[j].publicDataOffset
+    }
+
+    #[external]
+    fn CompressedBlockExtraInfoTest(_blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize) -> u256 {
+        let blocksExtraData = _blocksExtraData.span();
+        *blocksExtraData[i].onchainOperationPubdataHashs[j]
+    }
+
+    #[external]
+    fn ExecuteBlockInfoTest(_blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8) -> u8 {
+        let blocksData = _blocksData.span();
+        let bytes: @Bytes = blocksData[i].pendingOnchainOpsPubdata[j];
+        let opType: OpType = _opType.try_into().unwrap();
+
+        if opType == OpType::Deposit(()) {
+            let (_, op) = DepositOperation::readFromPubdata(bytes);
+            return op.chainId;
+        } else if opType == OpType::FullExit(()) {
+            let (_, op) = FullExitOperation::readFromPubdata(bytes);
+            return op.chainId;
+        } else if opType == OpType::Withdraw(()) {
+            let (_, op) = WithdrawOperation::readFromPubdata(bytes);
+            return op.chainId;
+        } else if opType == OpType::ForcedExit(()) {
+            let (_, op) = ForcedExitOperatoin::readFromPubdata(bytes);
+            return op.chainId;
+        } else if opType == OpType::ChangePubKey(()) {
+            let (_, op) = ChangePubKeyOperation::readFromPubdata(bytes);
+            return op.chainId;
+        } else {
+            return 0;
+        }
+    }
 }
