@@ -18,12 +18,11 @@ zkLink starknet core contracts, which is `cairo1` compatible.
     - [Deploy on localhost](#deploy-on-localhost)
       - [Start Starknet Devnet Node](#start-starknet-devnet-node)
       - [Setting up environment variables](#setting-up-environment-variables)
-      - [Setting up an account](#setting-up-an-account)
       - [Compile and declare a contract](#compile-and-declare-a-contract)
       - [Deploy a contract](#deploy-a-contract)
     - [Deploy on Testnet](#deploy-on-testnet)
       - [Setting up environment variables](#setting-up-environment-variables-1)
-      - [Setting up an account](#setting-up-an-account-1)
+      - [Setting up an account](#setting-up-an-account)
       - [Compile and declare a contract](#compile-and-declare-a-contract-1)
       - [Deploy a contract](#deploy-a-contract-1)
     - [Deploy on mainnet](#deploy-on-mainnet)
@@ -313,6 +312,28 @@ The follow command will give you 3 account every time when you start devnet node
 starknet-devnet --seed 0 --accounts 3
 ```
 
+You should add one of the three account into `~/.starknet_accounts/` and named `dev`:
+
+```json
+{
+    "alpha-goerli": {
+        "testnet_deployer": {
+            "private_key": "0x268a28dd90948d1c869a7a3281bb0e286fd590397b163f44272563b18fccb85",
+            "public_key": "0x139e31265ce9d09993a2bd7263a28c1e1fff7c2765608fca5f627f08f17adcf",
+            "salt": "0x28188ed97060794ca7b8655234ea607bd556cd69d2ee5b292925fbb617c993b",
+            "address": "0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d",
+            "deployed": true
+        },
+        "dev": {
+            "private_key": "0xe3e70682c2094cac629f6fbed82c07cd",
+            "public_key": "0x7e52885445756b313ea16849145363ccb73fb4ab0440dbac333cf9d13de82b9",
+            "address": "0x7e00d496e324876bbc8531f2d9a82bf154d1a04a50218ee74cdd372f75a551a",
+            "deployed": true
+        }
+    }
+}
+```
+
 #### Setting up environment variables
 
 The following commands must run every time you open a new terminal to interact with Starknet. Setting them saves you time when using the CLI within the same terminal session.
@@ -323,47 +344,6 @@ export STARKNET_NETWORK=alpha-goerli
 # Set the default wallet implementation to be used by the CLI
 export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount
 ```
-
-#### Setting up an account
-
-You need to set up your CLI with an account contract and fund it.
-
-The Starknet account declared through the CLI are stored on your machine in folder `~/.starknet_accounts/`.
-
-```Bash
-# Creating a new account.
-starknet new_account --account dev --gateway_url http://localhost:5050 --feeder_gateway_url http://localhost:5050
-```
-
-Your terminal will return your account’s address.
-
-```Bash
-Account address: 0x00d9d851f600d539a9f7811de4d9613a6b3c2634f8c0386a305c03216bd67559
-Public key: 0x0293d6625d860b9a37a0319d1e3c1eecc27685075cbeaae4ef29ed717d93c58b
-Move the appropriate amount of funds to the account, and then deploy the account
-by invoking the 'starknet deploy_account' command.
-
-NOTE: This is a modified version of the OpenZeppelin account contract. The signature is computed
-differently.
-```
-
-And deploy the account.
-
-```Bash
-# Deploying your account
-starknet deploy_account --account dev --gateway_url http://localhost:5050 --feeder_gateway_url http://localhost:5050
-```
-
-Your sample output should look something like this:
-
-```Bash
-Sending the transaction with max_fee: 0.000568 ETH (568383605914463 WEI).
-Sent deploy account contract transaction.
-Contract address: 0x03f42fc2355be54197a8b270ff2cb8e2eb7902e777b3498f8ad58c6c147cce60
-Transaction hash: 0x3d15e05389ecd1ff65555220be57f0ab43729877b20ca086048276917ed2838
-```
-
-Monitor the transaction until it passes the "PENDING" state.
 
 #### Compile and declare a contract
 
@@ -387,8 +367,6 @@ Let’s start with declaring the code.
 starknet declare --contract target/dev/zklink_Zklink.sierra.json  --account dev  --compiler_args "--add-pythonic-hints --allowed-libfuncs-list-name experimental_v0.1.0" --gateway_url http://localhost:5050 --feeder_gateway_url http://localhost:5050
 ```
 
-> *The above command may fail if you are using code that has already been declared by someone else! Please make sure to add custom code to your contract to create a new contract class.*
-
 You will see something like:
 
 ```Bash
@@ -398,8 +376,6 @@ Contract class hash: 0x8ceb9796d2809438d1e992b8ac17cfe83d0cf5944dbad948a370e0b5d
 Transaction hash: 0x334f16d9da30913c4a30194057793379079f35efa6bf5753bc6e724a591e9f0
 ```
 
-The transaction hash allows you to track when the network will have received your contract’s code. Once this transaction has moved to "PENDING", you can deploy an instance of your contract.
-
 #### Deploy a contract
 
 Using the above generated class hash, deploy the contract:
@@ -407,8 +383,6 @@ Using the above generated class hash, deploy the contract:
 ```Bash
 starknet deploy --class_hash 0x8ceb9796d2809438d1e992b8ac17cfe83d0cf5944dbad948a370e0b5d5924f --inputs x x x --account dev --gateway_url http://localhost:5050 --feeder_gateway_url http://localhost:5050
 ```
-
-> If you run into any fee related issues, please add the flag `--max_fee 100000000000000000` to your CLI commands to set an arbitrary high gas limit for your deploy transaction.
 
 You will see something like:
 
@@ -418,8 +392,6 @@ Invoke transaction for contract deployment was sent.
 Contract address: 0x03a5cac216edec20350e1fd8369536fadebb20b83bfceb0c33aab0175574d35d
 Transaction hash: 0x7895267b3e967e1c9c2f7da145e323bed60dfdd1b8ecc8efd243c9d587d579a
 ```
-
-Monitor the deploy transaction. Once it has passed "PENDING", your contract has been successfully deployed!
 
 ### Deploy on Testnet
 
