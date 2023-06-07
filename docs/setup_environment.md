@@ -63,7 +63,7 @@ pyenv virtualenv 3.9.0 cairo_venv
 pyenv activate cairo_venv
 ```
 
-Either way, make sure the `venv` is activated – you should see (`cairo_venv`) in the command line prompt.
+**Either way, make sure the `cairo_venv` is activated – you should see (`cairo_venv`) in the command line prompt.**
 
 **Step 2: Install the necessary dependencies**
 
@@ -116,7 +116,7 @@ git clone https://github.com/starkware-libs/cairo .cairo
 
 # Checkout into the working branch and generate the release binaries
 cd .cairo/
-git checkout tags/v1.0.0-alpha.6
+git checkout tags/v1.1.0
 cargo build --all --release
 ```
 
@@ -153,7 +153,7 @@ git clone git@github.com:software-mansion/scarb.git .scarb
 
 # Checkout into the working branch and generate the release binaries
 cd .scarb/
-git checkout tags/v0.1.0
+git checkout tags/v0.3.0
 cargo build --all --release
 
 # Add the below command to your .bashrc or .zshrc
@@ -170,6 +170,8 @@ scarb --version
 
 #### Installing `protostar`
 
+>Since the development of Protostar is slow, the current version does not use Protostar, so you can temporarily **NOT** install it.
+
 [protostar](https://docs.swmansion.com/protostar/) is a toolchain for developing Starknet smart contracts that helps with tasks such as dependencies management.
 
 To installing `protostar` run the following command:
@@ -183,9 +185,9 @@ After that, open a new shell and check that the following command returns `cairo
 ```bash
 ➜  ~ pyenv activate cairo_venv
 (cairo_venv) ➜  ~ protostar -v
-Protostar version: 0.10.0
-Cairo-lang version: 0.11.0.1
-Cairo 1 compiler version: 1.0.0a6
+Protostar version: 0.13.0
+Cairo-lang version: 0.11.2.1
+Cairo 1 compiler version: 1.1.0
 18:22:56 [INFO] Execution time: 1.25 s
 ```
 

@@ -6,7 +6,7 @@ zkLink starknet core contracts, which is `cairo1` compatible.
   - [Setting up development environment](#setting-up-development-environment)
   - [Work with `zklink-starknet-contracts`](#work-with-zklink-starknet-contracts)
     - [Build and Test](#build-and-test)
-    - [Deploy zkLink Starknet Contracts on devnet](#deploy-zklink-starknet-contracts-on-devnet)
+    - [Deploy zkLink Starknet Contracts on Devnet](#deploy-zklink-starknet-contracts-on-devnet)
     - [Deploy zkLink Starknet Contracts on Testnet](#deploy-zklink-starknet-contracts-on-testnet)
     - [Deploy zkLink Starknet Contracts on mainnet](#deploy-zklink-starknet-contracts-on-mainnet)
 
@@ -36,7 +36,7 @@ scarb build
 scarb run test
 ```
 
-### Deploy zkLink Starknet Contracts on devnet
+### Deploy zkLink Starknet Contracts on Devnet
 
 You can find how to deploy zkLink Starknet Contracts on testnet [here](docs/deploy_devnet.md).
 
