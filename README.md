@@ -5,10 +5,9 @@ zkLink starknet core contracts, which is `cairo1` compatible.
 - [zkLink Starknet Contracts](#zklink-starknet-contracts)
   - [Setting up development environment](#setting-up-development-environment)
   - [Work with `zklink-starknet-contracts`](#work-with-zklink-starknet-contracts)
+    - [Install Dependencies](#install-dependencies)
     - [Build and Test](#build-and-test)
-    - [Deploy zkLink Starknet Contracts on Devnet](#deploy-zklink-starknet-contracts-on-devnet)
-    - [Deploy zkLink Starknet Contracts on Testnet](#deploy-zklink-starknet-contracts-on-testnet)
-    - [Deploy zkLink Starknet Contracts on mainnet](#deploy-zklink-starknet-contracts-on-mainnet)
+    - [Deploy](#deploy)
 
 ## Setting up development environment
 
@@ -24,6 +23,14 @@ First of all, you should active the cairo python virtual environment before you 
 pyenv active cairo_env
 ```
 
+### Install Dependencies
+
+`zklink-starknet-contracts` use [starknet.js](https://github.com/0xs34n/starknet.js) as SDK. You should run follow command to install dependencies:
+
+```
+npm install
+```
+
 ### Build and Test
 
 To build an test `zklink-starknet-contracts`, you should run the following command in the root of this project:
@@ -36,14 +43,7 @@ scarb build
 scarb run test
 ```
 
-### Deploy zkLink Starknet Contracts on Devnet
+### Deploy
 
-You can find how to deploy zkLink Starknet Contracts on testnet [here](docs/deploy_devnet.md).
-
-### Deploy zkLink Starknet Contracts on Testnet
-
-You can find how to deploy zkLink Starknet Contracts on testnet [here](docs/deploy_testnet.md).
-
-### Deploy zkLink Starknet Contracts on mainnet
-
-You can find how to deploy zkLink Starknet Contracts on testnet [here](docs/deploy_mainnet.md).
+- [setting up an account](docs/setup_account.md)
+- [deploy zklink contract](docs/deploy.md)

@@ -1,14 +1,19 @@
+# Setting up development environment
+
 - [Setting up development environment](#setting-up-development-environment)
   - [Installing prerequisites](#installing-prerequisites)
   - [Installing the `cairo-lang` CLI](#installing-the-cairo-lang-cli)
+    - [Step 1: Set up your virtual environment](#step-1-set-up-your-virtual-environment)
+    - [Step 2: Install the necessary dependencies](#step-2-install-the-necessary-dependencies)
+    - [Step 3: Install `cairo-lang` CLI](#step-3-install-cairo-lang-cli)
   - [Installing the `cairo` Cairo 1 compiler](#installing-the-cairo-cairo-1-compiler)
+    - [Step1: Clone the cairo repository and set it up using the following instructions](#step1-clone-the-cairo-repository-and-set-it-up-using-the-following-instructions)
+    - [Step 2: Add Cairo 1.0 executables to your path](#step-2-add-cairo-10-executables-to-your-path)
   - [Installing development tools](#installing-development-tools)
     - [Installing `scarb`](#installing-scarb)
     - [Installing `protostar`](#installing-protostar)
     - [Installing `starknet-devnet`](#installing-starknet-devnet)
   - [Configuring `VSCode` as an Editor](#configuring-vscode-as-an-editor)
-
-## Setting up development environment
 
 This section will cover those steps:
 
@@ -18,16 +23,17 @@ This section will cover those steps:
 - Installing development tools:`Scarb`, `protostar`and`starknet-devnet`
 - Configuring `VSCode` as an Editor
 
-### Installing prerequisites
+## Installing prerequisites
 
 In order to install and use `cairo` and `cairo-lang`, install the following:
 
 - [Python 3.9+](https://www.python.org/downloads/release/python-390/)
 - [Rust](https://www.rust-lang.org/tools/install)
+- [NPM and Node 16+](https://www.npmjs.com/package/npm)
 
-### Installing the `cairo-lang` CLI
+## Installing the `cairo-lang` CLI
 
-**Step 1: Set up your virtual environment**
+### Step 1: Set up your virtual environment
 
 We use `pyenv` manage python versions, which will compile python from source code. You need install python dependencies.
 
@@ -65,7 +71,7 @@ pyenv activate cairo_venv
 
 **Either way, make sure the `cairo_venv` is activated – you should see (`cairo_venv`) in the command line prompt.**
 
-**Step 2: Install the necessary dependencies**
+### Step 2: Install the necessary dependencies
 
 On Ubuntu, for example, you will have to first run:
 
@@ -87,7 +93,7 @@ pip install ecdsa fastecdsa sympy
 
 There might be some other libraries which are not direct dependencies, but they might be indirect dependencies that you would need to install based on your operating system.
 
-**Step 3: Install `cairo-lang` CLI**
+### Step 3: Install `cairo-lang` CLI
 
 If you had `cairo-lang` installed previously, uninstall it and install the latest version.
 
@@ -104,9 +110,9 @@ Once you have installed the cairo lang package, make sure to test your installat
 starknet --version
 ```
 
-### Installing the `cairo` Cairo 1 compiler
+## Installing the `cairo` Cairo 1 compiler
 
-**Step1: Clone the cairo repository and set it up using the following instructions**
+### Step1: Clone the cairo repository and set it up using the following instructions
 
 ```shell
 # Go to your $HOME directory
@@ -122,7 +128,7 @@ cargo build --all --release
 
 **If you need upgrade, just run `git pull`, checkout to the newest tag, and rebuild the project.**
 
-**Step 2: Add Cairo 1.0 executables to your path**
+### Step 2: Add Cairo 1.0 executables to your path
 
 Now that we have built the Cairo 1.0 binaries, we need to add them to the `PATH` environment variable. Add the following in your `.bashrc` or `.zshrc`:
 
@@ -137,9 +143,9 @@ After that, open a new shell and check that the following command returns a vers
 cairo-compile --version
 ```
 
-### Installing development tools
+## Installing development tools
 
-#### Installing `scarb`
+### Installing `scarb`
 
 [scarb](https://github.com/software-mansion/scarb/releases) is the Cairo package manager. It can manages your dependencies, compiles your projects and works as an extensible platform assisting in development.
 
@@ -168,7 +174,7 @@ After that, open a new shell and check that the following command returns a vers
 scarb --version
 ```
 
-#### Installing `protostar`
+### Installing `protostar`
 
 >Since the development of Protostar is slow, the current version does not use Protostar, so you can temporarily **NOT** install it.
 
@@ -197,7 +203,7 @@ To upgrade Protostar, run:
 protostar upgrade
 ```
 
-#### Installing `starknet-devnet`
+### Installing `starknet-devnet`
 
 **You should execute follow command in previous `cairo_env` environment.**
 
@@ -205,7 +211,7 @@ protostar upgrade
 pip install starknet-devnet
 ```
 
-### Configuring `VSCode` as an Editor
+## Configuring `VSCode` as an Editor
 
 Now, `cairo` just support `VSCode` as an Editor.
 
