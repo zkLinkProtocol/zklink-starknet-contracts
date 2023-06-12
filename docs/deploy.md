@@ -10,7 +10,7 @@
 
 The example configuration file path is `etc/example.json`
 
-```
+```json
 {
     "network": {
         "name": "testnet",
@@ -91,6 +91,16 @@ starknet-devnet --seed 0 --accounts 0 --fork-network alpha-goerli
 > ```bash
 > starknet-devnet --seed 0 --accounts 0 --fork-network alpha-goerli --sierra-compiler-path ~/.cairo/target/release
 > ```
+
+Devnet network config looks like this:
+
+```json
+"network": {
+    "name": "devnet",
+    "url": "http://127.0.0.1:5050",
+    ...
+}
+```
 
 ## Deploy command
 

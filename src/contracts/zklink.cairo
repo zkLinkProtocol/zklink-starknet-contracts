@@ -1768,4 +1768,16 @@ mod Zklink {
             return 0;
         }
     }
+
+    #[external]
+    fn u256Test(_u256: u256) -> (u128, u128) {
+        (_u256.low, _u256.high)
+    }
+
+    #[external]
+    fn u256sTest(_u256s: Array<u256>, i: usize) -> (u128, u128) {
+        let _u256s = _u256s.span();
+        let _u256 = *_u256s[i];
+        (_u256.low, _u256.high)
+    }
 }
