@@ -36,6 +36,12 @@ The follow command will fork Testnet data when you start devnet node, and you ca
 starknet-devnet --seed 0 --accounts 0 --fork-network alpha-goerli
 ```
 
+> If your computer's CPU architecture is **NOT** x86, you should add argument `--sierra-compiler-path` with above command
+>
+> ```bash
+> starknet-devnet --seed 0 --accounts 0 --fork-network alpha-goerli --sierra-compiler-path ~/.cairo/target/release
+> ```
+
 #### Compile and declare a contract
 
 Compile the Starknet contract using the following command:

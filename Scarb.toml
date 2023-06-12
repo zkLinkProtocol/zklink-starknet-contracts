@@ -15,3 +15,17 @@ sierra = "cairo-compile . -r"
 test = "cairo-test --starknet ."
 
 [[target.starknet-contract]]
+# Enable Sierra codegen.
+sierra = true
+# Enable CASM codegen.
+casm = true
+# Emit Python-powered hints in order to run compiled CASM class with legacy Cairo VM.
+casm-add-pythonic-hints = false
+# Enable allowed libfuncs validation.
+allowed-libfuncs = true
+# Raise errors instead of warnings if disallowed libfuncs are found.
+allowed-libfuncs-deny = false
+# Reference to the libfuncs allowlist used for validation.
+# - Use `allowed-libfuncs-list.name` to use built-in named allowlist.
+# - Use `allowed-libfuncs-list.path` to read an allowlist from file.
+# allowed-libfuncs-list = {} # Cairo compiler defined
