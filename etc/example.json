@@ -1,0 +1,26 @@
+{
+    "network": {
+        "name": "testnet",
+        "url": "https://alpha4.starknet.io",
+        "accounts": {
+            "deployer": {
+                "address": "",
+                "privateKey": ""
+            },
+            "governor": {
+                "address": "",
+                "privateKey": ""
+            }
+        }
+    },
+    "macro": {
+        "BLOCK_PERIOD": "1 seconds",
+        "UPGRADE_NOTICE_PERIOD": 0,
+        "PRIORITY_EXPIRATION": 0,
+        "CHAIN_ID": 1,
+        "ENABLE_COMMIT_COMPRESSED_BLOCK": true,
+        "MIN_CHAIN_ID": 1,
+        "MAX_CHAIN_ID": 4,
+        "ALL_CHAINS": 15
+    }
+}

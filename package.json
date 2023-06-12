@@ -9,7 +9,11 @@
     "zkrollup",
     "cross chain"
   ],
+  "type": "module",
   "dependencies": {
     "starknet": "^5.11.1"
+  },
+  "scripts": {
+    "deploy": "node scripts/deploy_zklink.js"
   }
 }

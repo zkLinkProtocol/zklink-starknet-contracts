@@ -4,3 +4,4 @@ build/
 tests/test_example.cairo
 src/utils/test.cairo
 node_modules/
+etc/devnet.json
