@@ -1,0 +1,15 @@
+{
+  "name": "zklink-starknet-contracts",
+  "version": "1.0.0",
+  "license": "MIT",
+  "homepage": "https://zk.link",
+  "keywords": [
+    "zklink",
+    "starknet",
+    "zkrollup",
+    "cross chain"
+  ],
+  "dependencies": {
+    "starknet": "^5.11.1"
+  }
+}
