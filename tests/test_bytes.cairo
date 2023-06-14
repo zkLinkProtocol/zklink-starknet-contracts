@@ -1,6 +1,6 @@
 use traits::Into;
 use array::ArrayTrait;
-use starknet::{ContractAddress, ContractAddressIntoFelt252};
+use starknet::{ContractAddress, ContractAddressIntoFelt252, contract_address_const};
 use zklink::utils::bytes::{
     Bytes,
     BytesTrait
@@ -9,7 +9,7 @@ use debug::PrintTrait;
 
 #[test]
 #[available_gas(20000000)]
-fn test_bytes() {
+fn test_bytes_read_u128_packed() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
     array.append(0x01020304050607080910111213141516);
@@ -17,53 +17,260 @@ fn test_bytes() {
 
     let bytes = BytesTrait::new(42, array);
 
-    // read_u128
-    // TODO: over size
     let (new_offset, value) = bytes.read_u128_packed(0, 1);
-    assert(new_offset == 1, 'read_u128_1_offset');
-    assert(value == 0x01, 'read_u128_1_value');
+    assert(new_offset == 1, 'read_u128_packed_1_offset');
+    assert(value == 0x01, 'read_u128_packed_1_value');
 
     let (new_offset, value) = bytes.read_u128_packed(new_offset, 14);
-    assert(new_offset == 15, 'read_u128_2_offset');
-    assert(value == 0x0203040506070809101112131415, 'read_u128_2_value');
+    assert(new_offset == 15, 'read_u128_packed_2_offset');
+    assert(value == 0x0203040506070809101112131415, 'read_u128_packed_2_value');
 
     let (new_offset, value) = bytes.read_u128_packed(new_offset, 15);
-    assert(new_offset == 30, 'read_u128_3_offset');
-    assert(value == 0x160102030405060708091011121314, 'read_u128_3_value');
+    assert(new_offset == 30, 'read_u128_packed_3_offset');
+    assert(value == 0x160102030405060708091011121314, 'read_u128_packed_3_value');
 
     let (new_offset, value) = bytes.read_u128_packed(new_offset, 8);
-    assert(new_offset == 38, 'read_u128_3_offset');
-    assert(value == 0x1516010203040506, 'read_u128_3_value');
+    assert(new_offset == 38, 'read_u128_packed_4_offset');
+    assert(value == 0x1516010203040506, 'read_u128_packed_4_value');
 
     let (new_offset, value) = bytes.read_u128_packed(new_offset, 4);
-    assert(new_offset == 42, 'read_u128_3_offset');
-    assert(value == 0x07080910, 'read_u128_3_value');
-    
-    // read_u128_array
+    assert(new_offset == 42, 'read_u128_packed_5_offset');
+    assert(value == 0x07080910, 'read_u128_packed_5_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('out of bound', ))]
+fn test_bytes_read_u128_packed_out_of_bound() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, value) = bytes.read_u128_packed(0, 43);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('too large', ))]
+fn test_bytes_read_u128_packed_too_large() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, value) = bytes.read_u128_packed(0, 17);
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u128_array_packed() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
     let (new_offset, new_array) = bytes.read_u128_array_packed(0, 3, 3);
     assert(new_offset == 9, 'read_u128_array_1_offset');
     assert(*new_array[0] == 0x010203, 'read_u128_array_1_value_1');
     assert(*new_array[1] == 0x040506, 'read_u128_array_1_value_2');
     assert(*new_array[2] == 0x070809, 'read_u128_array_1_value_3');
 
-    let (new_offset, new_array) = bytes.read_u128_array_packed(9, 3, 7);
-    assert(new_offset == 30, 'read_u128_array_2_offset');
+    let (new_offset, new_array) = bytes.read_u128_array_packed(9, 4, 7);
+    assert(new_offset == 37, 'read_u128_array_2_offset');
     assert(*new_array[0] == 0x10111213141516, 'read_u128_array_2_value_1');
     assert(*new_array[1] == 0x01020304050607, 'read_u128_array_2_value_2');
     assert(*new_array[2] == 0x08091011121314, 'read_u128_array_2_value_3');
+    assert(*new_array[3] == 0x15160102030405, 'read_u128_array_2_value_4');
+}
 
-    // read_felt252_packed
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('out of bound', ))]
+fn test_bytes_read_u128_array_packed_out_of_bound() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, new_array) = bytes.read_u128_array_packed(0, 11, 4);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('too large', ))]
+fn test_bytes_read_u128_array_packed_too_large() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, new_array) = bytes.read_u128_array_packed(0, 2, 17);
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_felt252_packed() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
     let (new_offset, value) = bytes.read_felt252_packed(13, 20);
     assert(new_offset == 33, 'read_felt252_1_offset');
     assert(value == 0x1415160102030405060708091011121314151601, 'read_felt252_1_value');
+}
 
-    // read_u256
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('out of bound', ))]
+fn test_bytes_read_felt252_packed_out_of_bound() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, new_array) = bytes.read_felt252_packed(0, 43);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('too large', ))]
+fn test_bytes_read_felt252_packed_too_large() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, new_array) = bytes.read_felt252_packed(0, 32);
+}
+
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u8() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, value) = bytes.read_u8(15);
+    assert(new_offset == 16, 'read_u8_offset');
+    assert(value == 0x16, 'read_u8_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u16() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+    
+    let (new_offset, value) = bytes.read_u16(15);
+    assert(new_offset == 17, 'read_u16_offset');
+    assert(value == 0x1601, 'read_u16_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u32() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+    
+    let (new_offset, value) = bytes.read_u32(15);
+    assert(new_offset == 19, 'read_u32_offset');
+    assert(value == 0x16010203, 'read_u32_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_usize() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, value) = bytes.read_usize(15);
+    assert(new_offset == 19, 'read_usize_offset');
+    assert(value == 0x16010203, 'read_usize_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u64() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, value) = bytes.read_u64(15);
+    assert(new_offset == 23, 'read_u64_offset');
+    assert(value == 0x1601020304050607, 'read_u64_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u128() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
+    let (new_offset, value) = bytes.read_u128(15);
+    assert(new_offset == 31, 'read_u128_offset');
+    assert(value == 0x16010203040506070809101112131415, 'read_u128_value');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u256() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
+
+    let bytes = BytesTrait::new(42, array);
+
     let (new_offset, value) = bytes.read_u256(4);
     assert(new_offset == 36, 'read_u256_1_offset');
     assert(value.high == 0x05060708091011121314151601020304, 'read_u256_1_value_high');
     assert(value.low == 0x05060708091011121314151601020304, 'read_u256_1_value_low');
-    
-    // read_u256_array
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_u256_array() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
     array.append(0x16151413121110090807060504030201);
@@ -80,8 +287,11 @@ fn test_bytes() {
     assert(*new_array[0].low ==  0x09080706050403020116151413121110, 'read_256_array_value_1_low');
     assert(*new_array[1].high == 0x09080706050403020101020304050607, 'read_256_array_value_2_high');
     assert(*new_array[1].low ==  0x08091011121314151601020304050607, 'read_256_array_value_2_low');
+}
 
-    // read_address
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_address() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213140154);
     array.append(0x01855d7796176b05d160196ff92381eb);
@@ -93,30 +303,144 @@ fn test_bytes() {
     let (new_offset, value) = bytes.read_address(14);
     assert(new_offset == 46, 'read_address_offset');
     assert(value.into() == address, 'read_address_value');
+}
 
-    // read_bytes
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_read_bytes() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213140154);
+    array.append(0x01855d7796176b05d160196ff92381eb);
+    array.append(0x7910f5446c2e0e04e13db2194a4f0000);
+
+    let bytes = BytesTrait::new(46, array);
+
     let (new_offset, sub_bytes) = bytes.read_bytes(4, 37);
     let sub_bytes_data = @sub_bytes.data;
     assert(new_offset == 41, 'read_bytes_offset');
     assert(*sub_bytes_data[0] == 0x05060708091011121314015401855d77, 'read_bytes_value_1');
     assert(*sub_bytes_data[1] == 0x96176b05d160196ff92381eb7910f544, 'read_bytes_value_2');
     assert(*sub_bytes_data[2] == 0x6c2e0e04e10000000000000000000000, 'read_bytes_value_3');
+}
 
-    // append_u128_packed
-    let mut array = ArrayTrait::<u128>::new();
-    array.append(0x01020304050607080900000000000000);
-    let mut bytes = BytesTrait::new(9, array);
-
-    bytes.append_u128_packed(0x101112131415161718, 9);
-    let Bytes{size, mut data} = bytes;
-    assert(size == 18, 'append_u128_packed_size_1');
-    assert(*data[0] == 0x01020304050607080910111213141516, 'append_u128_packed_1_value_1');
-    assert(*data[1] == 0x17180000000000000000000000000000, 'append_u128_packed_1_value_2');
-
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_append() {
     let mut bytes = BytesTrait::new_empty();
 
+    // append_u128_packed
     bytes.append_u128_packed(0x101112131415161718, 9);
     let Bytes{size, mut data} = bytes;
-    assert(size == 9, 'append_u128_packed_2_size');
-    assert(*data[0] == 0x10111213141516171800000000000000, 'append_u128_packed_2_value_1');
+    assert(size == 9, 'append_u128_packed_1_size');
+    assert(*data[0] == 0x10111213141516171800000000000000, 'append_u128_packed_1_value_1');
+    bytes = Bytes {size: size, data: data};
+
+    bytes.append_u128_packed(0x101112131415161718, 9);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 18, 'append_u128_packed_2_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u128_packed_2_value_1');
+    assert(*data[1] == 0x17180000000000000000000000000000, 'append_u128_packed_2_value_2');
+    bytes = Bytes {size: size, data: data};
+
+    // append_u8
+    bytes.append_u8(0x01);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 19, 'append_u8_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u8_value_1');
+    assert(*data[1] == 0x17180100000000000000000000000000, 'append_u8_value_2');
+    bytes = Bytes {size: size, data: data};
+
+    // append_u16
+    bytes.append_u16(0x0102);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 21, 'append_u16_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u16_value_1');
+    assert(*data[1] == 0x17180101020000000000000000000000, 'append_u16_value_2');
+    bytes = Bytes {size: size, data: data};
+
+    // append_u32
+    bytes.append_u32(0x01020304);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 25, 'append_u32_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u32_value_1');
+    assert(*data[1] == 0x17180101020102030400000000000000, 'append_u32_value_2');
+    bytes = Bytes {size: size, data: data};
+
+    // append_usize
+    bytes.append_usize(0x01);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 29, 'append_usize_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_usize_value_1');
+    assert(*data[1] == 0x17180101020102030400000001000000, 'append_usize_value_2');
+    bytes = Bytes {size: size, data: data};
+
+    // append_u64
+    bytes.append_u64(0x030405060708);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 37, 'append_u64_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u64_value_1');
+    assert(*data[1] == 0x17180101020102030400000001000003, 'append_u64_value_2');
+    assert(*data[2] == 0x04050607080000000000000000000000, 'append_u64_value_3');
+    bytes = Bytes {size: size, data: data};
+
+    // append_u128
+    bytes.append_u128(0x101112131415161718);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 53, 'append_u128_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u128_value_1');
+    assert(*data[1] == 0x17180101020102030400000001000003, 'append_u128_value_2');
+    assert(*data[2] == 0x04050607080000000000000010111213, 'append_u128_value_3');
+    assert(*data[3] == 0x14151617180000000000000000000000, 'append_u128_value_4');
+    bytes = Bytes {size: size, data: data};
+
+    // append_u256
+    bytes.append_u256(u256 {low: 0x01020304050607, high: 0x010203040506070809});
+    let Bytes{size, mut data} = bytes;
+    assert(size == 85, 'append_u256_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_u256_value_1');
+    assert(*data[1] == 0x17180101020102030400000001000003, 'append_u256_value_2');
+    assert(*data[2] == 0x04050607080000000000000010111213, 'append_u256_value_3');
+    assert(*data[3] == 0x14151617180000000000000001020304, 'append_u256_value_4');
+    assert(*data[4] == 0x05060708090000000000000000000102, 'append_u256_value_5');
+    assert(*data[5] == 0x03040506070000000000000000000000, 'append_u256_value_6');
+    bytes = Bytes {size: size, data: data};
+
+    // append_address
+    let address = contract_address_const::<0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f>();
+    bytes.append_address(address);
+    let Bytes{size, mut data} = bytes;
+    assert(size == 117, 'append_address_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'append_address_value_1');
+    assert(*data[1] == 0x17180101020102030400000001000003, 'append_address_value_2');
+    assert(*data[2] == 0x04050607080000000000000010111213, 'append_address_value_3');
+    assert(*data[3] == 0x14151617180000000000000001020304, 'append_address_value_4');
+    assert(*data[4] == 0x05060708090000000000000000000102, 'append_address_value_5');
+    assert(*data[5] == 0x0304050607015401855d7796176b05d1,  'append_address_value_6');
+    assert(*data[6] == 0x60196ff92381eb7910f5446c2e0e04e1,  'append_address_value_7');
+    assert(*data[7] == 0x3db2194a4f0000000000000000000000,  'append_address_value_8');
 }
+
+// #[test]
+// #[available_gas(2000000)]
+// fn test_bytes_keccak() {
+//     // empty
+//     let bytes = BytesTrait::new_empty();
+//     let hash: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+//     assert(bytes.keccak() == hash, 'bytes_keccak');
+//     // let mut array = ArrayTrait::<u128>::new();
+//     // array.append(0x10111213141516171810111213141516);
+//     // array.append(0x17180101020102030400000001000003);
+//     // array.append(0x04050607080000000000000010111213);
+//     // array.append(0x14151617180000000000000001020304);
+//     // array.append(0x05060708090000000000000000000102);
+//     // array.append(0x0304050607015401855d7796176b05d1);
+//     // array.append(0x60196ff92381eb7910f5446c2e0e04e1);
+//     // array.append(0x3db2194a4f0000000000000000000000);
+
+//     // let bytes: Bytes = BytesTrait::new(117, array);
+
+//     // let hash: u256 = 0xcb1bcb5098bb2f588b82ea341e3b1148b7d1eeea2552d624b30f4240b5b85995;
+//     // let result = bytes.keccak();
+//     // result.print();
+//     // assert(result == hash, 'bytes_keccak');
+// }

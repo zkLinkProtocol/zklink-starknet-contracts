@@ -238,7 +238,7 @@ impl BytesImpl of BytesTrait {
     }
     // Read a usize from Bytes
     fn read_usize(self: @Bytes, offset: usize) -> (usize, usize) {
-        let (new_offset, value) = self.read_u128_packed(offset, 8);
+        let (new_offset, value) = self.read_u128_packed(offset, 4);
         (new_offset, value.try_into().unwrap())
     }
     // Read a u64 from Bytes
