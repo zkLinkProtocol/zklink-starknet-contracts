@@ -8,7 +8,9 @@ use debug::PrintTrait;
 fn test_keccak_u128s_be() {
     let mut array: Array<u128> = ArrayTrait::<u128>::new();
     let res: u256 = keccak_u128s_be(array.span());
-    res.print();
+    let hash: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+    assert(res == hash, 'keccak_0_wrong');
+
     array.append(0);
     array.append(1);
 

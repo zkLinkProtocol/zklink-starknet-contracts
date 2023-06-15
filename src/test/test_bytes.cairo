@@ -423,10 +423,11 @@ fn test_bytes_append() {
 #[test]
 #[available_gas(2000000)]
 fn test_bytes_keccak() {
-    // // empty
-    // let bytes = BytesTrait::new_empty();
-    // let hash: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-    // assert(bytes.keccak() == hash, 'bytes_keccak');
+    // empty
+    let bytes = BytesTrait::new_empty();
+    let hash: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+    let res = bytes.keccak();
+    assert(res == hash, 'bytes_keccak');
 
     // u256{low: 1, high: 0}
     let mut array = ArrayTrait::<u128>::new();

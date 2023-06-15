@@ -131,7 +131,6 @@ impl BytesImpl of BytesTrait {
 
     fn new_empty() -> Bytes {
         let mut data = ArrayTrait::<u128>::new();
-        data.append(0);
         Bytes {
             size: 0_usize,
             data: data
@@ -336,15 +335,14 @@ impl BytesImpl of BytesTrait {
         assert(size <= 16, 'size must be less than 16');
 
         let Bytes {size: old_bytes_size, mut data} = self;
-
         let (last_data_index, last_element_size) = BytesTrait::locate(old_bytes_size);
-        let (last_element_value, _) = u128_split(*data[last_data_index], 16, last_element_size);
-        data = u128_array_slice(@data, 0, last_data_index);
 
         if last_element_size == 0 {
             let padded_value = u128_join(value, 0, BYTES_PER_ELEMENT - size);
             data.append(padded_value);
         } else {
+            let (last_element_value, _) = u128_split(*data[last_data_index], 16, last_element_size);
+            data = u128_array_slice(@data, 0, last_data_index);
             if size + last_element_size > BYTES_PER_ELEMENT {
                 let (left, right) = u128_split(value, size, BYTES_PER_ELEMENT - last_element_size);
                 let value_full = u128_join(last_element_value, left, BYTES_PER_ELEMENT - last_element_size);
