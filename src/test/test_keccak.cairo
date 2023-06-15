@@ -7,6 +7,8 @@ use debug::PrintTrait;
 #[available_gas(2000000)]
 fn test_keccak_u128s_be() {
     let mut array: Array<u128> = ArrayTrait::<u128>::new();
+    let res: u256 = keccak_u128s_be(array.span());
+    res.print();
     array.append(0);
     array.append(1);
 

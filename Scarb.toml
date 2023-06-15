@@ -14,7 +14,6 @@ sierra-replace-ids = true
 
 [scripts]
 sierra = "cairo-compile . -r"
-test = "cairo-test --starknet ."
 
 [[target.starknet-contract]]
 # Enable Sierra codegen.
