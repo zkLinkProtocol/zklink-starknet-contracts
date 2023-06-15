@@ -21,7 +21,8 @@ use zklink::utils::utils::{
     u8_array_to_u256
 };
 use zklink::utils::keccak::keccak_u128s_be;
-use zklink::utils::sha256::sha256;
+use alexandria_math::sha256::sha256;
+use debug::PrintTrait;
 
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;
@@ -398,11 +399,15 @@ impl BytesImpl of BytesTrait {
     // keccak hash
     fn keccak(self: @Bytes) -> u256 {
         let (last_data_index, last_element_size) = BytesTrait::locate(self.size());
-        // To cumpute hash, we should remove 0 padded
-        let (last_element_value, _) = u128_split(*self.data[last_data_index], 16, last_element_size);
-        let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
-        hash_data.append(last_element_value);
-        keccak_u128s_be(hash_data.span())
+        if last_element_size == 0 {
+            return keccak_u128s_be(self.data.span());
+        } else {
+            let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
+            // To cumpute hash, we should remove 0 padded
+            let (last_element_value, _) = u128_split(*self.data[last_data_index], 16, last_element_size);
+            hash_data.append(last_element_value);
+            return keccak_u128s_be(hash_data.span());
+        }
     }
 
     // sha256 hash

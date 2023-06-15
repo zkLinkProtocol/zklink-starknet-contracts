@@ -12,7 +12,7 @@ use zklink::utils::bytes::{
     BytesTrait
 };
 use zklink::utils::keccak::keccak_u128s_be;
-use zklink::utils::array_ext::ArrayTraitExt;
+use alexandria_data_structures::array_ext::ArrayTraitExt;
 
 
 fn u8_array_to_u256(arr: Span<u8>) -> u256 {

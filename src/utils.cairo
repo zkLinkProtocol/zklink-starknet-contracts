@@ -5,5 +5,3 @@ mod keccak;
 mod operations;
 mod constants;
 mod data_structures;
-mod array_ext;
-mod sha256;
