@@ -1780,4 +1780,14 @@ mod Zklink {
         let _u256 = *_u256s[i];
         (_u256.low, _u256.high)
     }
+
+    #[external]
+    fn u8sTest1(_u8s: Array<u8>) -> usize {
+        _u8s.len()
+    }
+
+    #[external]
+    fn u8sTest2(_u8s: Array<u8>) -> Array<u8> {
+        _u8s
+    }
 }
