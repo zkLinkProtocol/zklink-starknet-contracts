@@ -42,7 +42,7 @@ fn test_keccak_u128s_be() {
     // 0x05060708090000000000000000000102
     // 0x0304050607015401855d7796176b05d1
     // 0x60196ff92381eb7910f5446c2e0e04e1
-    // 0x00000000000000000000003db2194a4f
+    // 0x3db2194a4f
     let mut array: Array<u128> = ArrayTrait::<u128>::new();
     array.append(0x10111213141516171810111213141516);
     array.append(0x17180101020102030400000001000003);
@@ -54,6 +54,6 @@ fn test_keccak_u128s_be() {
     array.append(0x3db2194a4f);
 
     let res: u256 = keccak_u128s_be(array.span());
-    let hash: u256 = 0x20aadd43071b2fab92e5a607ef124120be2b7840270696ccf2ca15c07e568d4b;
+    let hash: u256 = 0xcb1bcb5098bb2f588b82ea341e3b1148b7d1eeea2552d624b30f4240b5b85995;
     assert(res == hash, 'keccak_3_wrong');
 }

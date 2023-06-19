@@ -402,7 +402,7 @@ impl BytesImpl of BytesTrait {
         } else {
             let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
             // To cumpute hash, we should remove 0 padded
-            let (last_element_value, _) = u128_split(*self.data[last_data_index], 16, last_element_size);
+            let (last_element_value, _) = u128_split(*self.data[last_data_index], BYTES_PER_ELEMENT, last_element_size);
             hash_data.append(last_element_value);
             return keccak_u128s_be(hash_data.span());
         }

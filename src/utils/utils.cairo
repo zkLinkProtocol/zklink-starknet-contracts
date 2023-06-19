@@ -1,5 +1,5 @@
 use traits::Into;
-use array::ArrayTrait;
+use array::{ArrayTrait, SpanTrait};
 use traits::TryInto;
 use option::OptionTrait;
 use zklink::utils::math::{
@@ -16,11 +16,15 @@ use alexandria_data_structures::array_ext::ArrayTraitExt;
 
 
 fn u8_array_to_u256(arr: Span<u8>) -> u256 {
+    assert(arr.len() <= 32, 'too large');
     let mut i = 0;
     let mut high: u128 = 0;
     let mut low: u128 = 0;
     // process high
     loop {
+        if i >= arr.len() {
+            break();
+        }
         if i == 16 {
             break();
         }
@@ -29,7 +33,10 @@ fn u8_array_to_u256(arr: Span<u8>) -> u256 {
     };
     // process low
     loop {
-        if i == 16 {
+        if i >= arr.len() {
+            break();
+        }
+        if i == 32 {
             break();
         }
         low = u128_join(low, (*arr[i]).into(), 1);
