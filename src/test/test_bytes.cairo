@@ -5,7 +5,6 @@ use zklink::utils::bytes::{
     Bytes,
     BytesTrait
 };
-use debug::PrintTrait;
 
 #[test]
 #[available_gas(20000000)]
@@ -421,7 +420,7 @@ fn test_bytes_append() {
 }
 
 #[test]
-#[available_gas(2000000)]
+#[available_gas(20000000)]
 fn test_bytes_keccak() {
     // Calculating keccak by Python
     // from Crypto.Hash import keccak
@@ -459,7 +458,6 @@ fn test_bytes_keccak() {
 
     let hash: u256 = 0xcb1bcb5098bb2f588b82ea341e3b1148b7d1eeea2552d624b30f4240b5b85995;
     let res = bytes.keccak();
-    res.print();
     assert(res == hash, 'bytes_keccak_2');
 }
 

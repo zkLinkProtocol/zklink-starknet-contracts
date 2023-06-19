@@ -8,8 +8,6 @@ use zklink::utils::math::{
     u128_sub_value,
     u256_to_u160
 };
-use debug::PrintTrait;
-
 
 #[test]
 fn test_u256_to_u160() {

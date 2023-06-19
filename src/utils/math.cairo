@@ -103,6 +103,19 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
     }
 }
 
+// common u64 pow
+fn u64_pow(base: u64, mut exp: usize) -> u64 {
+    let mut res = 1;
+    loop {
+        if exp == 0 {
+            break res;
+        } else {
+            res = base * res;
+        }
+        exp = exp - 1;
+    }
+}
+
 // common u128 pow
 fn u128_pow(base: u128, mut exp: usize) -> u128 {
     let mut res = 1;

@@ -70,6 +70,23 @@ fn u128_array_slice(src: @Array<u128>, mut begin: usize, end: usize) -> Array<u1
     slice
 }
 
+fn u64_array_slice(src: @Array<u64>, mut begin: usize, end: usize) -> Array<u64> {
+    let mut slice = ArrayTrait::new();
+    let len = begin + end;
+    loop {
+        if begin >= len {
+            break ();
+        }
+        if begin >= src.len() {
+            break ();
+        }
+
+        slice.append(*src[begin]);
+        begin += 1;
+    };
+    slice
+}
+
 // new_hash = hash(old_hash + bytes)
 fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
     let mut hash_data: Array<u128> = ArrayTrait::new();
@@ -87,7 +104,7 @@ fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
     // append _bytes
     hash_data.append_all(ref bytes_data);
     hash_data.append(last_element_value);
-    keccak_u128s_be(hash_data.span())
+    keccak_u128s_be(hash_data.span(), 32 + _bytes.size())
 }
 
 // Returns new_hash = hash(a + b)
@@ -102,7 +119,7 @@ fn concatTwoHash(a: u256, b: u256) -> u256 {
     hash_data.append(b.high);
     hash_data.append(b.low);
 
-    keccak_u128s_be(hash_data.span())
+    keccak_u128s_be(hash_data.span(), 64)
 }
 
 // hash ChangePubKey.pubKeyHash(u160, 20 bytes, packed into felt252)
@@ -115,5 +132,5 @@ fn pubKeyHash(_pubKeyHash: felt252) -> u256 {
     hash_data.append(high);
     hash_data.append(r);
 
-    keccak_u128s_be(hash_data.span())
+    keccak_u128s_be(hash_data.span(), 20)
 }
