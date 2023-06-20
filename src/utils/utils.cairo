@@ -14,9 +14,10 @@ use zklink::utils::bytes::{
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_data_structures::array_ext::ArrayTraitExt;
 
-
+// Convert sha256 result(Array<u8>) to u256
+// result length MUST be 32
 fn u8_array_to_u256(arr: Span<u8>) -> u256 {
-    assert(arr.len() <= 32, 'too large');
+    assert(arr.len() == 32, 'too large');
     let mut i = 0;
     let mut high: u128 = 0;
     let mut low: u128 = 0;
