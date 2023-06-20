@@ -6,7 +6,9 @@ use zklink::utils::math::{
     u128_join,
     u128_split,
     u128_sub_value,
-    u256_to_u160
+    u256_to_u160,
+    u8_min, u32_min, u64_min, u128_min,
+    u64_pow, u128_pow
 };
 
 #[test]
@@ -167,4 +169,41 @@ fn test_u128_join() {
     let left = 0x0102;
     let right = 0x0304;
     assert(u128_join(left, right, 2) == 0x01020304, 'invalid result');
+}
+
+#[test]
+fn test_min() {
+    assert(u8_min(1, 2) == 1, 'invalid result');
+    assert(u8_min(2, 1) == 1, 'invalid result');
+    assert(u8_min(1, 1) == 1, 'invalid result');
+
+    assert(u32_min(1, 2) == 1, 'invalid result');
+    assert(u32_min(2, 1) == 1, 'invalid result');
+    assert(u32_min(1, 1) == 1, 'invalid result');
+
+    assert(u64_min(1, 2) == 1, 'invalid result');
+    assert(u64_min(2, 1) == 1, 'invalid result');
+    assert(u64_min(1, 1) == 1, 'invalid result');
+
+    assert(u128_min(1, 2) == 1, 'invalid result');
+    assert(u128_min(2, 1) == 1, 'invalid result');
+    assert(u128_min(1, 1) == 1, 'invalid result');
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_u64_pow() {
+    // u64_pow
+    assert(u64_pow(3, 0) == 1, 'invalid result');
+    assert(u64_pow(3, 1) == 3, 'invalid result');
+    assert(u64_pow(3, 10) == 59049, 'invalid result');
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_u128_pow() {
+    // u128_pow
+    assert(u128_pow(3, 0) == 1, 'invalid result');
+    assert(u128_pow(3, 1) == 3, 'invalid result');
+    assert(u128_pow(3, 10) == 59049, 'invalid result');
 }
