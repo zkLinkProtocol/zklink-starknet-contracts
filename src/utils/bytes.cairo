@@ -21,7 +21,7 @@ use zklink::utils::utils::{
     u8_array_to_u256
 };
 use zklink::utils::keccak::keccak_u128s_be;
-use alexandria_math::sha256::sha256;
+use alexandria::math::sha256::sha256;
 
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 const BYTES_PER_ELEMENT: usize = 16;

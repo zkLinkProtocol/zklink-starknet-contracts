@@ -21,7 +21,7 @@ mod DataStructures {
         ReadBytes
     };
 
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
     struct RegisteredToken {
         registered: bool,               // whether token registered to ZkLink or not, default is false
         paused: bool,                   // whether token can deposit to ZkLink or not, default is false
@@ -30,51 +30,19 @@ mod DataStructures {
         standard: bool                  // we will not check the balance different of zkLink contract after transfer when a token comply with erc20 standard
     }
 
-    // This trait impl is just for devlopment progress going on.
-    // TODO: remove this after StorageAccess derive macro
-    impl RegisteredTokenStorageAccess of StorageAccess<RegisteredToken> {
-        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<RegisteredToken> {
-            SyscallResult::Ok(RegisteredToken {
-                registered: false,
-                paused: false,
-                tokenAddress: Zeroable::zero(),
-                decimals: 0,
-                standard: false
-            })
-        }
-        fn write(address_domain: u32, base: StorageBaseAddress, value: RegisteredToken) -> SyscallResult<()> {
-            SyscallResult::Ok(())
-        }
-    }
-
     // We can set `enableBridgeTo` and `enableBridgeTo` to false
     // to disable bridge when `bridge` is compromised
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
     struct BridgeInfo {
         bridge: ContractAddress,
         enableBridgeTo: bool,
         enableBridgeFrom: bool
     }
 
-    // This trait impl is just for devlopment progress going on.
-    // TODO: remove this after StorageAccess derive macro
-    impl BridgeInfoStorageAccess of StorageAccess<BridgeInfo> {
-        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<BridgeInfo> {
-            SyscallResult::Ok(BridgeInfo{
-                bridge: Zeroable::zero(),
-                enableBridgeTo: false,
-                enableBridgeFrom: false
-            })
-        }
-        fn write(address_domain: u32, base: StorageBaseAddress, value: BridgeInfo) -> SyscallResult<()> {
-            SyscallResult::Ok(())
-        }
-    }
-
     // block stored data
     // `blockNumber`,`timestamp`,`stateHash`,`commitment` are the same on all chains
     // `priorityOperations`,`pendingOnchainOperationsHash` is different for each chain
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
     struct StoredBlockInfo {
         blockNumber: u64,                   // Rollup block number
         priorityOperations: u64,            // Number of priority operations processed
@@ -96,25 +64,6 @@ mod DataStructures {
             bytes.append_u256(self.commitment);
 
             bytes
-        }
-    }
-
-    // This trait impl is just for devlopment progress going on.
-    // TODO: remove this after StorageAccess derive macro
-    impl StoredBlockInfoStorageAccess of StorageAccess<StoredBlockInfo> {
-        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<StoredBlockInfo> {
-            SyscallResult::Ok(StoredBlockInfo{
-                blockNumber: 0,
-                priorityOperations: 0,
-                pendingOnchainOperationsHash: u256{low: 0, high: 0},
-                timestamp: 0,
-                stateHash: u256{low: 0, high: 0},
-                commitment: u256{low: 0, high: 0},
-                syncHash: u256{low: 0, high: 0}
-            })
-        }
-        fn write(address_domain: u32, base: StorageBaseAddress, value: StoredBlockInfo) -> SyscallResult<()> {
-            SyscallResult::Ok(())
         }
     }
     
