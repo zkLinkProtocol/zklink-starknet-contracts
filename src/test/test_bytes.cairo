@@ -282,10 +282,12 @@ fn test_bytes_read_u256_array() {
 
     let (new_offset, new_array) = bytes.read_u256_array(7, 2);
     assert(new_offset == 71, 'read_u256_array_offset');
-    assert(*new_array[0].high == 0x08091011121314151616151413121110, 'read_256_array_value_1_high');
-    assert(*new_array[0].low ==  0x09080706050403020116151413121110, 'read_256_array_value_1_low');
-    assert(*new_array[1].high == 0x09080706050403020101020304050607, 'read_256_array_value_2_high');
-    assert(*new_array[1].low ==  0x08091011121314151601020304050607, 'read_256_array_value_2_low');
+    let result: u256 = *new_array[0];
+    assert(result.high == 0x08091011121314151616151413121110, 'read_256_array_value_1_high');
+    assert(result.low ==  0x09080706050403020116151413121110, 'read_256_array_value_1_low');
+    let result: u256 = *new_array[1];
+    assert(result.high == 0x09080706050403020101020304050607, 'read_256_array_value_2_high');
+    assert(result.low ==  0x08091011121314151601020304050607, 'read_256_array_value_2_low');
 }
 
 #[test]

@@ -37,7 +37,7 @@ trait IZklink<TContractState> {
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
 
     fn StoredBlockInfoTest(self: @TContractState, _blocksData: Array<StoredBlockInfo>, i: usize) -> u64;
-    fn CommitBlockInfoTest(self: @TContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize
+    fn CommitBlockInfoTest(self: @TContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize;
     fn CompressedBlockExtraInfoTest(self: @TContractState, _blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize) -> u256;
     fn ExecuteBlockInfoTest(self: @TContractState, _blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8) -> u8;
     fn u256Test(self: @TContractState, _u256: u256) -> (u128, u128);
@@ -112,6 +112,7 @@ mod Zklink {
         CommitBlockInfo,
         CompressedBlockExtraInfo,
         ExecuteBlockInfo,
+        OnchainOperationData,
         Token,
         ProofInput,
         ChangePubkeyType,
@@ -545,7 +546,7 @@ mod Zklink {
 
             let sender = get_caller_address();
             if sender != _accepter {
-                assert(brokerAllowance(_tokenId, _accepter, sender) >= amountSent, 'F1');
+                assert(Zklink::brokerAllowance(@self, _tokenId, _accepter, sender) >= amountSent, 'F1');
                  self.brokerAllowances.write((_tokenId, _accepter, sender),  self.brokerAllowances.read((_tokenId, _accepter, sender)) - amountSent);
             }
 
@@ -840,7 +841,7 @@ mod Zklink {
             self.active();
             self.onlyValidator();
 
-            // let _blocksData = _blocksData.span();
+            let _blocksData = _blocksData.span();
             let nBlocks: u64 = _blocksData.len().into();
             assert(nBlocks > 0, 'd0');
 
@@ -852,8 +853,9 @@ mod Zklink {
                 if i.into() == nBlocks {
                     break();
                 }
-                self.executeOneBlock(_blocksData[i], i);
-                priorityRequestsExecuted += _blocksData[i].storedBlock.priorityOperations;
+                let blockData: @ExecuteBlockInfo = _blocksData[i];
+                self.executeOneBlock(blockData, i);
+                priorityRequestsExecuted += *blockData.storedBlock.priorityOperations;
                 i += 1;
             };
 
@@ -862,11 +864,11 @@ mod Zklink {
             self.totalOpenPriorityRequests.write(self.totalOpenPriorityRequests.read() - priorityRequestsExecuted);
 
             self.totalBlocksExecuted.write(self.totalBlocksExecuted.read() + nBlocks);
-
+            let lastBlockData: @ExecuteBlockInfo = _blocksData[(nBlocks - 1).try_into().unwrap()];
             self.emit(
                 Event::BlockExecuted (
                     BlockExecuted {
-                        blockNumber: *(_blocksData[(nBlocks - 1).try_into().unwrap()].storedBlock.blockNumber)
+                        blockNumber: *lastBlockData.storedBlock.blockNumber
                     }
                 )
             );
@@ -893,14 +895,14 @@ mod Zklink {
                 if i == _committedBlocks.len() {
                     break ();
                 }
-
+                let commitBlock: @StoredBlockInfo = _committedBlocks[i];
                 currentTotalBlocksProven += 1;
-                assert(hashStoredBlockInfo(*_committedBlocks[i]) == self.storedBlockHashes.read(currentTotalBlocksProven), 'x0');
+                assert(hashStoredBlockInfo(*commitBlock) == self.storedBlockHashes.read(currentTotalBlocksProven), 'x0');
 
                 // commitment of proof produced by zk has only 253 significant bits
                 // 'commitment & INPUT_MASK' is used to set the highest 3 bits to 0 and leave the rest unchanged
                 assert(*commitments_span[i] <= MAX_PROOF_COMMITMENT, 'x1');
-                assert(*commitments_span[i] == (*_committedBlocks[i].commitment & INPUT_MASK), 'x1');
+                assert(*commitments_span[i] == (*commitBlock.commitment & INPUT_MASK), 'x1');
 
                 i += 1;
             };
@@ -983,7 +985,7 @@ mod Zklink {
         // Combine the `progress` of the other chains of a `syncHash` with self
         fn receiveSynchronizationProgress(ref self: ContractState, _syncHash: u256, _progress: u256) {
             let sender = get_caller_address();
-            assert(isBridgeFromEnabled(sender), 'C');
+            assert(Zklink::isBridgeFromEnabled(@self, sender), 'C');
 
             self.synchronizedChains.write(_syncHash, self.synchronizedChains.read(_syncHash) | _progress);
         }
@@ -1255,23 +1257,24 @@ mod Zklink {
         // =============Test Interface=============
         // TODO: delete after test
         fn StoredBlockInfoTest(self: @ContractState, _blocksData: Array<StoredBlockInfo>, i: usize) -> u64 {
-            let blocksData = _blocksData.span();
-            *blocksData[i].timestamp
+            let blockData: @StoredBlockInfo = _blocksData[i];
+            *blockData.timestamp
         }
 
         fn CommitBlockInfoTest(self: @ContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize {
-            let blocksData = _blocksData.span();
-            *blocksData[i].onchainOperations[j].publicDataOffset
+            let blockData: @CommitBlockInfo = _blocksData[i];
+            let onchainOperation : @OnchainOperationData = blockData.onchainOperations[j];
+            *onchainOperation.publicDataOffset
         }
 
         fn CompressedBlockExtraInfoTest(self: @ContractState, _blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize) -> u256 {
-            let blocksExtraData = _blocksExtraData.span();
-            *blocksExtraData[i].onchainOperationPubdataHashs[j]
+            let blockExtraData: @CompressedBlockExtraInfo = _blocksExtraData[i];
+            *blockExtraData.onchainOperationPubdataHashs[j]
         }
 
         fn ExecuteBlockInfoTest(self: @ContractState, _blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8) -> u8 {
-            let blocksData = _blocksData.span();
-            let bytes: @Bytes = blocksData[i].pendingOnchainOpsPubdata[j];
+            let blockData: @ExecuteBlockInfo = _blocksData[i];
+            let bytes: @Bytes = blockData.pendingOnchainOpsPubdata[j];
             let opType: OpType = _opType.try_into().unwrap();
 
             if opType == OpType::Deposit(()) {
@@ -1300,7 +1303,7 @@ mod Zklink {
 
         fn u256sTest(self: @ContractState, _u256s: Array<u256>, i: usize) -> (u128, u128) {
             let _u256s = _u256s.span();
-            let _u256 = *_u256s[i];
+            let _u256: u256 = *_u256s[i];
             (_u256.low, _u256.high)
         }
 
@@ -1549,9 +1552,9 @@ mod Zklink {
                     if i != CHAIN_ID {
                         let (high_entry, _) = onchainOpPubdataHashsHigh.entry(i.into());
                         let (low_entry, _) = onchainOpPubdataHashsLow.entry(i.into());
-
-                        onchainOpPubdataHashsHigh = high_entry.finalize(*_newBlockExtra.onchainOperationPubdataHashs[i.into()].high);
-                        onchainOpPubdataHashsLow = low_entry.finalize(*_newBlockExtra.onchainOperationPubdataHashs[i.into()].low);
+                        let hash: u256 = *_newBlockExtra.onchainOperationPubdataHashs[i.into()];
+                        onchainOpPubdataHashsHigh = high_entry.finalize(hash.high);
+                        onchainOpPubdataHashsLow = low_entry.finalize(hash.low);
                     }
                     i += 1;
                 };
@@ -1598,8 +1601,8 @@ mod Zklink {
                 if i == _newBlockData.onchainOperations.len() {
                     break();
                 }
-                let onchainOpData = _newBlockData.onchainOperations[i];
-                let pubdataOffset: usize = onchainOpData.publicDataOffset;
+                let onchainOpData: @OnchainOperationData = _newBlockData.onchainOperations[i];
+                let pubdataOffset: usize = *onchainOpData.publicDataOffset;
                 
                 assert(pubdataOffset + 1 < pubData.size(), 'h1');
                 assert(pubdataOffset % CHUNK_BYTES == 0, 'h2');
@@ -1957,8 +1960,8 @@ mod Zklink {
         // We use dict instead to store onchainOperationPubdataHashs
         // And now dict in cairo do not support u256, we should use two dict
         // TODO: use one dict when cairo support u256 dict
-        let mut onchainOpPubdataHashsHigh: Felt252Dict<u128> = Felt252DictTrait::<u128>::new();
-        let mut onchainOpPubdataHashsLow: Felt252Dict<u128> = Felt252DictTrait::<u128>::new();
+        let mut onchainOpPubdataHashsHigh: Felt252Dict<u128> = Default::default();
+        let mut onchainOpPubdataHashsLow: Felt252Dict<u128> = Default::default();
         let mut i = MIN_CHAIN_ID;
         loop {
             if i > MAX_CHAIN_ID {

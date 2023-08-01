@@ -37,6 +37,29 @@ mod Operations {
         OrderMatching: ()   // 8 L2 op
     }
 
+    // TODO: delete this fake impl when cario update to v2.1.0
+    impl StorageAccessOpType of StorageAccess<OpType> {
+        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<OpType> {
+            Result::Ok(OpType::Noop(()))
+        }
+
+        fn write(address_domain: u32, base: StorageBaseAddress, value: OpType) -> SyscallResult<()> {
+            Result::Ok(())
+        }
+
+        fn read_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8) -> SyscallResult<OpType> {
+            Result::Ok(OpType::Noop(()))
+        }
+
+        fn write_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8, value: OpType) -> SyscallResult<()> {
+            Result::Ok(())
+        }
+
+        fn size_internal(value: OpType) -> u8 {
+            value.into()
+        }
+    }
+
     impl OpTypeReadBytes of ReadBytes<OpType> {
         fn read(bytes: @Bytes, offset: usize) -> (usize, OpType) {
             let (new_offset, opType) = bytes.read_u8(offset);
