@@ -371,7 +371,8 @@ mod Zklink {
     #[derive(Drop, starknet::Event)]
     struct NewToken {
         tokenId: u16,
-        token: ContractAddress
+        token: ContractAddress,
+        decimals: u8
     }
 
     // Governor changed
@@ -1090,7 +1091,8 @@ mod Zklink {
                 Event::NewToken (
                     NewToken {
                         tokenId: _tokenId,
-                        token: _tokenAddress
+                        token: _tokenAddress,
+                        decimals: _decimals
                     }
                 )
             );
