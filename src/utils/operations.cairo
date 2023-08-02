@@ -263,7 +263,7 @@ mod Operations {
         }
     }
 
-    // Withdraw operation: 61 bytes
+    // Withdraw operation: 61 bytes(67 with opType)
     #[derive(Copy, Drop)]
     struct Withdraw {
         chainId: u8,                // 1 byte, which chain the withdraw happened
@@ -327,7 +327,7 @@ mod Operations {
         }
     }
 
-    // ForcedExit operation: 51 Bytes
+    // ForcedExit operation: 51 Bytes(68 with opType)
     #[derive(Copy, Drop)]
     struct ForcedExit {
         chainId: u8,            // 1 byte, which chain the force exit happened
@@ -387,7 +387,7 @@ mod Operations {
         }
     }
 
-    // ChangePubKey operation: 61 bytes
+    // ChangePubKey operation: 61 bytes(67 with opType)
     #[derive(Copy, Drop)]
     struct ChangePubKey {
         chainId: u8,                // 1 byte, which chain to verify(only one chain need to verify for gas saving)
