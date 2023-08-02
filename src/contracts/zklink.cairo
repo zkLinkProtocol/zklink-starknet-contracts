@@ -235,13 +235,13 @@ mod Zklink {
 
         // public
         // Accept infos of fast withdraw of account
-        // (accountId, keccak256(receiver, tokenId, amount, withdrawFeeRate, nonce)) => accepter address
+        // (accountId, keccak256(receiver, tokenId, amount, withdrawFeeRate, nonce)) => acceptor address
         accepts: LegacyMap::<(u32, u256), ContractAddress>,
 
         // internal
-        // Broker allowance used in accept, accepter can authorize broker to do accept
+        // Broker allowance used in accept, acceptor can authorize broker to do accept
         // Similar to the allowance of transfer in ERC20
-        // (tokenId, accepter, broker) => allowance
+        // (tokenId, acceptor, broker) => allowance
         brokerAllowances: LegacyMap::<(u16, ContractAddress, ContractAddress), u128>,
 
         // public
@@ -341,10 +341,10 @@ mod Zklink {
         expirationBlock: u64
     }
 
-    // Event emitted when accepter accept a fast withdraw
+    // Event emitted when acceptor accept a fast withdraw
     #[derive(Drop, starknet::Event)]
     struct Accept {
-        accepter: ContractAddress,
+        acceptor: ContractAddress,
         accountId: u32,
         receiver: ContractAddress,
         tokenId: u16,
@@ -522,7 +522,7 @@ mod Zklink {
         //  withdrawFeeRate Fast withdraw fee rate taken by acceptor
         //  nonceFromAccountId Account that supply nonce, may be different from accountId
         //  nonceFromSubAccountId SubAccount that supply nonce
-        //  nonce Account nonce, used to produce unique accept info
+        //  nonce SubAccount nonce, used to produce unique accept info
         //  amountTransfer Amount that transfer from acceptor to receiver
         // may be a litter larger than the amount receiver received
         fn acceptERC20(ref self: ContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _amountTransfer: u128) {
@@ -552,7 +552,7 @@ mod Zklink {
 
             self.emit(
                 Accept {
-                    accepter: _acceptor,
+                    acceptor: _acceptor,
                     accountId: _accountId,
                     receiver: _receiver,
                     tokenId: _tokenId,
@@ -1006,8 +1006,8 @@ mod Zklink {
 
         // Give allowance to broker to call accept
         // Parameters:
-        //  tokenId token that transfer to the receiver of accept request from accepter or broker
-        //  broker who are allowed to do accept by accepter(the msg.sender)
+        //  tokenId token that transfer to the receiver of accept request from acceptor or broker
+        //  broker who are allowed to do accept by acceptor(the msg.sender)
         //  amount the accept allowance of broker
         fn brokerApprove(ref self: ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128) -> bool {
             assert(_broker != Zeroable::zero(), 'G');
@@ -1761,13 +1761,13 @@ mod Zklink {
 
                 if opType == OpType::Withdraw(()) {
                     let (_, op) = WithdrawOperation::readFromPubdata(pubData);
-                    // account request fast withdraw and account supply nonce
-                    self._executeFastWithdraw(op.accountId, op.accountId, op.subAccountId, op.nonce, op.owner, op.tokenId, op.amount, op.fastWithdrawFeeRate);
+                    // account request fast withdraw and sub account supply nonce
+                    self._executeFastWithdraw(op.accountId, op.accountId, op.subAccountId, op.nonce, op.owner, op.tokenId, op.amount, op.fastWithdrawFeeRate, op.fastWithdraw);
                 } else if opType == OpType::ForcedExit(()) {
                     let (_, op) = ForcedExitOperatoin::readFromPubdata(pubData);
-                    // request forced exit for target account but initiator account supply nonce
-                    // forced exit take no fee for fast withdraw
-                    self._executeFastWithdraw(op.targetAccountId, op.initiatorAccountId, op.initiatorSubAccountId, op.initiatorNonce, op.target, op.tokenId, op.amount, 0);
+                    // request forced exit for target account but initiator sub account supply nonce
+                    // forced exit require fast withdraw default and take no fee for fast withdraw
+                    self._executeFastWithdraw(op.targetAccountId, op.initiatorAccountId, op.initiatorSubAccountId, op.initiatorNonce, op.target, op.tokenId, op.amount, 0, 1);
                 } else if opType == OpType::FullExit(()) {
                     let (_, op) = FullExitOperation::readFromPubdata(pubData);
                     self.increasePendingBalance(op.tokenId, op.owner, op.amount);
@@ -1783,14 +1783,13 @@ mod Zklink {
             assert(pendingOnchainOpsHash == *_blockExecuteData.storedBlock.pendingOnchainOperationsHash, 'm3');
         }
 
-        // Execute fast withdraw or normal withdraw according by nonce
-        fn _executeFastWithdraw(ref self: ContractState, _accountId: u32, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16) {
+        // Execute fast withdraw or normal withdraw according by sub account nonce
+        fn _executeFastWithdraw(ref self: ContractState, _accountId: u32, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16, _fastWithdraw: u8) {
             // token MUST be registered
             let rt: RegisteredToken = self.tokens.read(_tokenId);
             assert(rt.registered, 'o0');
 
-            // nonce > 0 means fast withdraw
-            if _nonce > 0 {
+            if _fastWithdraw == 1 {
                 // recover withdraw amount
                 let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
                 let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
