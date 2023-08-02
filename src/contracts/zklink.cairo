@@ -35,6 +35,7 @@ trait IZklink<TContractState> {
     fn getPendingBalance(self: @TContractState, _address: felt252, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
+    fn networkGovernor(self: @TContractState) -> ContractAddress;
 
     fn StoredBlockInfoTest(self: @TContractState, _blocksData: Array<StoredBlockInfo>, i: usize) -> u64;
     fn CommitBlockInfoTest(self: @TContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize;
@@ -1266,6 +1267,11 @@ mod Zklink {
         fn isBridgeFromEnabled(self: @ContractState, _bridge: ContractAddress) -> bool {
             let index = self.bridgeIndex.read(_bridge) - 1;
             self.bridges.read(index).enableBridgeFrom
+        }
+
+        // Return the network governor
+        fn networkGovernor(self: @ContractState) -> ContractAddress {
+            self.networkGovernor.read()
         }
 
         // =============Test Interface=============
