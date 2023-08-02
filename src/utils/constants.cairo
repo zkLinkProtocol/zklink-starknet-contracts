@@ -2,9 +2,6 @@
 
 const EMPTY_STRING_KECCAK: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 
-// ERC20 tokens and ETH withdrawals gas limit, used only for complete withdrawals
-const WITHDRAWAL_GAS_LIMIT: u256 = 100000;
-
 // Bytes in one chunk
 const CHUNK_BYTES: usize = 23;
 

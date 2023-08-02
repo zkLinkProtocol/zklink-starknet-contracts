@@ -1761,13 +1761,16 @@ mod Zklink {
 
                 if opType == OpType::Withdraw(()) {
                     let (_, op) = WithdrawOperation::readFromPubdata(pubData);
-                    self.executeWithdraw(op);
+                    // account request fast withdraw and account supply nonce
+                    self._executeFastWithdraw(op.accountId, op.accountId, op.subAccountId, op.nonce, op.owner, op.tokenId, op.amount, op.fastWithdrawFeeRate);
                 } else if opType == OpType::ForcedExit(()) {
                     let (_, op) = ForcedExitOperatoin::readFromPubdata(pubData);
-                    self.executeForceExit(op);
+                    // request forced exit for target account but initiator account supply nonce
+                    // forced exit take no fee for fast withdraw
+                    self._executeFastWithdraw(op.targetAccountId, op.initiatorAccountId, op.initiatorSubAccountId, op.initiatorNonce, op.target, op.tokenId, op.amount, 0);
                 } else if opType == OpType::FullExit(()) {
                     let (_, op) = FullExitOperation::readFromPubdata(pubData);
-                    self.executeFullExit(op);
+                    self.increasePendingBalance(op.tokenId, op.owner, op.amount);
                 } else {
                     panic_with_felt252('m2');
                 }
@@ -1778,28 +1781,6 @@ mod Zklink {
             };
 
             assert(pendingOnchainOpsHash == *_blockExecuteData.storedBlock.pendingOnchainOperationsHash, 'm3');
-        }
-
-        // Execute withdraw operation
-        fn executeWithdraw(ref self: ContractState, _op: Withdraw) {
-            // account request fast withdraw and account supply nonce
-            self._executeFastWithdraw(_op.accountId, _op.accountId, _op.subAccountId, _op.nonce, _op.owner, _op.tokenId, _op.amount, _op.fastWithdrawFeeRate);
-        }
-
-        // Execute force exit operation
-        fn executeForceExit(ref self: ContractState, _op: ForcedExit) {
-            // request forced exit for target account but initiator account supply nonce
-            // forced exit take no fee for fast withdraw
-            self._executeFastWithdraw(_op.targetAccountId, _op.initiatorAccountId, _op.initiatorSubAccountId, _op.initiatorNonce, _op.target, _op.tokenId, _op.amount, 0);
-        }
-
-        // Execute full exit operation
-        fn executeFullExit(ref self: ContractState, _op: FullExit) {
-            // token MUST be registered
-            let rt: RegisteredToken = self.tokens.read(_op.tokenId);
-            assert(rt.registered, 'r0');
-
-            self.withdrawOrStore(_op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, _op.owner, _op.amount);
         }
 
         // Execute fast withdraw or normal withdraw according by nonce
@@ -1819,58 +1800,17 @@ mod Zklink {
                 if acceptor == Zeroable::zero() {
                     // receiver act as a acceptor
                     self.accepts.write((_accountId, fwHash), _owner);
-                    self.withdrawOrStore(_tokenId, rt.tokenAddress, rt.standard, rt.decimals, _owner, _amount);
+                    self.increasePendingBalance(_tokenId, _owner, _amount);
                 } else {
                     // just increase the pending balance of accepter
-                    self.increasePendingBalance(_tokenId, acceptor, _amount);
+                    self.increasePendingBalance(_tokenId, acceptor, _amount - dustAmount);
                     // add dust to owner
                     if dustAmount > 0 {
                         self.increasePendingBalance(_tokenId, _owner, dustAmount);
                     }
                 }
             } else {
-                self.withdrawOrStore(_tokenId, rt.tokenAddress, rt.standard, rt.decimals, _owner, _amount);
-            }
-        }
-
-        // Try execute withdraw, if it fails - store withdraw to pendingBalances
-        // 1. Try to send token to _recipients
-        // 2. On failure: Increment _recipients balance to withdraw.
-        // Parameters:
-        //  _tokenId
-        //  _tokenAddress
-        //  _isTokenStandard
-        //  _decimals
-        //  _recipient
-        //  _amount
-        fn withdrawOrStore(ref self: ContractState, _tokenId: u16, _tokenAddress: ContractAddress, _isTokenStandard: bool, _decimals: u8, _recipient: ContractAddress, _amount: u128) {
-            if _amount == 0 {
-                return ();
-            }
-
-            // recover withdraw amount and add dust to pending balance
-            let withdrawAmount: u128 = recoveryDecimals(_amount, _decimals);
-            let dustAmount: u128 = _amount - improveDecimals(withdrawAmount, _decimals);
-            let mut sent = false;
-            let contract_address = get_contract_address();
-
-            IZklinkDispatcher {contract_address}.transferERC20(_tokenAddress, _recipient, withdrawAmount, withdrawAmount, _isTokenStandard);
-            sent = true;
-
-            if sent {
-                self.emit(
-                    Event::Withdrawal(
-                        Withdrawal {
-                            tokenId: _tokenId,
-                            amount: withdrawAmount
-                        }
-                    )
-                );
-                if dustAmount > 0 {
-                    self.increasePendingBalance(_tokenId, _recipient, dustAmount);
-                }
-            } else {
-                self.increasePendingBalance(_tokenId, _recipient, _amount);
+                self.increasePendingBalance(_tokenId, _owner, _amount);
             }
         }
 
