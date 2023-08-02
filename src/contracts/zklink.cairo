@@ -8,7 +8,7 @@ use zklink::utils::bytes::Bytes;
 trait IZklink<TContractState> {
     fn depositERC20(ref self: TContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool);
     fn transferERC20(ref self: TContractState, _token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool) -> u128;
-    fn acceptERC20(ref self: TContractState, _accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32, _amountTransfer: u128);
+    fn acceptERC20(ref self: TContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _amountTransfer: u128);
     fn requestFullExit(ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool);
     fn activateExodusMode(ref self: TContractState);
     fn performExodus(ref self: TContractState, _storedBlockInfo: StoredBlockInfo, _owner: felt252, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>);
@@ -512,48 +512,47 @@ mod Zklink {
             }
         }
 
-        // Accepter accept a erc20 token fast withdraw, accepter will get a fee for profit
+        // Acceptor accept a erc20 token fast withdraw, acceptor will get a fee for profit
         // Parameters:
-        //  accepter Accepter who accept a fast withdraw
+        //  acceptor Acceptor who accept a fast withdraw
         //  accountId Account that request fast withdraw
-        //  receiver User receive token from accepter (the owner of withdraw operation)
+        //  receiver User receive token from acceptor (the owner of withdraw operation)
         //  tokenId Token id
         //  amount The amount of withdraw operation
-        //  withdrawFeeRate Fast withdraw fee rate taken by accepter
+        //  withdrawFeeRate Fast withdraw fee rate taken by acceptor
+        //  nonceFromAccountId Account that supply nonce, may be different from accountId
+        //  nonceFromSubAccountId SubAccount that supply nonce
         //  nonce Account nonce, used to produce unique accept info
-        //  amountTransfer Amount that transfer from accepter to receiver
+        //  amountTransfer Amount that transfer from acceptor to receiver
         // may be a litter larger than the amount receiver received
-        fn acceptERC20(ref self: ContractState, _accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32, _amountTransfer: u128) {
+        fn acceptERC20(ref self: ContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _amountTransfer: u128) {
             self.start();
 
             // Checks
-            let (mut amountReceive, hash, tokenAddress) = self._checkAccept(_accepter, _accountId, _receiver, _tokenId, _amount, _withdrawFeeRate, _nonce);
-
-            // Effects
-             self.accepts.write((_accountId, hash), _accepter);
+            let (mut amountReceive, tokenAddress) = self._checkAccept(_acceptor, _accountId, _receiver, _tokenId, _amount, _withdrawFeeRate, _accountIdOfNonce, _subAccountIdOfNonce, _nonce);
 
             // Interactions
             let receiverBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_receiver);
-            let accepterBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_accepter);
-            let success: bool = IERC20Dispatcher {contract_address: tokenAddress}.transfer_from(_accepter, _receiver, _amountTransfer.into());
+            let acceptorBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_acceptor);
+            let success: bool = IERC20Dispatcher {contract_address: tokenAddress}.transfer_from(_acceptor, _receiver, _amountTransfer.into());
             // TODO: need check?
             assert(success, 'H7');
             let receiverBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_receiver);
-            let accepterBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_accepter);
+            let acceptorBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_acceptor);
             let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore).try_into().unwrap();
             assert(receiverBalanceDiff >= amountReceive, 'F0');
             amountReceive = receiverBalanceDiff;
-            let amountSent: u128 = (accepterBalanceBefore - accepterBalanceAfter).try_into().unwrap();
+            let amountSent: u128 = (acceptorBalanceBefore - acceptorBalanceAfter).try_into().unwrap();
 
             let sender = get_caller_address();
-            if sender != _accepter {
-                assert(Zklink::brokerAllowance(@self, _tokenId, _accepter, sender) >= amountSent, 'F1');
-                 self.brokerAllowances.write((_tokenId, _accepter, sender),  self.brokerAllowances.read((_tokenId, _accepter, sender)) - amountSent);
+            if sender != _acceptor {
+                assert(Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountSent, 'F1');
+                 self.brokerAllowances.write((_tokenId, _acceptor, sender),  self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountSent);
             }
 
             self.emit(
                 Accept {
-                    accepter: _accepter,
+                    accepter: _acceptor,
                     accountId: _accountId,
                     receiver: _receiver,
                     tokenId: _tokenId,
@@ -1782,58 +1781,56 @@ mod Zklink {
         }
 
         // Execute withdraw operation
-        fn executeWithdraw(ref self: ContractState, op: Withdraw) {
-            // token MUST be registered
-            let rt: RegisteredToken = self.tokens.read(op.tokenId);
-            assert(rt.registered, 'o0');
-
-            // nonce > 0 means fast withdraw
-            if op.nonce > 0 {
-                // recover withdraw amount
-                let acceptAmount: u128 = recoveryDecimals(op.amount, rt.decimals);
-                let dustAmount: u128 = op.amount - improveDecimals(acceptAmount, rt.decimals);
-                let mut fwBytes: Bytes = BytesTrait::new_empty();
-                fwBytes.append_address(op.owner);
-                fwBytes.append_u16(op.tokenId);
-                fwBytes.append_u128(acceptAmount);
-                fwBytes.append_u16(op.fastWithdrawFeeRate);
-                fwBytes.append_u32(op.nonce);
-                let fwHash = fwBytes.keccak();
-                let accepter: ContractAddress = self.accepts.read((op.accountId, fwHash));
-
-                if accepter == Zeroable::zero() {
-                    // receiver act as a accepter
-                    self.accepts.write((op.accountId, fwHash), op.owner);
-                    self.withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.owner, op.amount);
-                } else {
-                    // just increase the pending balance of accepter
-                    self.increasePendingBalance(op.tokenId, accepter, op.amount);
-                    // add dust to owner
-                    if dustAmount > 0 {
-                        self.increasePendingBalance(op.tokenId, op.owner, dustAmount);
-                    }
-                }
-            } else {
-                self.withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.owner, op.amount);
-            }
+        fn executeWithdraw(ref self: ContractState, _op: Withdraw) {
+            // account request fast withdraw and account supply nonce
+            self._executeFastWithdraw(_op.accountId, _op.accountId, _op.subAccountId, _op.nonce, _op.owner, _op.tokenId, _op.amount, _op.fastWithdrawFeeRate);
         }
 
         // Execute force exit operation
-        fn executeForceExit(ref self: ContractState, op: ForcedExit) {
-            // token MUST be registered
-            let rt: RegisteredToken = self.tokens.read(op.tokenId);
-            assert(rt.registered, 'p0');
-
-            self.withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.target, op.amount);
+        fn executeForceExit(ref self: ContractState, _op: ForcedExit) {
+            // request forced exit for target account but initiator account supply nonce
+            // forced exit take no fee for fast withdraw
+            self._executeFastWithdraw(_op.targetAccountId, _op.initiatorAccountId, _op.initiatorSubAccountId, _op.initiatorNonce, _op.target, _op.tokenId, _op.amount, 0);
         }
 
         // Execute full exit operation
-        fn executeFullExit(ref self: ContractState, op: FullExit) {
+        fn executeFullExit(ref self: ContractState, _op: FullExit) {
             // token MUST be registered
-            let rt: RegisteredToken = self.tokens.read(op.tokenId);
+            let rt: RegisteredToken = self.tokens.read(_op.tokenId);
             assert(rt.registered, 'r0');
 
-            self.withdrawOrStore(op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, op.owner, op.amount);
+            self.withdrawOrStore(_op.tokenId, rt.tokenAddress, rt.standard, rt.decimals, _op.owner, _op.amount);
+        }
+
+        // Execute fast withdraw or normal withdraw according by nonce
+        fn _executeFastWithdraw(ref self: ContractState, _accountId: u32, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16) {
+            // token MUST be registered
+            let rt: RegisteredToken = self.tokens.read(_tokenId);
+            assert(rt.registered, 'o0');
+
+            // nonce > 0 means fast withdraw
+            if _nonce > 0 {
+                // recover withdraw amount
+                let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
+                let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
+                let fwHash = getFastWithdrawHash(_accountIdOfNonce, _subAccountIdOfNonce, _nonce, _owner, _tokenId, acceptAmount, _fastWithdrawFeeRate);
+                let acceptor: ContractAddress = self.accepts.read((_accountId, fwHash));
+
+                if acceptor == Zeroable::zero() {
+                    // receiver act as a acceptor
+                    self.accepts.write((_accountId, fwHash), _owner);
+                    self.withdrawOrStore(_tokenId, rt.tokenAddress, rt.standard, rt.decimals, _owner, _amount);
+                } else {
+                    // just increase the pending balance of accepter
+                    self.increasePendingBalance(_tokenId, acceptor, _amount);
+                    // add dust to owner
+                    if dustAmount > 0 {
+                        self.increasePendingBalance(_tokenId, _owner, dustAmount);
+                    }
+                }
+            } else {
+                self.withdrawOrStore(_tokenId, rt.tokenAddress, rt.standard, rt.decimals, _owner, _amount);
+            }
         }
 
         // Try execute withdraw, if it fails - store withdraw to pendingBalances
@@ -1900,11 +1897,11 @@ mod Zklink {
             self.pendingBalances.write((_address, _tokenId), balance + _amount);
         }
 
-        fn _checkAccept(self: @ContractState, _accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32) -> (u128, u256, ContractAddress) {
-            // accepter and receiver MUST be set and MUST not be the same
-            assert(_accepter != Zeroable::zero(), 'H0');
+        fn _checkAccept(ref self: ContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32) -> (u128, ContractAddress) {
+            // acceptor and receiver MUST be set and MUST not be the same
+            assert(_acceptor != Zeroable::zero(), 'H0');
             assert(_receiver != Zeroable::zero(), 'H1');
-            assert(_accepter != _receiver, 'H2');
+            assert(_acceptor != _receiver, 'H2');
 
             // token MUST be registered to ZkLink
             let rt: RegisteredToken = self.tokens.read(_tokenId);
@@ -1920,18 +1917,13 @@ mod Zklink {
             assert(_nonce > 0, 'H5');
 
             // accept tx may be later than block exec tx(with user withdraw op)
-            let mut acceptBytes: Bytes = BytesTrait::new_empty();
-            acceptBytes.append_address(_receiver);
-            acceptBytes.append_u16(_tokenId);
-            acceptBytes.append_u128(_amount);
-            acceptBytes.append_u16(_withdrawFeeRate);
-            acceptBytes.append_u32(_nonce);
-
-            let hash = acceptBytes.keccak();
-
+            let hash = getFastWithdrawHash(_accountIdOfNonce, _subAccountIdOfNonce, _nonce, _receiver, _tokenId, _amount, _withdrawFeeRate);
             assert(self.accepts.read((_accountId, hash)) == Zeroable::zero(), 'H6');
 
-            (amountReceive, hash, tokenAddress)
+            // ===Effects===
+            self.accepts.write((_accountId, hash), _acceptor);
+
+            (amountReceive, tokenAddress)
         }
     }
 
@@ -1947,6 +1939,20 @@ mod Zklink {
     // recover decimals when withdraw, this is the opposite of improve decimals
     fn recoveryDecimals(_amount: u128, _decimals: u8) -> u128 {
         _amount / u128_pow(10, (TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
+    }
+
+    // Return accept record hash for fast withdraw
+    fn getFastWithdrawHash(_accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16) -> u256 {
+        let mut bytes: Bytes = BytesTrait::new_empty();
+        bytes.append_u32(_accountIdOfNonce);
+        bytes.append_u8(_subAccountIdOfNonce);
+        bytes.append_u32(_nonce);
+        bytes.append_address(_owner);
+        bytes.append_u16(_tokenId);
+        bytes.append_u128(_amount);
+        bytes.append_u16(_fastWithdrawFeeRate);
+
+        bytes.keccak()
     }
 
     // Returns the keccak hash of the ABI-encoded StoredBlockInfo

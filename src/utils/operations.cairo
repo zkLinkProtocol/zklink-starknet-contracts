@@ -263,11 +263,12 @@ mod Operations {
         }
     }
 
-    // Withdraw operation: 61 bytes(67 with opType)
+    // Withdraw operation: 62 bytes(67 with opType)
     #[derive(Copy, Drop)]
     struct Withdraw {
         chainId: u8,                // 1 byte, which chain the withdraw happened
         accountId: u32,             // 4 bytes, the account id to withdraw from
+        subAccountId: u8,           // 1 byte, the sub account to withdraw from
         tokenId: u16,               // 2 bytes, the token that to withdraw
         amount: u128,               // 16 bytes, the token amount to withdraw
         owner: ContractAddress,     // 32 bytes, the address to receive token
@@ -280,7 +281,7 @@ mod Operations {
         //  opType, u8, ignored at serialization
         //  chainId,
         //  accountId,
-        //  subAccountId, u8, ignored at serialization
+        //  subAccountId,
         //  tokenId,
         //  srcTokenId, u16, ignored at serialization
         //  amount,
@@ -293,7 +294,7 @@ mod Operations {
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
             let (offset, accountId) = pubData.read_u32(offset);
-            // uint8 subAccountId, present in pubdata, ignored at serialization
+            let (offset, subAccountId) = pubData.read_u8(offset);
             let offset = offset + SUB_ACCOUNT_ID_BYTES;
             let (offset, tokenId) = pubData.read_u16(offset);
             // uint16 srcTokenId, the token that decreased in l2, present in pubdata, ignored at serialization
@@ -308,6 +309,7 @@ mod Operations {
             let withdraw = Withdraw {
                 chainId: chainId,
                 accountId: accountId,
+                subAccountId: subAccountId,
                 tokenId: tokenId,
                 amount: amount,
                 owner: owner,
@@ -327,48 +329,53 @@ mod Operations {
         }
     }
 
-    // ForcedExit operation: 51 Bytes(68 with opType)
+    // ForcedExit operation: 64 Bytes(68 with opType)
     #[derive(Copy, Drop)]
     struct ForcedExit {
-        chainId: u8,            // 1 byte, which chain the force exit happened
-        tokenId: u16,           // 2 bytes, the token that to withdraw
-        amount: u128,           // 16 bytes, the token amount to withdraw
-        target: ContractAddress // 32 bytes, the address to receive token
+        chainId: u8,                // 1 byte, which chain the force exit happened
+        initiatorAccountId: u32,    // 4 bytes, the account id of initiator
+        initiatorSubAccountId: u8,  // 1 byte, the sub account id of initiator
+        initiatorNonce: u32,        // 4 bytes, the nonce of initiator, zero means normal withdraw, not zero means fast withdraw
+        targetAccountId: u32,       // 4 bytes, the account id of target
+        tokenId: u16,               // 2 bytes, the token that to withdraw
+        amount: u128,               // 16 bytes, the token amount to withdraw
+        target: ContractAddress     // 32 bytes, the address to receive token
     }
 
     impl ForcedExitOperatoin of OperationTrait<ForcedExit> {
         // ForcedExit operation pubdata looks like this:
         //  opType, u8, ignored at serialization
         //  chainId,
-        //  initiatorAccountId, u32, ignored at serialization
-        //  initiatorSubAccountId, u8, ignored at serialization
-        //  targetAccountId, u32, ignored at serialization
+        //  initiatorAccountId,
+        //  initiatorSubAccountId,
+        //  initiatorNonce,
+        //  targetAccountId,
         //  targetSubAccountId, u8, ignored at serialization
         //  tokenId,
         //  srcTokenId, u16, ignored at serialization
-        //  feeTokenId, u16, ignored at serialization
         //  amount,
-        //  fee, u16, ignored at serialization
         //  target
         fn readFromPubdata(pubData: @Bytes) -> (usize, ForcedExit) {
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
-            // initiatorAccountId, u32, ignored at serialization
-            // initiatorSubAccountId, u8, ignored at serialization
-            // targetAccountId, u32, ignored at serialization
+            let (offset, initiatorAccountId) = pubData.read_u32(offset);
+            let (offset, initiatorSubAccountId) = pubData.read_u8(offset);
+            let (offset, initiatorNonce) = pubData.read_u32(offset);
+            let (offset, targetAccountId) = pubData.read_u32(offset);
             // targetSubAccountId, u8, ignored at serialization
-            let offset = offset + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES;
+            let offset = offset + SUB_ACCOUNT_ID_BYTES;
             let (offset, tokenId) = pubData.read_u16(offset);
             // srcTokenId, u16, ignored at serialization
-            // feeTokenId, u16, ignored at serialization
-            let offset = offset + TOKEN_BYTES + TOKEN_BYTES;
+            let offset = offset + TOKEN_BYTES;
             let (offset, amount) = pubData.read_u128(offset);
-            // fee, u16, ignored at serialization
-            let offset = offset + FEE_BYTES;
             let (offset, target) = pubData.read_address(offset);
 
             let forcedExit = ForcedExit {
                 chainId: chainId,
+                initiatorAccountId: initiatorAccountId,
+                initiatorSubAccountId: initiatorSubAccountId,
+                initiatorNonce: initiatorNonce,
+                targetAccountId: targetAccountId,
                 tokenId: tokenId,
                 amount: amount,
                 target: target
