@@ -235,7 +235,7 @@ mod Zklink {
 
         // public
         // Accept infos of fast withdraw of account
-        // (accountId, keccak256(receiver, tokenId, amount, withdrawFeeRate, nonce)) => acceptor address
+        // (accountId, keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate)) => acceptor address
         accepts: LegacyMap::<(u32, u256), ContractAddress>,
 
         // internal
@@ -346,8 +346,14 @@ mod Zklink {
     struct Accept {
         acceptor: ContractAddress,
         accountId: u32,
+        #[key]
         receiver: ContractAddress,
         tokenId: u16,
+        amount: u128,
+        withdrawFeeRate: u16,
+        accountIdOfNonce: u32,
+        subAccountIdOfNonce: u8,
+        nonce: u32,
         amountSent: u128,
         amountReceive: u128
     }
@@ -556,6 +562,11 @@ mod Zklink {
                     accountId: _accountId,
                     receiver: _receiver,
                     tokenId: _tokenId,
+                    amount: _amount,
+                    withdrawFeeRate: _withdrawFeeRate,
+                    accountIdOfNonce: _accountIdOfNonce,
+                    subAccountIdOfNonce: _subAccountIdOfNonce,
+                    nonce: _nonce,
                     amountSent: amountSent,
                     amountReceive: amountReceive,
                 }
