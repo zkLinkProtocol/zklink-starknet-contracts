@@ -272,7 +272,7 @@ mod Operations {
         tokenId: u16,               // 2 bytes, the token that to withdraw
         amount: u128,               // 16 bytes, the token amount to withdraw
         owner: ContractAddress,     // 32 bytes, the address to receive token
-        nonce: u32,                 // 4 bytes, zero means normal withdraw, not zero means fast withdraw and the value is the sub account nonce
+        nonce: u32,                 // 4 bytes, the sub account nonce
         fastWithdrawFeeRate: u16,   // 2 bytes, fast withdraw fee rate taken by acceptor
         fastWithdraw: u8,           // 1 byte, 0 means normal withdraw, 1 means fast withdraw
     }
@@ -338,7 +338,7 @@ mod Operations {
         chainId: u8,                // 1 byte, which chain the force exit happened
         initiatorAccountId: u32,    // 4 bytes, the account id of initiator
         initiatorSubAccountId: u8,  // 1 byte, the sub account id of initiator
-        initiatorNonce: u32,        // 4 bytes, the sub account nonce of initiator, zero means normal withdraw, not zero means fast withdraw
+        initiatorNonce: u32,        // 4 bytes, the sub account nonce of initiator
         targetAccountId: u32,       // 4 bytes, the account id of target
         tokenId: u16,               // 2 bytes, the token that to withdraw
         amount: u128,               // 16 bytes, the token amount to withdraw

@@ -1762,12 +1762,12 @@ mod Zklink {
                 if opType == OpType::Withdraw(()) {
                     let (_, op) = WithdrawOperation::readFromPubdata(pubData);
                     // account request fast withdraw and sub account supply nonce
-                    self._executeFastWithdraw(op.accountId, op.accountId, op.subAccountId, op.nonce, op.owner, op.tokenId, op.amount, op.fastWithdrawFeeRate, op.fastWithdraw);
+                    self._executeWithdraw(op.accountId, op.accountId, op.subAccountId, op.nonce, op.owner, op.tokenId, op.amount, op.fastWithdrawFeeRate, op.fastWithdraw);
                 } else if opType == OpType::ForcedExit(()) {
                     let (_, op) = ForcedExitOperatoin::readFromPubdata(pubData);
                     // request forced exit for target account but initiator sub account supply nonce
                     // forced exit require fast withdraw default and take no fee for fast withdraw
-                    self._executeFastWithdraw(op.targetAccountId, op.initiatorAccountId, op.initiatorSubAccountId, op.initiatorNonce, op.target, op.tokenId, op.amount, 0, 1);
+                    self._executeWithdraw(op.targetAccountId, op.initiatorAccountId, op.initiatorSubAccountId, op.initiatorNonce, op.target, op.tokenId, op.amount, 0, 1);
                 } else if opType == OpType::FullExit(()) {
                     let (_, op) = FullExitOperation::readFromPubdata(pubData);
                     self.increasePendingBalance(op.tokenId, op.owner, op.amount);
@@ -1783,8 +1783,8 @@ mod Zklink {
             assert(pendingOnchainOpsHash == *_blockExecuteData.storedBlock.pendingOnchainOperationsHash, 'm3');
         }
 
-        // Execute fast withdraw or normal withdraw according by sub account nonce
-        fn _executeFastWithdraw(ref self: ContractState, _accountId: u32, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16, _fastWithdraw: u8) {
+        // Execute fast withdraw or normal withdraw according by fastWithdraw flag
+        fn _executeWithdraw(ref self: ContractState, _accountId: u32, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16, _fastWithdraw: u8) {
             // token MUST be registered
             let rt: RegisteredToken = self.tokens.read(_tokenId);
             assert(rt.registered, 'o0');
