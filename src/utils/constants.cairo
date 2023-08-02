@@ -120,10 +120,6 @@ const TOKEN_DECIMALS_OF_LAYER2: u8 = 18;
 // Global asset account in the network
 // Can not deposit to or full exit this account
 const GLOBAL_ASSET_ACCOUNT_ID: u32 = 1;
-// Now, in cairo only literal constants are currently supported.
-// So we use felt252 to represent address
-// Before use this constant, we should convert it to ContractAddress
-const GLOBAL_ASSET_ACCOUNT_ADDRESS: felt252 = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
 // USD and USD stable tokens defined by zkLink
 // User can deposit USD stable token(eg. USDC, BUSD) to get USD in layer two

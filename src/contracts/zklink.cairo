@@ -6,12 +6,12 @@ use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
 trait IZklink<TContractState> {
-    fn depositERC20(ref self: TContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool);
+    fn depositERC20(ref self: TContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool);
     fn transferERC20(ref self: TContractState, _token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool) -> u128;
     fn acceptERC20(ref self: TContractState, _accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32, _amountTransfer: u128);
     fn requestFullExit(ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool);
     fn activateExodusMode(ref self: TContractState);
-    fn performExodus(ref self: TContractState, _storedBlockInfo: StoredBlockInfo, _owner: ContractAddress, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>);
+    fn performExodus(ref self: TContractState, _storedBlockInfo: StoredBlockInfo, _owner: felt252, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>);
     fn cancelOutstandingDepositsForExodusMode(ref self: TContractState, _n: u64, _depositsPubdata: Array<Bytes>);
     fn setAuthPubkeyHash(ref self: TContractState, _pubkeyHash: felt252, _nonce: u32);
     fn withdrawPendingBalance(ref self: TContractState, _owner: ContractAddress, _tokenId: u16, _amount: u128) -> u128;
@@ -32,7 +32,7 @@ trait IZklink<TContractState> {
     fn updateBridge(ref self: TContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool);
     fn getSynchronizedProgress(self: @TContractState, _block: StoredBlockInfo) -> u256;
     fn brokerAllowance(self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress) -> u128;
-    fn getPendingBalance(self: @TContractState, _address: ContractAddress, _tokenId: u16) -> u128;
+    fn getPendingBalance(self: @TContractState, _address: felt252, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
 
@@ -142,7 +142,7 @@ mod Zklink {
         CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
         ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
         TOKEN_DECIMALS_OF_LAYER2,
-        GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
+        GLOBAL_ASSET_ACCOUNT_ID,
         USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
     };
     
@@ -194,9 +194,10 @@ mod Zklink {
         exodusMode: bool,
 
         // internal
-        // Root-chain balances to withdraw, (owner, tokenId) => amount
+        // Balances to withdraw, (owner, tokenId) => amount
+        // The type of owner is felt252, which can both storing evm address and starknet address 
         // the amount of pending balance need to recovery decimals when withdraw
-        pendingBalances: LegacyMap::<(ContractAddress, u16), u128>,
+        pendingBalances: LegacyMap::<(felt252, u16), u128>,
 
         // public
         // Flag indicates that a user has exited a certain token balance in the exodus mode
@@ -299,7 +300,7 @@ mod Zklink {
     #[derive(Drop, starknet::Event)]
     struct WithdrawalPending {
         tokenId: u16,
-        recepient: ContractAddress,
+        recepient: felt252,
         amount: u128
     }
 
@@ -475,7 +476,7 @@ mod Zklink {
         //  _zkLinkAddress The receiver Layer 2 address
         //  _subAccountId The receiver sub account
         //  _mapping If true and token has a mapping token, user will receive mapping token at l2
-        fn depositERC20(ref self: ContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
+        fn depositERC20(ref self: ContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool) {
             self.start();
             self.deposit(_token, _amount, _zkLinkAddress, _subAccountId, _mapping);
             self.end();
@@ -639,7 +640,7 @@ mod Zklink {
         //  _withdrawTokenId The token want to withdraw in l1
         //  _deductTokenId The token deducted in l2
         //  _amount Amount for owner (must be total amount, not part of it) in l2
-        fn performExodus(ref self: ContractState, _storedBlockInfo: StoredBlockInfo, _owner: ContractAddress, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>) {
+        fn performExodus(ref self: ContractState, _storedBlockInfo: StoredBlockInfo, _owner: felt252, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>) {
             self.start();
             self.notActive();
 
@@ -656,7 +657,7 @@ mod Zklink {
             // Effects
             self.performedExodus.write((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId), true);
 
-            self.increaseBalanceToWithdraw(_withdrawTokenId, _owner, _amount);
+            self.increaseBalanceToWithdraw(_owner, _withdrawTokenId, _amount);
             self.emit(
                 Event::WithdrawalPending(
                     WithdrawalPending {
@@ -702,7 +703,7 @@ mod Zklink {
                     currentDepositIdx += 1;
 
                     let (_, op) = DepositOperation::readFromPubdata(depositPubdata);
-                    self.increaseBalanceToWithdraw(op.tokenId, op.owner, op.amount);
+                    self.increaseBalanceToWithdraw(op.owner, op.tokenId, op.amount);
                 }
 
                 // TODO: delete priority request
@@ -794,7 +795,7 @@ mod Zklink {
             assert(rt.registered, 'b0');
 
             // Set the available amount to withdraw
-            let balance: u128 = self.pendingBalances.read((_owner, _tokenId));
+            let balance: u128 = self.pendingBalances.read((_owner.into(), _tokenId));
             let withdrawBalance = recoveryDecimals(balance, rt.decimals);
             let mut amount = u128_min(_amount, withdrawBalance);
             assert(amount > 0, 'b1');
@@ -804,7 +805,7 @@ mod Zklink {
             let contract_address = get_contract_address();
             amount = IZklinkDispatcher {contract_address}.transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
             
-            self.pendingBalances.write((_owner, _tokenId), balance - improveDecimals(amount, rt.decimals));
+            self.pendingBalances.write((_owner.into(), _tokenId), balance - improveDecimals(amount, rt.decimals));
             self.emit(
                 Event::Withdrawal (
                     Withdrawal {
@@ -1238,7 +1239,7 @@ mod Zklink {
         //  _tokenId Token id
         // Returns:
         //  The pending balance(without recovery decimals) can be withdrawn
-        fn getPendingBalance(self: @ContractState, _address: ContractAddress, _tokenId: u16) -> u128 {
+        fn getPendingBalance(self: @ContractState, _address: felt252, _tokenId: u16) -> u128 {
             self.pendingBalances.read((_address, _tokenId))
         }
 
@@ -1366,12 +1367,13 @@ mod Zklink {
         //  _zkLinkAddress The receiver Layer 2 address
         //  _subAccountId The receiver sub account
         //  _mapping If true and token has a mapping token, user will receive mapping token at l2
-        fn deposit(ref self: ContractState, _tokenAddress: ContractAddress, _amount: u128, _zkLinkAddress: ContractAddress, _subAccountId: u8, _mapping: bool) {
+        fn deposit(ref self: ContractState, _tokenAddress: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool) {
             self.active();
             // checks
             // disable deposit to zero address or global asset account
-            assert(_zkLinkAddress != contract_address_const::<0>(), 'e1');
-            assert(_zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS.try_into().unwrap(), 'e1');
+            // global asset account is 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+            // user can not deposit to this account, skip this check
+            assert(_zkLinkAddress != 0, 'e1');
             // subAccountId MUST be valid
             assert(_subAccountId <= MAX_SUB_ACCOUNT_ID, 'e2');
             // token MUST be registered to ZkLink and deposit MUST be enabled
@@ -1881,21 +1883,21 @@ mod Zklink {
         //  _recipient
         //  _amount amount that need to recovery decimals when withdraw
         fn increasePendingBalance(ref self: ContractState, _tokenId: u16, _recipient: ContractAddress, _amount: u128) {
-            self.increaseBalanceToWithdraw(_tokenId, _recipient, _amount);
+            self.increaseBalanceToWithdraw(_recipient.into(), _tokenId, _amount);
             self.emit(
                 Event::WithdrawalPending(
                     WithdrawalPending {
                         tokenId: _tokenId,
-                        recepient: _recipient,
+                        recepient: _recipient.into(),
                         amount: _amount
                     }
                 )
             );
         }
 
-        fn increaseBalanceToWithdraw(ref self: ContractState, _tokenId: u16, _recipient: ContractAddress, _amount: u128) {
-            let balance: u128 = self.pendingBalances.read((_recipient, _tokenId));
-            self.pendingBalances.write((_recipient, _tokenId), balance + _amount);
+        fn increaseBalanceToWithdraw(ref self: ContractState, _address: felt252, _tokenId: u16, _amount: u128) {
+            let balance: u128 = self.pendingBalances.read((_address, _tokenId));
+            self.pendingBalances.write((_address, _tokenId), balance + _amount);
         }
 
         fn _checkAccept(self: @ContractState, _accepter: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _nonce: u32) -> (u128, u256, ContractAddress) {

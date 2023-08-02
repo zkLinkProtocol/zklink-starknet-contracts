@@ -94,6 +94,8 @@ trait BytesTrait {
     fn read_u256_array(self: @Bytes, offset: usize, array_length: usize) -> (usize, Array<u256>);
     // Read sub Bytes with size bytes from Bytes
     fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes);
+    // Read felt252 from Bytes, which stored as u256
+    fn read_felt252(self: @Bytes, offset: usize) -> (usize, felt252);
     // Read a ContractAddress from Bytes
     fn read_address(self: @Bytes, offset: usize) -> (usize, ContractAddress);
     // Write value with size bytes into Bytes, value is packed into u128
@@ -112,6 +114,8 @@ trait BytesTrait {
     fn append_u128(ref self: Bytes, value: u128);
     // Write u256 into Bytes
     fn append_u256(ref self: Bytes, value: u256);
+    // Write felt252 into Bytes, which stored as u256
+    fn append_felt252(ref self: Bytes, value: felt252);
     // Write address into Bytes
     fn append_address(ref self: Bytes, value: ContractAddress);
     // keccak hash
@@ -322,6 +326,13 @@ impl BytesImpl of BytesTrait {
         return (offset, BytesTrait::new(size, array));
     }
 
+    // read felt252 from Bytes
+    // felt252 stores as u256 in Bytes
+    fn read_felt252(self: @Bytes, offset: usize) -> (usize, felt252) {
+        let (new_offset, value) = self.read_u256(offset);
+        (new_offset, value.try_into().unwrap())
+    }
+
     // read address from Bytes
     fn read_address(self: @Bytes, offset: usize) -> (usize, ContractAddress) {
         let (new_offset, value) = self.read_u256(offset);
@@ -361,31 +372,44 @@ impl BytesImpl of BytesTrait {
     fn append_u8(ref self: Bytes, value: u8) {
         self.append_u128_packed(value.into(), 1)
     }
+
     // Write u16 into Bytes
     fn append_u16(ref self: Bytes, value: u16) {
         self.append_u128_packed(value.into(), 2)
     }
+
     // Write u32 into Bytes
     fn append_u32(ref self: Bytes, value: u32) {
         self.append_u128_packed(value.into(), 4)
     }
+
     // Write usize into Bytes
     fn append_usize(ref self: Bytes, value: usize) {
         self.append_u128_packed(value.into(), 4)
     }
+
     // Write u64 into Bytes
     fn append_u64(ref self: Bytes, value: u64) {
         self.append_u128_packed(value.into(), 8)
     }
+
     // Write u128 into Bytes
     fn append_u128(ref self: Bytes, value: u128) {
         self.append_u128_packed(value, 16)
     }
+
     // Write u256 into Bytes
     fn append_u256(ref self: Bytes, value: u256) {
         self.append_u128(value.high);
         self.append_u128(value.low);
     }
+
+    // Write felt252 into Bytes, which stored as u256
+    fn append_felt252(ref self: Bytes, value: felt252) {
+        let value: u256 = value.into();
+        self.append_u256(value)
+    }
+
     // Write address into Bytes
     fn append_address(ref self: Bytes, value: ContractAddress) {
         let address_felt256: felt252 = value.into();
