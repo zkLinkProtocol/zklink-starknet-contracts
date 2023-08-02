@@ -1544,6 +1544,8 @@ mod Zklink {
             // Create synchronization hash for cross chain block verify
             if _compressed {
                 let mut i = MIN_CHAIN_ID;
+                let hashs: @Array<u256> = _newBlockExtra.onchainOperationPubdataHashs;
+                assert(hashs.len() == MAX_CHAIN_ID.into() + 1, 'g3');
                 loop {
                     if i > MAX_CHAIN_ID {
                         break();
@@ -1552,7 +1554,7 @@ mod Zklink {
                     if i != CHAIN_ID {
                         let (high_entry, _) = onchainOpPubdataHashsHigh.entry(i.into());
                         let (low_entry, _) = onchainOpPubdataHashsLow.entry(i.into());
-                        let hash: u256 = *_newBlockExtra.onchainOperationPubdataHashs[i.into()];
+                        let hash: u256 = *hashs[i.into()];
                         onchainOpPubdataHashsHigh = high_entry.finalize(hash.high);
                         onchainOpPubdataHashsLow = low_entry.finalize(hash.low);
                     }
