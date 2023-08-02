@@ -1852,9 +1852,6 @@ mod Zklink {
             assert(_withdrawFeeRate <= MAX_ACCEPT_FEE_RATE, 'H4');
             let amountReceive: u128 = _amount * ((MAX_ACCEPT_FEE_RATE - _withdrawFeeRate) / MAX_ACCEPT_FEE_RATE).into();
 
-            // nonce MUST not be zero
-            assert(_nonce > 0, 'H5');
-
             // accept tx may be later than block exec tx(with user withdraw op)
             let hash = getFastWithdrawHash(_accountIdOfNonce, _subAccountIdOfNonce, _nonce, _receiver, _tokenId, _amount, _withdrawFeeRate);
             assert(self.accepts.read((_accountId, hash)) == Zeroable::zero(), 'H6');
