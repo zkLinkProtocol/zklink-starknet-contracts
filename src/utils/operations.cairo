@@ -150,13 +150,13 @@ mod Operations {
     // Deposit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop)]
     struct Deposit {
-        chainId: u8,            // 1 byte, deposit from which chain that identified by l2 chain id
+        chainId: u8,            // 1 byte, deposit from which chain that identified by L2 chain id
         accountId: u32,         // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
         subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        tokenId: u16,           // 2 bytes, the token that registered to l2
-        targetTokenId: u16,     // 2 bytes, the token that user increased in l2
-        amount: u128,           // 16 bytes, the token amount deposited to l2
-        owner: felt252,         // 32 bytes, the address that receive deposited token at l2
+        tokenId: u16,           // 2 bytes, the token that registered to L2
+        targetTokenId: u16,     // 2 bytes, the token that user increased in L2
+        amount: u128,           // 16 bytes, the token amount deposited to L2
+        owner: felt252,         // 32 bytes, the address that receive deposited token at L2
     }
 
     impl DepositOperation of OperationTrait<Deposit> {
@@ -208,12 +208,12 @@ mod Operations {
     // FullExit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop)]
     struct FullExit {
-        chainId: u8,            // 1 byte, withdraw to which chain that identified by l2 chain id
+        chainId: u8,            // 1 byte, withdraw to which chain that identified by L2 chain id
         accountId: u32,         // 4 bytes, the account id to withdraw from
         subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        owner: ContractAddress, // 32 bytes, the address that own the account at l2
+        owner: ContractAddress, // 32 bytes, the address that own the account at L2
         tokenId: u16,           // 2 bytes, the token that withdraw to l1
-        srcTokenId: u16,        // 2 bytes, the token that deducted in l2
+        srcTokenId: u16,        // 2 bytes, the token that deducted in L2
         amount: u128,           // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
     }
 
@@ -298,7 +298,7 @@ mod Operations {
             let (offset, subAccountId) = pubData.read_u8(offset);
             let offset = offset + SUB_ACCOUNT_ID_BYTES;
             let (offset, tokenId) = pubData.read_u16(offset);
-            // uint16 srcTokenId, the token that decreased in l2, present in pubdata, ignored at serialization
+            // uint16 srcTokenId, the token that decreased in L2, present in pubdata, ignored at serialization
             let offset = offset + TOKEN_BYTES;
             let (offset, amount) = pubData.read_u128(offset);
             // uint16 fee, present in pubdata, ignored at serialization

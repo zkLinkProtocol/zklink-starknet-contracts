@@ -368,6 +368,7 @@ mod Zklink {
     }
 
     // Token added to ZkLink net
+    // Log token decimals on this chain to let L2 know(token decimals maybe different on different chains)
     #[derive(Drop, starknet::Event)]
     struct NewToken {
         tokenId: u16,
@@ -1846,6 +1847,8 @@ mod Zklink {
 
         fn increaseBalanceToWithdraw(ref self: ContractState, _address: felt252, _tokenId: u16, _amount: u128) {
             let balance: u128 = self.pendingBalances.read((_address, _tokenId));
+            // overflow should not happen here
+            // (2^128 / 10^18 = 3.4 * 10^20) is enough to meet the really token balance of L2 account
             self.pendingBalances.write((_address, _tokenId), balance + _amount);
         }
 
