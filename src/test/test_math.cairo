@@ -54,15 +54,6 @@ fn test_u128_div_rem() {
     assert(r == value % div, 'invalid result');
 }
 
-// TODO: protostar do not support should_panic Now.
-// #[test]
-// #[should_panic(expected:('value_size can not be gt 16', ))]
-// fn test_u128_split_panic_1() {
-//     let value = 0x01020304050607080102030405060708;
-//     let value_size = 17;
-//     u128_split(value, value_size, 1);
-// }
-
 #[test]
 fn test_u128_split_full() {
     let value = 0x01020304050607080102030405060708;

@@ -80,7 +80,6 @@ mod Zklink {
     use zklink::libraries::IVerifier::IVerifierDispatcherTrait;
     use zklink::libraries::IERC20::IERC20Dispatcher;
     use zklink::libraries::IERC20::IERC20DispatcherTrait;
-    // use zklink::libraries::reentrancyguard::ReentrancyGuard;
 
     use zklink::utils::bytes::{
         Bytes,
@@ -462,9 +461,7 @@ mod Zklink {
             syncHash: _syncHash
         };
 
-        // TODO: uncomment this assert when cairo fix the `Difference in FunctionId` bug.
-        // https://github.com/starkware-libs/cairo/pull/3230
-        // storedBlockHashes::write(_blockNumber, hashStoredBlockInfo(storedBlockZero));
+        self.storedBlockHashes.write(_blockNumber, hashStoredBlockInfo(storedBlockZero));
         self.totalBlocksCommitted.write(_blockNumber);
         self.totalBlocksProven.write(_blockNumber);
         self.totalBlocksSynchronized.write(_blockNumber);
@@ -719,11 +716,10 @@ mod Zklink {
                     self.increaseBalanceToWithdraw(op.owner, op.tokenId, op.amount);
                 }
 
-                // TODO: delete priority request
                 // after return back deposited token to user, delete the priorityRequest to avoid redundant cancel
                 // other priority requests(ie. FullExit) are also be deleted because they are no used anymore
                 // and we can get gas reward for free these slots
-                // delete priorityRequests[id];
+                self.priorityRequests.write(id, Default::default());
 
                 id += 1;
             };
@@ -1465,8 +1461,8 @@ mod Zklink {
                 expirationBlock: expirationBlock,
                 opType: _opType
             };
-            // TODO: uncomment it when impl real priorityRequests StorageAccess
-            // priorityRequests::write(nextPriorityRequestId, priorityRequest);
+
+            self.priorityRequests.write(nextPriorityRequestId, priorityRequest);
 
             let sender = get_caller_address();
             self.emit(
@@ -1693,13 +1689,9 @@ mod Zklink {
                 let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
                 if _chainId == CHAIN_ID {
                     let (_, op) = ChangePubKeyOperation::readFromPubdata(@opPubData_internal);
-                    if _ethWitness.size() != 0 {
-                        let valid: bool = self.verifyChangePubkey(_ethWitness, @op);
-                        assert(valid, 'k0');
-                    } else {
-                        let valid: bool = self.authFacts.read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
-                        assert(valid, 'k1');
-                    }
+                    // Now, starknet only support on-chain change pubkey
+                    let valid: bool = self.authFacts.read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
+                    assert(valid, 'k1');
                 }
                 opPubData = opPubData_internal;
             } else {
@@ -1733,36 +1725,19 @@ mod Zklink {
         }
 
         
-
-
+        // TODO
+        // Now, Starknet only support on-chain changepubkey type
         // Checks that change operation is correct
-        fn verifyChangePubkey(self: @ContractState, _ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
-            let (_, changePkType) = ChangePubkeyTypeReadBytes::read(_ethWitness, 0);
-            if changePkType == ChangePubkeyType::ECRECOVER(()) {
-                return self.verifyChangePubkeyECRECOVER(_ethWitness, _changePk);
-            } else {
-                return false;
-            }
-        }
-
-        // Checks that signature is valid for pubkey change message
-        fn verifyChangePubkeyECRECOVER(self: @ContractState, _ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
-            // TODO: add impl when cairo secp256k1 added
-            // https://github.com/starkware-libs/cairo/blob/main/corelib/src/starknet/secp256k1.cairo
-            true
-        }
+        // fn verifyChangePubkey(self: @ContractState, _ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
+        //     true
+        // }
 
         // Executes one block
         // 1. Processes all pending operations (Send Exits, Complete priority requests)
         // 2. Finalizes block on Ethereum
         fn executeOneBlock(ref self: ContractState, _blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: usize) {
             // Ensure block was committed
-            // TODO: uncomment this assert when cairo fix the `Difference in FunctionId` bug.
-            // https://github.com/starkware-libs/cairo/pull/3230
-            // assert(
-            //     hashStoredBlockInfo(*_blockExecuteData.storedBlock) ==
-            //     storedBlockHashes::read(*_blockExecuteData.storedBlock.blockNumber),
-            //     'm0');
+            assert(hashStoredBlockInfo(*_blockExecuteData.storedBlock) == self.storedBlockHashes.read(*_blockExecuteData.storedBlock.blockNumber), 'm0');
             assert(*_blockExecuteData.storedBlock.blockNumber == self.totalBlocksExecuted.read() + _executedBlockIdx.into() + 1, 'm1');
 
             let mut pendingOnchainOpsHash: u256 = EMPTY_STRING_KECCAK;

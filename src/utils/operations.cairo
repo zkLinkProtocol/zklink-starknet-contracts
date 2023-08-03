@@ -138,6 +138,17 @@ mod Operations {
         opType: OpType
     }
 
+    impl PriorityOperationDefault of Default<PriorityOperation> {
+        #[always_inline]
+        fn default() -> PriorityOperation {
+            PriorityOperation {
+                hashedPubData: 0,
+                expirationBlock: 0,
+                opType: OpType::Noop(())
+            }
+        }
+    }
+
     trait OperationTrait<T> {
         // Deserialize operation from pubdata
         fn readFromPubdata(pubData: @Bytes) -> (usize, T);
