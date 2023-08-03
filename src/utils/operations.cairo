@@ -159,7 +159,7 @@ mod Operations {
     }
 
     // Deposit operation: 58 bytes(59 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct Deposit {
         chainId: u8,            // 1 byte, deposit from which chain that identified by L2 chain id
         accountId: u32,         // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted

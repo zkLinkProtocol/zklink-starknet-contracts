@@ -23,4 +23,4 @@ casm = true
 casm-add-pythonic-hints = false
 # Enable allowed libfuncs validation.
 allowed-libfuncs = true
-allowed-libfuncs-list.name = "experimental"
+allowed-libfuncs-list.name = "all"
