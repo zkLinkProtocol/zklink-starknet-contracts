@@ -6,7 +6,7 @@ mod Operations {
     use traits::TryInto;
     use option::OptionTrait;
     use starknet::{
-        StorageAccess,
+        Store,
         StorageBaseAddress,
         SyscallResult,
         storage_read_syscall,
@@ -24,7 +24,7 @@ mod Operations {
     };
     
     // zkLink circuit operation type
-    #[derive(Copy, Drop, PartialEq, Serde)]
+    #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]
     enum OpType {
         Noop: (),           // 0
         Deposit: (),        // 1 L1 op
@@ -35,29 +35,6 @@ mod Operations {
         ChangePubKey: (),   // 6 L2 op
         ForcedExit: (),     // 7 L2 op
         OrderMatching: ()   // 8 L2 op
-    }
-
-    // TODO: delete this fake impl when cario update to v2.1.0
-    impl StorageAccessOpType of StorageAccess<OpType> {
-        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<OpType> {
-            Result::Ok(OpType::Noop(()))
-        }
-
-        fn write(address_domain: u32, base: StorageBaseAddress, value: OpType) -> SyscallResult<()> {
-            Result::Ok(())
-        }
-
-        fn read_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8) -> SyscallResult<OpType> {
-            Result::Ok(OpType::Noop(()))
-        }
-
-        fn write_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8, value: OpType) -> SyscallResult<()> {
-            Result::Ok(())
-        }
-
-        fn size_internal(value: OpType) -> u8 {
-            value.into()
-        }
     }
 
     impl OpTypeReadBytes of ReadBytes<OpType> {
@@ -131,7 +108,7 @@ mod Operations {
     const PUBKEY_HASH_BYTES: usize = 20;
 
     // Priority operations: Deposit, FullExit
-    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
     struct PriorityOperation {
         hashedPubData: felt252,
         expirationBlock: u64,

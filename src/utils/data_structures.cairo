@@ -8,7 +8,7 @@ mod DataStructures {
         ContractAddressZeroable,
     };
     use starknet::{
-        StorageAccess,
+        Store,
         StorageBaseAddress,
         SyscallResult,
         storage_read_syscall,
@@ -21,7 +21,7 @@ mod DataStructures {
         ReadBytes
     };
 
-    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
     struct RegisteredToken {
         registered: bool,               // whether token registered to ZkLink or not, default is false
         paused: bool,                   // whether token can deposit to ZkLink or not, default is false
@@ -32,7 +32,7 @@ mod DataStructures {
 
     // We can set `enableBridgeTo` and `enableBridgeTo` to false
     // to disable bridge when `bridge` is compromised
-    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
     struct BridgeInfo {
         bridge: ContractAddress,
         enableBridgeTo: bool,
@@ -42,7 +42,7 @@ mod DataStructures {
     // block stored data
     // `blockNumber`,`timestamp`,`stateHash`,`commitment` are the same on all chains
     // `priorityOperations`,`pendingOnchainOperationsHash` is different for each chain
-    #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
     struct StoredBlockInfo {
         blockNumber: u64,                   // Rollup block number
         priorityOperations: u64,            // Number of priority operations processed

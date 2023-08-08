@@ -5,7 +5,7 @@ description = "zklink starknet core contracts, cairo1.0 compatible"
 homepage = "https://zk.link/"
 
 [dependencies]
-starknet = ">=2.0.1"
+starknet = ">=2.1.0"
 alexandria = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 [cairo]
