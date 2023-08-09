@@ -3,7 +3,7 @@ use integer::u128_byte_reverse;
 use traits::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
-use keccak::{u128_to_u64, u128_split as u128_split_to_u64};
+use keccak::{u128_to_u64, u128_split as u128_split_to_u64, cairo_keccak};
 use zklink::utils::math::{u32_min, u128_split, u128_div_rem, u128_fast_pow2, u64_pow, u128_join};
 use zklink::utils::utils::u64_array_slice;
 
@@ -33,8 +33,16 @@ fn keccak_u128s_be(mut input: Span<u128>, n_bytes: usize) -> u256 {
             },
         };
     };
-    add_padding(ref keccak_input, n_bytes);
-    u256_reverse_endian(starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall())
+
+    let aligned = n_bytes % 8 == 0;
+    if aligned {
+        u256_reverse_endian(cairo_keccak(ref keccak_input, 0, 0))
+    } else {
+        let last_input_num_bytes = n_bytes % 8;
+        let last_input_word = *keccak_input[keccak_input.len() - 1];
+        let mut inputs = u64_array_slice(@keccak_input, 0, keccak_input.len() - 1);
+        u256_reverse_endian(cairo_keccak(ref inputs, last_input_word, last_input_num_bytes))
+    }
 }
 
 fn keccak_add_uint128_be(ref keccak_input: Array::<u64>, value: u128, value_size: usize) {
@@ -53,39 +61,4 @@ fn keccak_add_uint128_be(ref keccak_input: Array::<u64>, value: u128, value_size
             keccak_input.append(u128_to_u64(high));
         }
     }
-}
-
-// The padding in keccak256 is 10*1;
-fn add_padding(ref input: Array<u64>, n_bytes: usize) {
-    let aligned = n_bytes % 8 == 0;
-    let divisor = integer::u32_try_as_non_zero(KECCAK_FULL_RATE_IN_U64S).unwrap();
-    let (q, r) = integer::u32_safe_divmod(input.len(), divisor);
-    let padding_len = KECCAK_FULL_RATE_IN_U64S - r;
-    // padding_len is in the range [1, KECCAK_FULL_RATE_IN_U64S].
-    // padding_len >= 2;
-    if aligned {
-        if padding_len == 1 {
-            input.append(0x8000000000000001);
-            return ();
-        }
-        input.append(1);
-        finalize_padding(ref input, padding_len - 1);
-    } else {
-        let mut last: u64 = *input[input.len() - 1];
-        last = u64_pow(2, (n_bytes % 8) * 8) + last;
-        input = u64_array_slice(@input, 0, input.len() - 1);
-        input.append(last);
-        finalize_padding(ref input, padding_len);
-    }
-}
-
-// Finalize the padding by appending 0*1.
-fn finalize_padding(ref input: Array<u64>, padding_len: u32) {
-    if (padding_len == 1) {
-        input.append(0x8000000000000000);
-        return ();
-    }
-
-    input.append(0);
-    finalize_padding(ref input, padding_len - 1);
 }

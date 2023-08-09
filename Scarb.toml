@@ -24,3 +24,5 @@ casm-add-pythonic-hints = false
 # Enable allowed libfuncs validation.
 allowed-libfuncs = true
 allowed-libfuncs-list.name = "all"
+
+[tool.snforge]
