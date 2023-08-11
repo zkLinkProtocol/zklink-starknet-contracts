@@ -194,7 +194,7 @@ mod Operations {
     }
 
     // FullExit operation: 58 bytes(59 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct FullExit {
         chainId: u8,            // 1 byte, withdraw to which chain that identified by L2 chain id
         accountId: u32,         // 4 bytes, the account id to withdraw from
@@ -252,7 +252,7 @@ mod Operations {
     }
 
     // Withdraw operation: 63 bytes(68 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct Withdraw {
         chainId: u8,                // 1 byte, which chain the withdraw happened
         accountId: u32,             // 4 bytes, the account id to withdraw from
@@ -284,7 +284,6 @@ mod Operations {
             let (offset, chainId) = pubData.read_u8(offset);
             let (offset, accountId) = pubData.read_u32(offset);
             let (offset, subAccountId) = pubData.read_u8(offset);
-            let offset = offset + SUB_ACCOUNT_ID_BYTES;
             let (offset, tokenId) = pubData.read_u16(offset);
             // uint16 srcTokenId, the token that decreased in L2, present in pubdata, ignored at serialization
             let offset = offset + TOKEN_BYTES;
@@ -321,7 +320,7 @@ mod Operations {
     }
 
     // ForcedExit operation: 64 Bytes(68 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct ForcedExit {
         chainId: u8,                // 1 byte, which chain the force exit happened
         initiatorAccountId: u32,    // 4 bytes, the account id of initiator
@@ -386,7 +385,7 @@ mod Operations {
     }
 
     // ChangePubKey operation: 61 bytes(67 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct ChangePubKey {
         chainId: u8,                // 1 byte, which chain to verify(only one chain need to verify for gas saving)
         accountId: u32,             // 4 bytes, the account that to change pubkey
