@@ -2,7 +2,7 @@ use zklink::utils::operations::Operations::{Deposit, Withdraw, FullExit, ForcedE
 use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
-trait IOperations<TContractState> {
+trait IOperationsMock<TContractState> {
     fn testDepositPubdata(self: @TContractState, _example: Deposit, _pubData: Bytes);
     fn testWriteDepositPubdata(self: @TContractState, _example: Deposit);
     fn testWithdrawPubdata(self: @TContractState, _example: Withdraw, _pubData: Bytes);
@@ -13,7 +13,7 @@ trait IOperations<TContractState> {
 }
 
 #[starknet::contract]
-mod Operations {
+mod OperationsMock {
     use zklink::utils::operations::Operations::{
         OperationTrait,
         Deposit, DepositOperation,
@@ -29,7 +29,7 @@ mod Operations {
     struct Storage {}
 
     #[external(v0)]
-    impl OperationsImpl of super::IOperations<ContractState> {
+    impl OperationsImpl of super::IOperationsMock<ContractState> {
         fn testDepositPubdata(self: @ContractState, _example: Deposit, _pubData: Bytes) {
             let (_, parsed) = DepositOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cok');
