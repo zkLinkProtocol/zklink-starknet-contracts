@@ -7,10 +7,10 @@ use starknet::Felt252TryIntoContractAddress;
 use cheatcodes::PreparedContract;
 use forge_print::PrintTrait;
 
-use zklink::mocks::operations::IOperationsSafeDispatcher;
-use zklink::mocks::operations::IOperationsSafeDispatcherTrait;
-use zklink::mocks::operations::IOperationsDispatcher;
-use zklink::mocks::operations::IOperationsDispatcherTrait;
+use zklink::mocks::operations_test::IOperationsSafeDispatcher;
+use zklink::mocks::operations_test::IOperationsSafeDispatcherTrait;
+use zklink::mocks::operations_test::IOperationsDispatcher;
+use zklink::mocks::operations_test::IOperationsDispatcherTrait;
 
 use zklink::utils::operations::Operations::{
     OperationTrait, Deposit, Withdraw, FullExit, ForcedExit, ChangePubKey
