@@ -12,7 +12,7 @@ use zklink::utils::bytes::{
     BytesTrait
 };
 use zklink::utils::keccak::keccak_u128s_be;
-use alexandria::data_structures::array_ext::ArrayTraitExt;
+use alexandria_data_structures::array_ext::ArrayTraitExt;
 
 // Convert sha256 result(Array<u8>) to u256
 // result length MUST be 32
