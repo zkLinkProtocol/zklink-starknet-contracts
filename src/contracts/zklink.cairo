@@ -158,7 +158,7 @@ mod Zklink {
     use zklink::utils::math::{
         u128_pow, felt252_fast_pow2, u256_pow2, u256_to_u160, u32_min, u64_min, u128_min,
     };
-    use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash};
+    use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash, update_u256_array_at};
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES,
@@ -1728,8 +1728,7 @@ mod Zklink {
                 pendingOnchainOpsHash,
                 priorityReqCommitted,
                 onchainOpsOffsetCommitment,
-                mut onchainOpPubdataHashsHigh,
-                mut onchainOpPubdataHashsLow
+                mut onchainOpPubdataHashs
             ) =
                 self
                 .collectOnchainOps(_newBlock);
@@ -1750,11 +1749,8 @@ mod Zklink {
                     }
 
                     if i != CHAIN_ID {
-                        let (high_entry, _) = onchainOpPubdataHashsHigh.entry(i.into());
-                        let (low_entry, _) = onchainOpPubdataHashsLow.entry(i.into());
                         let hash: u256 = *hashs[i.into()];
-                        onchainOpPubdataHashsHigh = high_entry.finalize(hash.high);
-                        onchainOpPubdataHashsLow = low_entry.finalize(hash.low);
+                        onchainOpPubdataHashs = update_u256_array_at(@onchainOpPubdataHashs, i.into(), hash);
                     }
                     i += 1;
                 };
@@ -1763,8 +1759,7 @@ mod Zklink {
             let syncHash = createSyncHash(
                 *_previousBlock.syncHash,
                 commitment,
-                ref onchainOpPubdataHashsHigh,
-                ref onchainOpPubdataHashsLow
+                @onchainOpPubdataHashs
             );
 
             StoredBlockInfo {
@@ -1790,7 +1785,7 @@ mod Zklink {
         //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
         fn collectOnchainOps(
             self: @ContractState, _newBlockData: @CommitBlockInfo
-        ) -> (u256, u64, u256, Felt252Dict<u128>, Felt252Dict<u128>) {
+        ) -> (u256, u64, u256, Array<u256>) {
             let pubData = _newBlockData.publicData;
             // pubdata length must be a multiple of CHUNK_BYTES
             assert(pubData.size() % CHUNK_BYTES == 0, 'h0');
@@ -1798,8 +1793,7 @@ mod Zklink {
             // Init return values
             let mut offsetsCommitment: u256 = 0; // use a u256 instead of Bytes to save gas
             let mut priorityOperationsProcessed: u64 = 0;
-            let (mut onchainOpPubdataHashsHigh, mut onchainOpPubdataHashsLow) =
-                initOnchainOperationPubdataHashs();
+            let mut onchainOpPubdataHashs: Array<u256> = initOnchainOperationPubdataHashs();
             let mut processableOperationsHash: u256 = EMPTY_STRING_KECCAK;
 
             let uncommittedPriorityRequestsOffset = self.firstPriorityRequestId.read()
@@ -1845,9 +1839,7 @@ mod Zklink {
 
                 priorityOperationsProcessed += newPriorityProceeded;
                 // group onchain operations pubdata hash by chain id
-                updateOnchainOperationPubdataHashs(
-                    chainId, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow, @opPubData
-                );
+                onchainOpPubdataHashs = updateOnchainOperationPubdataHashs(chainId, @onchainOpPubdataHashs, @opPubData);
 
                 if processablePubData.size() > 0 {
                     processableOperationsHash =
@@ -1861,8 +1853,7 @@ mod Zklink {
                 processableOperationsHash,
                 priorityOperationsProcessed,
                 offsetsCommitment,
-                onchainOpPubdataHashsHigh,
-                onchainOpPubdataHashsLow
+                onchainOpPubdataHashs
             )
         }
 
@@ -2192,17 +2183,11 @@ mod Zklink {
         bytes.keccak()
     }
 
-    fn initOnchainOperationPubdataHashs() -> (Felt252Dict<u128>, Felt252Dict<u128>) {
+    fn initOnchainOperationPubdataHashs() -> Array<u256> {
         // overflow is impossible, max(MAX_CHAIN_ID + 1) = 256
         // use index of onchainOperationPubdataHashs as chain id
         // index start from [0, MIN_CHAIN_ID - 1] left unused
-
-        // Becauseof cairo array element can not update,
-        // We use dict instead to store onchainOperationPubdataHashs
-        // And now dict in cairo do not support u256, we should use two dict
-        // TODO: use one dict when cairo support u256 dict
-        let mut onchainOpPubdataHashsHigh: Felt252Dict<u128> = Default::default();
-        let mut onchainOpPubdataHashsLow: Felt252Dict<u128> = Default::default();
+        let mut onchainOpPubdataHashs: Array<u256> = ArrayTrait::new();
         let mut i = MIN_CHAIN_ID;
         loop {
             if i > MAX_CHAIN_ID {
@@ -2210,12 +2195,13 @@ mod Zklink {
             }
             let chainIndex: u256 = u256_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
-                onchainOpPubdataHashsHigh.insert(i.into(), EMPTY_STRING_KECCAK.high);
-                onchainOpPubdataHashsLow.insert(i.into(), EMPTY_STRING_KECCAK.low);
+                onchainOpPubdataHashs.append(EMPTY_STRING_KECCAK);
+            } else {
+                onchainOpPubdataHashs.append(0);
             }
             i += 1;
         };
-        (onchainOpPubdataHashsHigh, onchainOpPubdataHashsLow)
+        onchainOpPubdataHashs
     }
 
     fn checkChainId(_chainId: u8) {
@@ -2228,17 +2214,13 @@ mod Zklink {
 
     fn updateOnchainOperationPubdataHashs(
         _chainId: u8,
-        ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>,
-        ref _onchainOpPubdataHashsLow: Felt252Dict<u128>,
+        _onchainOpPubdataHashs: @Array<u256>,
         _opPubData: @Bytes
-    ) {
-        let (high_entry, high_value) = _onchainOpPubdataHashsHigh.entry(_chainId.into());
-        let (low_entry, low_value) = _onchainOpPubdataHashsLow.entry(_chainId.into());
-        let old_hash = u256 { high: high_value, low: low_value };
+    ) -> Array<u256> {
+        let old_hash: u256 = *_onchainOpPubdataHashs[_chainId.into()];
         let newHash = concatHash(old_hash, _opPubData);
 
-        _onchainOpPubdataHashsHigh = high_entry.finalize(newHash.high);
-        _onchainOpPubdataHashsLow = low_entry.finalize(newHash.low);
+        update_u256_array_at(_onchainOpPubdataHashs, _chainId.into(), newHash)
     }
 
     // Creates block commitment from its data
@@ -2279,8 +2261,7 @@ mod Zklink {
     fn createSyncHash(
         _preBlockSyncHash: u256,
         _commitment: u256,
-        ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>,
-        ref _onchainOpPubdataHashsLow: Felt252Dict<u128>
+        _onchainOpPubdataHashs: @Array<u256>
     ) -> u256 {
         let mut syncHash = concatTwoHash(_preBlockSyncHash, _commitment);
         let mut i = MIN_CHAIN_ID;
@@ -2290,10 +2271,7 @@ mod Zklink {
             }
             let chainIndex: u256 = u256_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
-                let onchainOperationPubdataHash = u256 {
-                    low: _onchainOpPubdataHashsLow.get(i.into()),
-                    high: _onchainOpPubdataHashsHigh.get(i.into())
-                };
+                let onchainOperationPubdataHash = *_onchainOpPubdataHashs[i.into()];
                 syncHash = concatTwoHash(syncHash, onchainOperationPubdataHash);
             }
             i += 1;
