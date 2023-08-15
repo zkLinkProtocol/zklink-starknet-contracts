@@ -3,23 +3,12 @@ use array::ArrayTrait;
 use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
-use starknet::{
-    ContractAddress,
-    Felt252TryIntoContractAddress
-};
+use starknet::{ContractAddress, Felt252TryIntoContractAddress};
 use zklink::utils::math::{
-    felt252_fast_pow2,
-    u128_fast_pow2,
-    u128_div_rem,
-    u128_join,
-    u128_split,
-    u128_sub_value,
+    felt252_fast_pow2, u128_fast_pow2, u128_div_rem, u128_join, u128_split, u128_sub_value,
     usize_div_rem
 };
-use zklink::utils::utils::{
-    u128_array_slice,
-    u8_array_to_u256
-};
+use zklink::utils::utils::{u128_array_slice, u8_array_to_u256};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_math::sha256::sha256;
 
@@ -73,7 +62,9 @@ trait BytesTrait {
     // Read value with size bytes from Bytes, and packed into u128
     fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
     // Read value with element_size bytes from Bytes, and packed into u128 array
-    fn read_u128_array_packed(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>);
+    fn read_u128_array_packed(
+        self: @Bytes, offset: usize, array_length: usize, element_size: usize
+    ) -> (usize, Array<u128>);
     // Read value with size bytes from Bytes, and packed into felt252
     fn read_felt252_packed(self: @Bytes, offset: usize, size: usize) -> (usize, felt252);
     // Read a u8 from Bytes
@@ -126,18 +117,12 @@ trait BytesTrait {
 
 impl BytesImpl of BytesTrait {
     fn new(size: usize, data: Array::<u128>) -> Bytes {
-        Bytes {
-            size,
-            data
-        }
+        Bytes { size, data }
     }
 
     fn new_empty() -> Bytes {
         let mut data = ArrayTrait::<u128>::new();
-        Bytes {
-            size: 0_usize,
-            data: data
-        }
+        Bytes { size: 0_usize, data: data }
     }
 
     // Locat offset in Bytes
@@ -174,18 +159,29 @@ impl BytesImpl of BytesTrait {
         let value_in_one_element = element_offset + size <= BYTES_PER_ELEMENT;
 
         if value_in_one_element {
-            let value = u128_sub_value(*self.data[element_index], BYTES_PER_ELEMENT, element_offset, size);
+            let value = u128_sub_value(
+                *self.data[element_index], BYTES_PER_ELEMENT, element_offset, size
+            );
             return (offset + size, value);
         } else {
             let (_, end_element_offset) = BytesTrait::locate(offset + size);
-            let left = u128_sub_value(*self.data[element_index], BYTES_PER_ELEMENT, element_offset, BYTES_PER_ELEMENT - element_offset);
-            let right = u128_sub_value(*self.data[element_index + 1], BYTES_PER_ELEMENT, 0, end_element_offset);
+            let left = u128_sub_value(
+                *self.data[element_index],
+                BYTES_PER_ELEMENT,
+                element_offset,
+                BYTES_PER_ELEMENT - element_offset
+            );
+            let right = u128_sub_value(
+                *self.data[element_index + 1], BYTES_PER_ELEMENT, 0, end_element_offset
+            );
             let value = u128_join(left, right, end_element_offset);
             return (offset + size, value);
         }
     }
 
-    fn read_u128_array_packed(self: @Bytes, offset: usize, array_length: usize, element_size: usize) -> (usize, Array<u128>) {
+    fn read_u128_array_packed(
+        self: @Bytes, offset: usize, array_length: usize, element_size: usize
+    ) -> (usize, Array<u128>) {
         assert(offset + array_length * element_size <= self.size(), 'out of bound');
         let mut array = ArrayTrait::<u128>::new();
 
@@ -200,7 +196,7 @@ impl BytesImpl of BytesTrait {
             offset = new_offset;
             i -= 1;
             if i == 0 {
-                break();
+                break ();
             };
         };
         (offset, array)
@@ -220,7 +216,7 @@ impl BytesImpl of BytesTrait {
         } else {
             let (new_offset, high) = self.read_u128_packed(offset, size - 16);
             let (new_offset, low) = self.read_u128_packed(new_offset, 16);
-            return (new_offset, u256{low, high}.try_into().unwrap());
+            return (new_offset, u256 { low, high }.try_into().unwrap());
         }
     }
 
@@ -270,7 +266,7 @@ impl BytesImpl of BytesTrait {
     fn read_u256_array(self: @Bytes, offset: usize, array_length: usize) -> (usize, Array<u256>) {
         assert(offset + array_length * 32 <= self.size(), 'out of bound');
         let mut array = ArrayTrait::<u256>::new();
-        
+
         if array_length == 0 {
             return (offset, array);
         }
@@ -283,7 +279,7 @@ impl BytesImpl of BytesTrait {
             offset = new_offset;
             i -= 1;
             if i == 0 {
-                break();
+                break ();
             };
         };
         (offset, array)
@@ -307,7 +303,7 @@ impl BytesImpl of BytesTrait {
             offset = new_offset;
             sub_bytes_full_array_len -= 1;
             if sub_bytes_full_array_len == 0 {
-                break();
+                break ();
             };
         };
 
@@ -344,7 +340,7 @@ impl BytesImpl of BytesTrait {
     fn append_u128_packed(ref self: Bytes, value: u128, size: usize) {
         assert(size <= 16, 'size must be less than 16');
 
-        let Bytes {size: old_bytes_size, mut data} = self;
+        let Bytes{size: old_bytes_size, mut data } = self;
         let (last_data_index, last_element_size) = BytesTrait::locate(old_bytes_size);
 
         if last_element_size == 0 {
@@ -355,13 +351,19 @@ impl BytesImpl of BytesTrait {
             data = u128_array_slice(@data, 0, last_data_index);
             if size + last_element_size > BYTES_PER_ELEMENT {
                 let (left, right) = u128_split(value, size, BYTES_PER_ELEMENT - last_element_size);
-                let value_full = u128_join(last_element_value, left, BYTES_PER_ELEMENT - last_element_size);
-                let value_padded = u128_join(right, 0, 2 * BYTES_PER_ELEMENT - size - last_element_size);
+                let value_full = u128_join(
+                    last_element_value, left, BYTES_PER_ELEMENT - last_element_size
+                );
+                let value_padded = u128_join(
+                    right, 0, 2 * BYTES_PER_ELEMENT - size - last_element_size
+                );
                 data.append(value_full);
                 data.append(value_padded);
             } else {
                 let value = u128_join(last_element_value, value, size);
-                let value_padded = u128_join(value, 0, BYTES_PER_ELEMENT - size - last_element_size);
+                let value_padded = u128_join(
+                    value, 0, BYTES_PER_ELEMENT - size - last_element_size
+                );
                 data.append(value_padded);
             }
         }
@@ -425,7 +427,9 @@ impl BytesImpl of BytesTrait {
         } else {
             let mut hash_data = u128_array_slice(self.data, 0, last_data_index);
             // To cumpute hash, we should remove 0 padded
-            let (last_element_value, _) = u128_split(*self.data[last_data_index], BYTES_PER_ELEMENT, last_element_size);
+            let (last_element_value, _) = u128_split(
+                *self.data[last_data_index], BYTES_PER_ELEMENT, last_element_size
+            );
             hash_data.append(last_element_value);
             return keccak_u128s_be(hash_data.span(), self.size());
         }
@@ -438,14 +442,14 @@ impl BytesImpl of BytesTrait {
         let mut offset: usize = 0;
         loop {
             if i == self.size() {
-                break();
+                break ();
             }
             let (new_offset, hash_data_item) = self.read_u8(offset);
             hash_data.append(hash_data_item);
             offset = new_offset;
             i += 1;
         };
-        
+
         let output: Array<u8> = sha256(hash_data);
         u8_array_to_u256(output.span())
     }

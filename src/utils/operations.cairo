@@ -6,35 +6,24 @@ mod Operations {
     use traits::TryInto;
     use option::OptionTrait;
     use starknet::{
-        Store,
-        StorageBaseAddress,
-        SyscallResult,
-        storage_read_syscall,
-        storage_write_syscall,
-        storage_address_from_base_and_offset,
-        ContractAddress
+        Store, StorageBaseAddress, SyscallResult, storage_read_syscall, storage_write_syscall,
+        storage_address_from_base_and_offset, ContractAddress
     };
-    use zklink::utils::bytes::{
-        Bytes,
-        BytesTrait,
-        ReadBytes,
-    };
-    use zklink::utils::math::{
-        u256_to_u160,
-    };
-    
+    use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes, };
+    use zklink::utils::math::{u256_to_u160, };
+
     // zkLink circuit operation type
     #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]
     enum OpType {
-        Noop: (),           // 0
-        Deposit: (),        // 1 L1 op
-        TransferToNew: (),  // 2 L2 op
-        Withdraw: (),       // 3 L2 op
-        Transfer: (),       // 4 L2 op
-        FullExit: (),       // 5 L1 op
-        ChangePubKey: (),   // 6 L2 op
-        ForcedExit: (),     // 7 L2 op
-        OrderMatching: ()   // 8 L2 op
+        Noop: (), // 0
+        Deposit: (), // 1 L1 op
+        TransferToNew: (), // 2 L2 op
+        Withdraw: (), // 3 L2 op
+        Transfer: (), // 4 L2 op
+        FullExit: (), // 5 L1 op
+        ChangePubKey: (), // 6 L2 op
+        ForcedExit: (), // 7 L2 op
+        OrderMatching: () // 8 L2 op
     }
 
     impl OpTypeReadBytes of ReadBytes<OpType> {
@@ -118,11 +107,7 @@ mod Operations {
     impl PriorityOperationDefault of Default<PriorityOperation> {
         #[always_inline]
         fn default() -> PriorityOperation {
-            PriorityOperation {
-                hashedPubData: 0,
-                expirationBlock: 0,
-                opType: OpType::Noop(())
-            }
+            PriorityOperation { hashedPubData: 0, expirationBlock: 0, opType: OpType::Noop(()) }
         }
     }
 
@@ -138,13 +123,13 @@ mod Operations {
     // Deposit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop, Serde)]
     struct Deposit {
-        chainId: u8,            // 1 byte, deposit from which chain that identified by L2 chain id
-        accountId: u32,         // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
-        subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        tokenId: u16,           // 2 bytes, the token that registered to L2
-        targetTokenId: u16,     // 2 bytes, the token that user increased in L2
-        amount: u128,           // 16 bytes, the token amount deposited to L2
-        owner: felt252,         // 32 bytes, the address that receive deposited token at L2
+        chainId: u8, // 1 byte, deposit from which chain that identified by L2 chain id
+        accountId: u32, // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
+        subAccountId: u8, // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
+        tokenId: u16, // 2 bytes, the token that registered to L2
+        targetTokenId: u16, // 2 bytes, the token that user increased in L2
+        amount: u128, // 16 bytes, the token amount deposited to L2
+        owner: felt252, // 32 bytes, the address that receive deposited token at L2
     }
 
     impl DepositOperation of OperationTrait<Deposit> {
@@ -176,7 +161,7 @@ mod Operations {
             let mut pubData = BytesTrait::new_empty();
             pubData.append_u8(opType.into());
             pubData.append_u8(*self.chainId);
-            pubData.append_u32(0);              // accountId (ignored during hash calculation)
+            pubData.append_u32(0); // accountId (ignored during hash calculation)
             pubData.append_u8(*self.subAccountId);
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.targetTokenId);
@@ -189,20 +174,24 @@ mod Operations {
         // Checks the peration is same as operation in priority queue
         fn checkPriorityOperation(self: @Deposit, priorityOperation: @PriorityOperation) {
             assert(*priorityOperation.opType == OpType::Deposit(()), 'OP: not deposit');
-            assert(u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation.hashedPubData, 'OP: invalid deposit hash');
+            assert(
+                u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation
+                    .hashedPubData,
+                'OP: invalid deposit hash'
+            );
         }
     }
 
     // FullExit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop, Serde)]
     struct FullExit {
-        chainId: u8,            // 1 byte, withdraw to which chain that identified by L2 chain id
-        accountId: u32,         // 4 bytes, the account id to withdraw from
-        subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
+        chainId: u8, // 1 byte, withdraw to which chain that identified by L2 chain id
+        accountId: u32, // 4 bytes, the account id to withdraw from
+        subAccountId: u8, // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
         owner: ContractAddress, // 32 bytes, the address that own the account at L2
-        tokenId: u16,           // 2 bytes, the token that withdraw to l1
-        srcTokenId: u16,        // 2 bytes, the token that deducted in L2
-        amount: u128,           // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
+        tokenId: u16, // 2 bytes, the token that withdraw to l1
+        srcTokenId: u16, // 2 bytes, the token that deducted in L2
+        amount: u128, // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
     }
 
     impl FullExitOperation of OperationTrait<FullExit> {
@@ -239,7 +228,7 @@ mod Operations {
             pubData.append_address(*self.owner);
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.srcTokenId);
-            pubData.append_u128(0);            // amount (ignored during hash calculation)
+            pubData.append_u128(0); // amount (ignored during hash calculation)
 
             pubData
         }
@@ -247,22 +236,26 @@ mod Operations {
         // Checks the peration is same as operation in priority queue
         fn checkPriorityOperation(self: @FullExit, priorityOperation: @PriorityOperation) {
             assert(*priorityOperation.opType == OpType::FullExit(()), 'OP: not fullExit');
-            assert(u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation.hashedPubData, 'OP: invalid fullExit hash');
+            assert(
+                u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation
+                    .hashedPubData,
+                'OP: invalid fullExit hash'
+            );
         }
     }
 
     // Withdraw operation: 63 bytes(68 with opType)
     #[derive(Copy, Drop, Serde)]
     struct Withdraw {
-        chainId: u8,                // 1 byte, which chain the withdraw happened
-        accountId: u32,             // 4 bytes, the account id to withdraw from
-        subAccountId: u8,           // 1 byte, the sub account to withdraw from
-        tokenId: u16,               // 2 bytes, the token that to withdraw
-        amount: u128,               // 16 bytes, the token amount to withdraw
-        owner: ContractAddress,     // 32 bytes, the address to receive token
-        nonce: u32,                 // 4 bytes, the sub account nonce
-        fastWithdrawFeeRate: u16,   // 2 bytes, fast withdraw fee rate taken by acceptor
-        fastWithdraw: u8,           // 1 byte, 0 means normal withdraw, 1 means fast withdraw
+        chainId: u8, // 1 byte, which chain the withdraw happened
+        accountId: u32, // 4 bytes, the account id to withdraw from
+        subAccountId: u8, // 1 byte, the sub account to withdraw from
+        tokenId: u16, // 2 bytes, the token that to withdraw
+        amount: u128, // 16 bytes, the token amount to withdraw
+        owner: ContractAddress, // 32 bytes, the address to receive token
+        nonce: u32, // 4 bytes, the sub account nonce
+        fastWithdrawFeeRate: u16, // 2 bytes, fast withdraw fee rate taken by acceptor
+        fastWithdraw: u8, // 1 byte, 0 means normal withdraw, 1 means fast withdraw
     }
 
     impl WithdrawOperation of OperationTrait<Withdraw> {
@@ -314,22 +307,20 @@ mod Operations {
             BytesTrait::new_empty()
         }
         // Do nothing
-        fn checkPriorityOperation(self: @Withdraw, priorityOperation: @PriorityOperation) {
-
-        }
+        fn checkPriorityOperation(self: @Withdraw, priorityOperation: @PriorityOperation) {}
     }
 
     // ForcedExit operation: 64 Bytes(68 with opType)
     #[derive(Copy, Drop, Serde)]
     struct ForcedExit {
-        chainId: u8,                // 1 byte, which chain the force exit happened
-        initiatorAccountId: u32,    // 4 bytes, the account id of initiator
-        initiatorSubAccountId: u8,  // 1 byte, the sub account id of initiator
-        initiatorNonce: u32,        // 4 bytes, the sub account nonce of initiator
-        targetAccountId: u32,       // 4 bytes, the account id of target
-        tokenId: u16,               // 2 bytes, the token that to withdraw
-        amount: u128,               // 16 bytes, the token amount to withdraw
-        target: ContractAddress     // 32 bytes, the address to receive token
+        chainId: u8, // 1 byte, which chain the force exit happened
+        initiatorAccountId: u32, // 4 bytes, the account id of initiator
+        initiatorSubAccountId: u8, // 1 byte, the sub account id of initiator
+        initiatorNonce: u32, // 4 bytes, the sub account nonce of initiator
+        targetAccountId: u32, // 4 bytes, the account id of target
+        tokenId: u16, // 2 bytes, the token that to withdraw
+        amount: u128, // 16 bytes, the token amount to withdraw
+        target: ContractAddress // 32 bytes, the address to receive token
     }
 
     impl ForcedExitOperatoin of OperationTrait<ForcedExit> {
@@ -379,19 +370,17 @@ mod Operations {
         }
 
         // Do nothing
-        fn checkPriorityOperation(self: @ForcedExit, priorityOperation: @PriorityOperation) {
-
-        }
+        fn checkPriorityOperation(self: @ForcedExit, priorityOperation: @PriorityOperation) {}
     }
 
     // ChangePubKey operation: 61 bytes(67 with opType)
     #[derive(Copy, Drop, Serde)]
     struct ChangePubKey {
-        chainId: u8,                // 1 byte, which chain to verify(only one chain need to verify for gas saving)
-        accountId: u32,             // 4 bytes, the account that to change pubkey
-        pubKeyHash: felt252,        // 20 bytes, hash of the new rollup pubkey
-        owner: ContractAddress,     // 32 bytes, the owner that own this account
-        nonce: u32,                 // 4 bytes, the account nonce
+        chainId: u8, // 1 byte, which chain to verify(only one chain need to verify for gas saving)
+        accountId: u32, // 4 bytes, the account that to change pubkey
+        pubKeyHash: felt252, // 20 bytes, hash of the new rollup pubkey
+        owner: ContractAddress, // 32 bytes, the owner that own this account
+        nonce: u32, // 4 bytes, the account nonce
     }
 
     impl ChangePubKeyOperation of OperationTrait<ChangePubKey> {
@@ -431,8 +420,6 @@ mod Operations {
         }
 
         // Do nothing
-        fn checkPriorityOperation(self: @ChangePubKey, priorityOperation: @PriorityOperation) {
-
-        }
+        fn checkPriorityOperation(self: @ChangePubKey, priorityOperation: @PriorityOperation) {}
     }
 }

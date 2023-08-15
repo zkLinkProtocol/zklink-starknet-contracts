@@ -1,46 +1,119 @@
 use starknet::ContractAddress;
 use zklink::utils::data_structures::DataStructures::{
-    StoredBlockInfo, CommitBlockInfo, ProofInput, Token,
-    CompressedBlockExtraInfo, ExecuteBlockInfo};
+    StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo
+};
 use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
 trait IZklink<TContractState> {
-    fn depositERC20(ref self: TContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool);
-    fn transferERC20(ref self: TContractState, _token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool) -> u128;
-    fn acceptERC20(ref self: TContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _amountTransfer: u128);
-    fn requestFullExit(ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool);
+    fn depositERC20(
+        ref self: TContractState,
+        _token: ContractAddress,
+        _amount: u128,
+        _zkLinkAddress: felt252,
+        _subAccountId: u8,
+        _mapping: bool
+    );
+    fn transferERC20(
+        ref self: TContractState,
+        _token: ContractAddress,
+        _to: ContractAddress,
+        _amount: u128,
+        _maxAmount: u128,
+        _isStandard: bool
+    ) -> u128;
+    fn acceptERC20(
+        ref self: TContractState,
+        _acceptor: ContractAddress,
+        _accountId: u32,
+        _receiver: ContractAddress,
+        _tokenId: u16,
+        _amount: u128,
+        _withdrawFeeRate: u16,
+        _accountIdOfNonce: u32,
+        _subAccountIdOfNonce: u8,
+        _nonce: u32,
+        _amountTransfer: u128
+    );
+    fn requestFullExit(
+        ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
+    );
     fn activateExodusMode(ref self: TContractState);
-    fn performExodus(ref self: TContractState, _storedBlockInfo: StoredBlockInfo, _owner: felt252, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>);
-    fn cancelOutstandingDepositsForExodusMode(ref self: TContractState, _n: u64, _depositsPubdata: Array<Bytes>);
+    fn performExodus(
+        ref self: TContractState,
+        _storedBlockInfo: StoredBlockInfo,
+        _owner: felt252,
+        _accountId: u32,
+        _subAccountId: u8,
+        _withdrawTokenId: u16,
+        _deductTokenId: u16,
+        _amount: u128,
+        _proof: Array<u256>
+    );
+    fn cancelOutstandingDepositsForExodusMode(
+        ref self: TContractState, _n: u64, _depositsPubdata: Array<Bytes>
+    );
     fn setAuthPubkeyHash(ref self: TContractState, _pubkeyHash: felt252, _nonce: u32);
-    fn withdrawPendingBalance(ref self: TContractState, _owner: ContractAddress, _tokenId: u16, _amount: u128) -> u128;
-    fn commitBlocks(ref self: TContractState, _lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>);
-    fn commitCompressedBlocks(ref self: TContractState, _lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>, _newBlocksExtraData: Array<CompressedBlockExtraInfo>);
+    fn withdrawPendingBalance(
+        ref self: TContractState, _owner: ContractAddress, _tokenId: u16, _amount: u128
+    ) -> u128;
+    fn commitBlocks(
+        ref self: TContractState,
+        _lastCommittedBlockData: StoredBlockInfo,
+        _newBlocksData: Array<CommitBlockInfo>
+    );
+    fn commitCompressedBlocks(
+        ref self: TContractState,
+        _lastCommittedBlockData: StoredBlockInfo,
+        _newBlocksData: Array<CommitBlockInfo>,
+        _newBlocksExtraData: Array<CompressedBlockExtraInfo>
+    );
     fn executeBlocks(ref self: TContractState, _blocksData: Array<ExecuteBlockInfo>);
-    fn proveBlocks(ref self: TContractState, _committedBlocks: Array<StoredBlockInfo>, _proof: ProofInput);
+    fn proveBlocks(
+        ref self: TContractState, _committedBlocks: Array<StoredBlockInfo>, _proof: ProofInput
+    );
     fn revertBlocks(ref self: TContractState, _blocksToRevert: Array<StoredBlockInfo>);
     fn receiveSynchronizationProgress(ref self: TContractState, _syncHash: u256, _progress: u256);
     fn syncBlocks(ref self: TContractState, _block: StoredBlockInfo);
-    fn brokerApprove(ref self: TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128) -> bool;
+    fn brokerApprove(
+        ref self: TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
+    ) -> bool;
     fn changeGovernor(ref self: TContractState, _newGovernor: ContractAddress);
-    fn addToken(ref self: TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8, _standard: bool);
+    fn addToken(
+        ref self: TContractState,
+        _tokenId: u16,
+        _tokenAddress: ContractAddress,
+        _decimals: u8,
+        _standard: bool
+    );
     fn addTokens(ref self: TContractState, _tokenList: Array<Token>);
     fn setTokenPaused(ref self: TContractState, _tokenId: u16, _tokenPaused: bool);
     fn setValidator(ref self: TContractState, _validator: ContractAddress, _active: bool);
     fn addBridge(ref self: TContractState, _bridge: ContractAddress) -> usize;
-    fn updateBridge(ref self: TContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool);
+    fn updateBridge(
+        ref self: TContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool
+    );
     fn getSynchronizedProgress(self: @TContractState, _block: StoredBlockInfo) -> u256;
-    fn brokerAllowance(self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress) -> u128;
+    fn brokerAllowance(
+        self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress
+    ) -> u128;
     fn getPendingBalance(self: @TContractState, _address: felt252, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn networkGovernor(self: @TContractState) -> ContractAddress;
 
-    fn StoredBlockInfoTest(self: @TContractState, _blocksData: Array<StoredBlockInfo>, i: usize) -> u64;
-    fn CommitBlockInfoTest(self: @TContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize;
-    fn CompressedBlockExtraInfoTest(self: @TContractState, _blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize) -> u256;
-    fn ExecuteBlockInfoTest(self: @TContractState, _blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8) -> u8;
+    fn StoredBlockInfoTest(
+        self: @TContractState, _blocksData: Array<StoredBlockInfo>, i: usize
+    ) -> u64;
+    fn CommitBlockInfoTest(
+        self: @TContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize
+    ) -> usize;
+    fn CompressedBlockExtraInfoTest(
+        self: @TContractState, _blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize
+    ) -> u256;
+    fn ExecuteBlockInfoTest(
+        self: @TContractState, _blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8
+    ) -> u8;
     fn u256Test(self: @TContractState, _u256: u256) -> (u128, u128);
     fn u256sTest(self: @TContractState, _u256s: Array<u256>, i: usize) -> (u128, u128);
     fn u8sTest1(self: @TContractState, _u8s: Array<u8>) -> usize;
@@ -50,12 +123,7 @@ trait IZklink<TContractState> {
 #[starknet::contract]
 mod Zklink {
     use zeroable::Zeroable;
-    use traits::{
-        Into,
-        TryInto,
-        Index,
-        Default
-    };
+    use traits::{Into, TryInto, Index, Default};
     use option::OptionTrait;
     use array::{ArrayTrait, SpanTrait};
     use dict::Felt252DictTrait;
@@ -63,13 +131,8 @@ mod Zklink {
     use box::BoxTrait;
     use clone::Clone;
     use starknet::{
-        ContractAddress,
-        contract_address_const,
-        Felt252TryIntoContractAddress,
-        get_contract_address,
-        get_caller_address,
-        get_block_info,
-        get_block_timestamp
+        ContractAddress, contract_address_const, Felt252TryIntoContractAddress,
+        get_contract_address, get_caller_address, get_block_info, get_block_timestamp
     };
     // TODO: corelib import error
     use core::starknet::info::get_block_number;
@@ -81,190 +144,124 @@ mod Zklink {
     use zklink::libraries::IERC20::IERC20Dispatcher;
     use zklink::libraries::IERC20::IERC20DispatcherTrait;
 
-    use zklink::utils::bytes::{
-        Bytes,
-        BytesTrait,
-        ReadBytes
-    };
+    use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
     use zklink::utils::operations::Operations::{
-        OpType,
-        OpTypeIntoU8,
-        OpTypeReadBytes,
-        U8TryIntoOpType,
-        PriorityOperation,
-        OperationTrait,
-        Deposit,
-        DepositOperation,
-        FullExit,
-        FullExitOperation,
-        ForcedExit,
-        ForcedExitOperatoin,
-        Withdraw,
-        WithdrawOperation,
-        ChangePubKey,
-        ChangePubKeyOperation
+        OpType, OpTypeIntoU8, OpTypeReadBytes, U8TryIntoOpType, PriorityOperation, OperationTrait,
+        Deposit, DepositOperation, FullExit, FullExitOperation, ForcedExit, ForcedExitOperatoin,
+        Withdraw, WithdrawOperation, ChangePubKey, ChangePubKeyOperation
     };
     use zklink::utils::data_structures::DataStructures::{
-        RegisteredToken,
-        BridgeInfo,
-        StoredBlockInfo,
-        StoredBlockInfoIntoBytes,
-        CommitBlockInfo,
-        CompressedBlockExtraInfo,
-        ExecuteBlockInfo,
-        OnchainOperationData,
-        Token,
-        ProofInput,
-        ChangePubkeyType,
-        ChangePubkeyTypeReadBytes
+        RegisteredToken, BridgeInfo, StoredBlockInfo, StoredBlockInfoIntoBytes, CommitBlockInfo,
+        CompressedBlockExtraInfo, ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
+        ChangePubkeyType, ChangePubkeyTypeReadBytes
     };
     use zklink::utils::math::{
-        u128_pow,
-        felt252_fast_pow2,
-        u256_pow2,
-        u256_to_u160,
-        u32_min,
-        u64_min,
-        u128_min,
+        u128_pow, felt252_fast_pow2, u256_pow2, u256_to_u160, u32_min, u64_min, u128_min,
     };
-    use zklink::utils::utils::{
-        concatHash,
-        pubKeyHash,
-        concatTwoHash
-    };
+    use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash};
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
-        CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES, FULL_EXIT_BYTES,
-        PRIORITY_EXPIRATION,
-        MAX_DEPOSIT_AMOUNT,
-        MAX_PROOF_COMMITMENT, INPUT_MASK,
-        AUTH_FACT_RESET_TIMELOCK,
-        CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
-        ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
-        TOKEN_DECIMALS_OF_LAYER2,
-        GLOBAL_ASSET_ACCOUNT_ID,
-        USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
+        CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES,
+        FULL_EXIT_BYTES, PRIORITY_EXPIRATION, MAX_DEPOSIT_AMOUNT, MAX_PROOF_COMMITMENT, INPUT_MASK,
+        AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
+        ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE, TOKEN_DECIMALS_OF_LAYER2,
+        GLOBAL_ASSET_ACCOUNT_ID, USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
     };
-    
+
     /// Storage
     #[storage]
     struct Storage {
         entered: bool,
-
         // public
         // Verifier contract. Used to verify block proof and exit proof
         verifier: ContractAddress,
-
         // public
         // Total number of executed blocks i.e. blocks[totalBlocksExecuted] points at the latest executed block (block 0 is genesis)
         totalBlocksExecuted: u64,
-
         // public
         // First open priority request id
         firstPriorityRequestId: u64,
-
         // public
         // The the owner of whole system
         networkGovernor: ContractAddress,
-
         // public
         // Total number of committed blocks i.e. blocks[totalBlocksCommitted] points at the latest committed block
         totalBlocksCommitted: u64,
-
         // public
         // Total number of requests
         totalOpenPriorityRequests: u64,
-
         // public
         // Total blocks proven
         totalBlocksProven: u64,
-
         // public
         // Total number of committed requests.
         // Used in checks: if the request matches the operation on Rollup contract and if provided number of requests is not too big
         totalCommittedPriorityRequests: u64,
-
         // public
         // Latest synchronized block height
         totalBlocksSynchronized: u64,
-
         // public
         // Flag indicates that exodus (mass exit) mode is triggered
         // Once it was raised, it can not be cleared again, and all users must exit
         exodusMode: bool,
-
         // internal
         // Balances to withdraw, (owner, tokenId) => amount
         // The type of owner is felt252, which can both storing evm address and starknet address 
         // the amount of pending balance need to recovery decimals when withdraw
         pendingBalances: LegacyMap::<(felt252, u16), u128>,
-
         // public
         // Flag indicates that a user has exited a certain token balance in the exodus mode
         // The struct of this map is (accountId ,subAccountId, withdrawTokenId, deductTokenId) => performed
         // withdrawTokenId is the token that withdraw to user in l1
         // deductTokenId is the token that deducted from user in l2
         performedExodus: LegacyMap::<(u32, u8, u16, u16), bool>,
-
         // internal
         // Priority Requests mapping (request id - operation)
         // Contains op type, pubdata and expiration block of unsatisfied requests.
         // Numbers are in order of requests receiving
         priorityRequests: LegacyMap::<u64, PriorityOperation>,
-
         // public
         // User authenticated fact hashes for some nonce.
         // (owner, nonce) => hash.
         authFacts: LegacyMap::<(ContractAddress, u32), u256>,
-
         // internal
         // Timer for authFacts entry reset (address, nonce) => timer.
         // Used when user wants to reset `authFacts` for some nonce.
         authFactsResetTimer: LegacyMap::<(ContractAddress, u32), u64>,
-
         // internal
         // Stored hashed StoredBlockInfo for some block number
         // Block number is u64 in Starknet
         storedBlockHashes: LegacyMap::<u64, u256>,
-
         // internal
         // if (`synchronizedChains` | CHAIN_INDEX) == `ALL_CHAINS` defined in `constants.cairo` then blocks at `blockHeight` and before it can be executed
         // the key is the `syncHash` of `StoredBlockInfo`
         // the value is the `synchronizedChains` of `syncHash` collected from all other chains
         synchronizedChains: LegacyMap::<u256, u256>,
-
         // public
         // Accept infos of fast withdraw of account
         // (accountId, keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate)) => acceptor address
         accepts: LegacyMap::<(u32, u256), ContractAddress>,
-
         // internal
         // Broker allowance used in accept, acceptor can authorize broker to do accept
         // Similar to the allowance of transfer in ERC20
         // (tokenId, acceptor, broker) => allowance
         brokerAllowances: LegacyMap::<(u16, ContractAddress, ContractAddress), u128>,
-
         // public
         // A set of permitted validators
         validators: LegacyMap::<ContractAddress, bool>,
-
         // public
         // A map of registered token infos
         tokens: LegacyMap::<u16, RegisteredToken>,
-
         // public
         // A map of registered token infos
         tokenIds: LegacyMap::<ContractAddress, u16>,
-
         // public
         // using map instead of array, index => BridgeInfo
         // bridgeIndex[bridgeAddress] - 1 => BridgeInfo
         bridges: LegacyMap::<usize, BridgeInfo>,
-
         // public
         // bridges length
         bridgesLength: usize,
-
         // public
         // 0 is reversed for non-exist bridge, existing bridges are indexed from 1
         bridgeIndex: LegacyMap::<ContractAddress, usize>,
@@ -288,7 +285,7 @@ mod Zklink {
     struct BlockExecuted {
         blockNumber: u64
     }
-    
+
     // Event emitted when user funds are withdrawn from the zkLink state and contract
     #[derive(Drop, starknet::Event)]
     struct Withdrawal {
@@ -472,7 +469,6 @@ mod Zklink {
     impl Zklink of super::IZklink<ContractState> {
         // TODO: upgrade interface
 
-
         // Deposit ERC20 token to Layer 2 - transfer ERC20 tokens from user into contract, validate it, register deposit
         // it MUST be ok to call other external functions within from this function
         // when the token(eg. erc777) is not a pure erc20 token
@@ -482,7 +478,14 @@ mod Zklink {
         //  _zkLinkAddress The receiver Layer 2 address
         //  _subAccountId The receiver sub account
         //  _mapping If true and token has a mapping token, user will receive mapping token at l2
-        fn depositERC20(ref self: ContractState, _token: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool) {
+        fn depositERC20(
+            ref self: ContractState,
+            _token: ContractAddress,
+            _amount: u128,
+            _zkLinkAddress: felt252,
+            _subAccountId: u8,
+            _mapping: bool
+        ) {
             self.start();
             self.deposit(_token, _amount, _zkLinkAddress, _subAccountId, _mapping);
             self.end();
@@ -498,22 +501,37 @@ mod Zklink {
         //  _maxAmount Maximum possible amount of tokens to transfer to this account
         //  _isStandard If token is a standard erc20
         //  withdrawnAmount The really amount than will be debited from user
-        fn transferERC20(ref self: ContractState, _token: ContractAddress, _to: ContractAddress, _amount: u128, _maxAmount: u128, _isStandard: bool) -> u128 {
+        fn transferERC20(
+            ref self: ContractState,
+            _token: ContractAddress,
+            _to: ContractAddress,
+            _amount: u128,
+            _maxAmount: u128,
+            _isStandard: bool
+        ) -> u128 {
             let sender = get_caller_address();
             let contract_address = get_contract_address();
             assert(sender == contract_address, 'n0');
 
             // most tokens are standard, fewer query token balance can save gas
             if _isStandard {
-                IERC20Dispatcher {contract_address: _token}.transfer(_to, _amount.into());
+                IERC20Dispatcher { contract_address: _token }.transfer(_to, _amount.into());
                 return _amount;
             } else {
-                let balanceBefore = IERC20Dispatcher {contract_address: _token}.balance_of(contract_address);
-                IERC20Dispatcher {contract_address: _token}.transfer(_to, _amount.into());
-                let balanceAfter = IERC20Dispatcher {contract_address: _token}.balance_of(contract_address);
+                let balanceBefore = IERC20Dispatcher {
+                    contract_address: _token
+                }.balance_of(contract_address);
+                IERC20Dispatcher { contract_address: _token }.transfer(_to, _amount.into());
+                let balanceAfter = IERC20Dispatcher {
+                    contract_address: _token
+                }.balance_of(contract_address);
                 let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
-                assert(balanceDiff > 0, 'n1'); // transfer is considered successful only if the balance of the contract decreased after transfer
-                assert(balanceDiff <= _maxAmount, 'n2'); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
+                assert(
+                    balanceDiff > 0, 'n1'
+                ); // transfer is considered successful only if the balance of the contract decreased after transfer
+                assert(
+                    balanceDiff <= _maxAmount, 'n2'
+                ); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
                 return balanceDiff;
             }
         }
@@ -531,46 +549,91 @@ mod Zklink {
         //  nonce SubAccount nonce, used to produce unique accept info
         //  amountTransfer Amount that transfer from acceptor to receiver
         // may be a litter larger than the amount receiver received
-        fn acceptERC20(ref self: ContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _amountTransfer: u128) {
+        fn acceptERC20(
+            ref self: ContractState,
+            _acceptor: ContractAddress,
+            _accountId: u32,
+            _receiver: ContractAddress,
+            _tokenId: u16,
+            _amount: u128,
+            _withdrawFeeRate: u16,
+            _accountIdOfNonce: u32,
+            _subAccountIdOfNonce: u8,
+            _nonce: u32,
+            _amountTransfer: u128
+        ) {
             self.start();
 
             // Checks
-            let (mut amountReceive, tokenAddress) = self._checkAccept(_acceptor, _accountId, _receiver, _tokenId, _amount, _withdrawFeeRate, _accountIdOfNonce, _subAccountIdOfNonce, _nonce);
+            let (mut amountReceive, tokenAddress) = self
+                ._checkAccept(
+                    _acceptor,
+                    _accountId,
+                    _receiver,
+                    _tokenId,
+                    _amount,
+                    _withdrawFeeRate,
+                    _accountIdOfNonce,
+                    _subAccountIdOfNonce,
+                    _nonce
+                );
 
             // Interactions
-            let receiverBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_receiver);
-            let acceptorBalanceBefore: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_acceptor);
-            let success: bool = IERC20Dispatcher {contract_address: tokenAddress}.transfer_from(_acceptor, _receiver, _amountTransfer.into());
+            let receiverBalanceBefore: u256 = IERC20Dispatcher {
+                contract_address: tokenAddress
+            }.balance_of(_receiver);
+            let acceptorBalanceBefore: u256 = IERC20Dispatcher {
+                contract_address: tokenAddress
+            }.balance_of(_acceptor);
+            let success: bool = IERC20Dispatcher {
+                contract_address: tokenAddress
+            }.transfer_from(_acceptor, _receiver, _amountTransfer.into());
             // TODO: need check?
             assert(success, 'H7');
-            let receiverBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_receiver);
-            let acceptorBalanceAfter: u256 = IERC20Dispatcher {contract_address: tokenAddress}.balance_of(_acceptor);
-            let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore).try_into().unwrap();
+            let receiverBalanceAfter: u256 = IERC20Dispatcher {
+                contract_address: tokenAddress
+            }.balance_of(_receiver);
+            let acceptorBalanceAfter: u256 = IERC20Dispatcher {
+                contract_address: tokenAddress
+            }.balance_of(_acceptor);
+            let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore)
+                .try_into()
+                .unwrap();
             assert(receiverBalanceDiff >= amountReceive, 'F0');
             amountReceive = receiverBalanceDiff;
-            let amountSent: u128 = (acceptorBalanceBefore - acceptorBalanceAfter).try_into().unwrap();
+            let amountSent: u128 = (acceptorBalanceBefore - acceptorBalanceAfter)
+                .try_into()
+                .unwrap();
 
             let sender = get_caller_address();
             if sender != _acceptor {
-                assert(Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountSent, 'F1');
-                 self.brokerAllowances.write((_tokenId, _acceptor, sender),  self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountSent);
+                assert(
+                    Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountSent, 'F1'
+                );
+                self
+                    .brokerAllowances
+                    .write(
+                        (_tokenId, _acceptor, sender),
+                        self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountSent
+                    );
             }
 
-            self.emit(
-                Accept {
-                    acceptor: _acceptor,
-                    accountId: _accountId,
-                    receiver: _receiver,
-                    tokenId: _tokenId,
-                    amount: _amount,
-                    withdrawFeeRate: _withdrawFeeRate,
-                    accountIdOfNonce: _accountIdOfNonce,
-                    subAccountIdOfNonce: _subAccountIdOfNonce,
-                    nonce: _nonce,
-                    amountSent: amountSent,
-                    amountReceive: amountReceive,
-                }
-            );
+            self
+                .emit(
+                    Accept {
+                        acceptor: _acceptor,
+                        accountId: _accountId,
+                        receiver: _receiver,
+                        tokenId: _tokenId,
+                        amount: _amount,
+                        withdrawFeeRate: _withdrawFeeRate,
+                        accountIdOfNonce: _accountIdOfNonce,
+                        subAccountIdOfNonce: _subAccountIdOfNonce,
+                        nonce: _nonce,
+                        amountSent: amountSent,
+                        amountReceive: amountReceive,
+                    }
+                );
 
             self.end();
         }
@@ -581,7 +644,13 @@ mod Zklink {
         //  _subAccountId The exit sub account
         //  _tokenId Token id
         //  _mapping If true and token has a mapping token, user's mapping token balance will be decreased at l2
-        fn requestFullExit(ref self: ContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool) {
+        fn requestFullExit(
+            ref self: ContractState,
+            _accountId: u32,
+            _subAccountId: u8,
+            _tokenId: u16,
+            _mapping: bool
+        ) {
             self.start();
             self.active();
             // Checks
@@ -596,7 +665,9 @@ mod Zklink {
             // all other tokens don't support mapping
             let mut srcTokenId = _tokenId;
             if _mapping {
-                assert(_tokenId >= MIN_USD_STABLE_TOKEN_ID && _tokenId <= MAX_USD_STABLE_TOKEN_ID, 'a3');
+                assert(
+                    _tokenId >= MIN_USD_STABLE_TOKEN_ID && _tokenId <= MAX_USD_STABLE_TOKEN_ID, 'a3'
+                );
                 srcTokenId = USD_TOKEN_ID;
             }
 
@@ -606,10 +677,10 @@ mod Zklink {
                 chainId: CHAIN_ID,
                 accountId: _accountId,
                 subAccountId: _subAccountId,
-                owner: sender,              // Only the owner of account can fullExit for them self
+                owner: sender, // Only the owner of account can fullExit for them self
                 tokenId: _tokenId,
                 srcTokenId: srcTokenId,
-                amount: 0,                  // unknown at this point
+                amount: 0, // unknown at this point
             };
 
             let pubData = op.writeForPriorityQueue();
@@ -625,16 +696,15 @@ mod Zklink {
             self.start();
             self.active();
             let blockNumber = get_block_number();
-            let expirationBlock = self.priorityRequests.read(self.firstPriorityRequestId.read()).expirationBlock;
+            let expirationBlock = self
+                .priorityRequests
+                .read(self.firstPriorityRequestId.read())
+                .expirationBlock;
             let trigger: bool = ((blockNumber >= expirationBlock) & (expirationBlock != 0));
 
             if trigger {
                 self.exodusMode.write(true);
-                self.emit(
-                    Event::ExodusMode(
-                        ExodusMode {}
-                    )
-                );
+                self.emit(Event::ExodusMode(ExodusMode {}));
             }
 
             self.end();
@@ -650,33 +720,54 @@ mod Zklink {
         //  _withdrawTokenId The token want to withdraw in l1
         //  _deductTokenId The token deducted in l2
         //  _amount Amount for owner (must be total amount, not part of it) in l2
-        fn performExodus(ref self: ContractState, _storedBlockInfo: StoredBlockInfo, _owner: felt252, _accountId: u32, _subAccountId: u8, _withdrawTokenId: u16, _deductTokenId: u16, _amount: u128, _proof: Array<u256>) {
+        fn performExodus(
+            ref self: ContractState,
+            _storedBlockInfo: StoredBlockInfo,
+            _owner: felt252,
+            _accountId: u32,
+            _subAccountId: u8,
+            _withdrawTokenId: u16,
+            _deductTokenId: u16,
+            _amount: u128,
+            _proof: Array<u256>
+        ) {
             self.start();
             self.notActive();
 
             // checks
             // performed exodus MUST not be already exited
-            assert(!self.performedExodus.read((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId)), 'y0');
+            assert(
+                !self
+                    .performedExodus
+                    .read((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId)),
+                'y0'
+            );
             // incorrect stored block info
-            assert(self.storedBlockHashes.read(self.totalBlocksExecuted.read()) == hashStoredBlockInfo(_storedBlockInfo), 'y1');
+            assert(
+                self
+                    .storedBlockHashes
+                    .read(self.totalBlocksExecuted.read()) == hashStoredBlockInfo(_storedBlockInfo),
+                'y1'
+            );
             // exit proof MUST be correct
             // TODO: impl fake verifier proof contract
             let proofCorrect: bool = true;
             assert(proofCorrect, 'y2');
 
             // Effects
-            self.performedExodus.write((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId), true);
+            self
+                .performedExodus
+                .write((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId), true);
 
             self.increaseBalanceToWithdraw(_owner, _withdrawTokenId, _amount);
-            self.emit(
-                Event::WithdrawalPending(
-                    WithdrawalPending {
-                        tokenId: _withdrawTokenId,
-                        recepient: _owner,
-                        amount: _amount
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::WithdrawalPending(
+                        WithdrawalPending {
+                            tokenId: _withdrawTokenId, recepient: _owner, amount: _amount
+                        }
+                    )
+                );
 
             self.end();
         }
@@ -688,7 +779,9 @@ mod Zklink {
         //  _n number of requests to process
         //  _depositsPubdataSize deposit pubData size in bytes
         //  _depositsPubdata deposit details
-        fn cancelOutstandingDepositsForExodusMode(ref self: ContractState, _n: u64, _depositsPubdata: Array<Bytes>) {
+        fn cancelOutstandingDepositsForExodusMode(
+            ref self: ContractState, _n: u64, _depositsPubdata: Array<Bytes>
+        ) {
             self.start();
             self.notActive();
             // Checks
@@ -745,42 +838,33 @@ mod Zklink {
             let sender = get_caller_address();
             if self.authFacts.read((sender, _nonce)) == 0 {
                 self.authFacts.write((sender, _nonce), pubKeyHash(_pubkeyHash));
-                self.emit(
-                    Event::FactAuth (
-                        FactAuth {
-                            sender: sender,
-                            nonce: _nonce,
-                            fact: _pubkeyHash
-                        }
-                    )
-                );
+                self
+                    .emit(
+                        Event::FactAuth(
+                            FactAuth { sender: sender, nonce: _nonce, fact: _pubkeyHash }
+                        )
+                    );
             } else {
                 let currentResetTimer: u64 = self.authFactsResetTimer.read((sender, _nonce));
                 let timestamp = get_block_timestamp();
                 if currentResetTimer == 0 {
                     self.authFactsResetTimer.write((sender, _nonce), timestamp);
-                    self.emit(
-                        Event::FactAuthResetTime (
-                            FactAuthResetTime {
-                                sender: sender,
-                                nonce: _nonce,
-                                time: timestamp
-                            }
-                        )
-                    );
+                    self
+                        .emit(
+                            Event::FactAuthResetTime(
+                                FactAuthResetTime { sender: sender, nonce: _nonce, time: timestamp }
+                            )
+                        );
                 } else {
                     assert((timestamp - currentResetTimer) >= AUTH_FACT_RESET_TIMELOCK, 'B1');
                     self.authFactsResetTimer.write((sender, _nonce), 0);
                     self.authFacts.write((sender, _nonce), pubKeyHash(_pubkeyHash));
-                    self.emit(
-                        Event::FactAuth (
-                            FactAuth {
-                                sender: sender,
-                                nonce: _nonce,
-                                fact: _pubkeyHash
-                            }
-                        )
-                    );
+                    self
+                        .emit(
+                            Event::FactAuth(
+                                FactAuth { sender: sender, nonce: _nonce, fact: _pubkeyHash }
+                            )
+                        );
                 }
             }
 
@@ -796,7 +880,9 @@ mod Zklink {
         //  _amount Amount to withdraw to request.
         // Returns:
         //  The actual withdrawn amount
-        fn withdrawPendingBalance(ref self: ContractState, _owner: ContractAddress, _tokenId: u16, _amount: u128) -> u128 {
+        fn withdrawPendingBalance(
+            ref self: ContractState, _owner: ContractAddress, _tokenId: u16, _amount: u128
+        ) -> u128 {
             self.start();
 
             // Checks
@@ -812,17 +898,14 @@ mod Zklink {
             // Interactions
             let tokenAddress: ContractAddress = rt.tokenAddress;
             let contract_address = get_contract_address();
-            amount = IZklinkDispatcher {contract_address}.transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
-            
-            self.pendingBalances.write((_owner.into(), _tokenId), balance - improveDecimals(amount, rt.decimals));
-            self.emit(
-                Event::Withdrawal (
-                    Withdrawal {
-                        tokenId: _tokenId,
-                        amount: amount
-                    }
-                )
-            );
+            amount = IZklinkDispatcher {
+                contract_address
+            }.transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
+
+            self
+                .pendingBalances
+                .write((_owner.into(), _tokenId), balance - improveDecimals(amount, rt.decimals));
+            self.emit(Event::Withdrawal(Withdrawal { tokenId: _tokenId, amount: amount }));
 
             self.end();
             amount
@@ -831,7 +914,11 @@ mod Zklink {
         // Commit block
         // 1. Checks onchain operations of all chains, timestamp.
         // 2. Store block commitments, sync hash.
-        fn commitBlocks(ref self: ContractState, _lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>) {
+        fn commitBlocks(
+            ref self: ContractState,
+            _lastCommittedBlockData: StoredBlockInfo,
+            _newBlocksData: Array<CommitBlockInfo>
+        ) {
             let mut _newBlocksExtraData: Array<CompressedBlockExtraInfo> = ArrayTrait::new();
             self._commitBlocks(_lastCommittedBlockData, _newBlocksData, false, _newBlocksExtraData);
         }
@@ -839,7 +926,12 @@ mod Zklink {
         // Commit compressed block
         // 1. Checks onchain operations of current chain, timestamp.
         // 2. Store block commitments, sync hash.
-        fn commitCompressedBlocks(ref self: ContractState, _lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>, _newBlocksExtraData: Array<CompressedBlockExtraInfo>) {
+        fn commitCompressedBlocks(
+            ref self: ContractState,
+            _lastCommittedBlockData: StoredBlockInfo,
+            _newBlocksData: Array<CommitBlockInfo>,
+            _newBlocksExtraData: Array<CompressedBlockExtraInfo>
+        ) {
             self._commitBlocks(_lastCommittedBlockData, _newBlocksData, true, _newBlocksExtraData);
         }
 
@@ -855,13 +947,16 @@ mod Zklink {
             let nBlocks: u64 = _blocksData.len().into();
             assert(nBlocks > 0, 'd0');
 
-            assert(self.totalBlocksExecuted.read() + nBlocks <= self.totalBlocksSynchronized.read(), 'd1');
+            assert(
+                self.totalBlocksExecuted.read() + nBlocks <= self.totalBlocksSynchronized.read(),
+                'd1'
+            );
 
             let mut priorityRequestsExecuted = 0;
             let mut i: usize = 0;
             loop {
                 if i.into() == nBlocks {
-                    break();
+                    break ();
                 }
                 let blockData: @ExecuteBlockInfo = _blocksData[i];
                 self.executeOneBlock(blockData, i);
@@ -869,35 +964,36 @@ mod Zklink {
                 i += 1;
             };
 
-            self.firstPriorityRequestId.write(self.firstPriorityRequestId.read() + priorityRequestsExecuted);
-            self.totalCommittedPriorityRequests.write(self.totalCommittedPriorityRequests.read() - priorityRequestsExecuted);
-            self.totalOpenPriorityRequests.write(self.totalOpenPriorityRequests.read() - priorityRequestsExecuted);
+            self
+                .firstPriorityRequestId
+                .write(self.firstPriorityRequestId.read() + priorityRequestsExecuted);
+            self
+                .totalCommittedPriorityRequests
+                .write(self.totalCommittedPriorityRequests.read() - priorityRequestsExecuted);
+            self
+                .totalOpenPriorityRequests
+                .write(self.totalOpenPriorityRequests.read() - priorityRequestsExecuted);
 
             self.totalBlocksExecuted.write(self.totalBlocksExecuted.read() + nBlocks);
             let lastBlockData: @ExecuteBlockInfo = _blocksData[(nBlocks - 1).try_into().unwrap()];
-            self.emit(
-                Event::BlockExecuted (
-                    BlockExecuted {
-                        blockNumber: *lastBlockData.storedBlock.blockNumber
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::BlockExecuted(
+                        BlockExecuted { blockNumber: *lastBlockData.storedBlock.blockNumber }
+                    )
+                );
 
             self.end();
         }
 
         // Blocks commitment verification.
         // Only verifies block commitments without any other processing
-        fn proveBlocks(ref self: ContractState, _committedBlocks: Array<StoredBlockInfo>, _proof: ProofInput) {
+        fn proveBlocks(
+            ref self: ContractState, _committedBlocks: Array<StoredBlockInfo>, _proof: ProofInput
+        ) {
             self.start();
             // Checks
-            let ProofInput {
-                recursiveInput,
-                proof,
-                vkIndexes,
-                commitments,
-                subproofsLimbs
-            } = _proof;
+            let ProofInput{recursiveInput, proof, vkIndexes, commitments, subproofsLimbs } = _proof;
             let mut currentTotalBlocksProven: u64 = self.totalBlocksProven.read();
             let mut i: usize = 0;
             let commitments_span = commitments.span();
@@ -907,7 +1003,12 @@ mod Zklink {
                 }
                 let commitBlock: @StoredBlockInfo = _committedBlocks[i];
                 currentTotalBlocksProven += 1;
-                assert(hashStoredBlockInfo(*commitBlock) == self.storedBlockHashes.read(currentTotalBlocksProven), 'x0');
+                assert(
+                    hashStoredBlockInfo(*commitBlock) == self
+                        .storedBlockHashes
+                        .read(currentTotalBlocksProven),
+                    'x0'
+                );
 
                 // commitment of proof produced by zk has only 253 significant bits
                 // 'commitment & INPUT_MASK' is used to set the highest 3 bits to 0 and leave the rest unchanged
@@ -923,22 +1024,15 @@ mod Zklink {
 
             // Interactions
             let contract_address: ContractAddress = self.verifier.read();
-            let success: bool = IVerifierDispatcher {contract_address}.verifyAggregatedBlockProof(
-                recursiveInput,
-                proof,
-                vkIndexes,
-                commitments,
-                subproofsLimbs,
-            );
+            let success: bool = IVerifierDispatcher {
+                contract_address
+            }
+                .verifyAggregatedBlockProof(
+                    recursiveInput, proof, vkIndexes, commitments, subproofsLimbs, 
+                );
             assert(success, 'x3');
 
-            self.emit(
-                Event::BlockProven (
-                    BlockProven {
-                        blockNumber: currentTotalBlocksProven
-                    }
-                )
-            );
+            self.emit(Event::BlockProven(BlockProven { blockNumber: currentTotalBlocksProven }));
 
             self.end();
         }
@@ -949,7 +1043,10 @@ mod Zklink {
             self.onlyValidator();
 
             let mut blocksCommitted: u64 = self.totalBlocksCommitted.read();
-            let blocksToRevert: u32 = u32_min(_blocksToRevert.len(), (blocksCommitted - self.totalBlocksExecuted.read()).try_into().unwrap());
+            let blocksToRevert: u32 = u32_min(
+                _blocksToRevert.len(),
+                (blocksCommitted - self.totalBlocksExecuted.read()).try_into().unwrap()
+            );
             let mut revertedPriorityRequests: u64 = 0;
             let mut i: usize = 0;
 
@@ -959,7 +1056,12 @@ mod Zklink {
                 }
 
                 let storedBlockInfo: StoredBlockInfo = *_blocksToRevert[i];
-                assert(self.storedBlockHashes.read(blocksCommitted) == hashStoredBlockInfo(storedBlockInfo), 'c');
+                assert(
+                    self
+                        .storedBlockHashes
+                        .read(blocksCommitted) == hashStoredBlockInfo(storedBlockInfo),
+                    'c'
+                );
 
                 // TODO: delete storedBlockHashes[blocksCommitted];
                 // delete storedBlockHashes[blocksCommitted];
@@ -971,7 +1073,9 @@ mod Zklink {
             };
 
             self.totalBlocksCommitted.write(blocksCommitted);
-            self.totalCommittedPriorityRequests.write(self.totalCommittedPriorityRequests.read() - revertedPriorityRequests);
+            self
+                .totalCommittedPriorityRequests
+                .write(self.totalCommittedPriorityRequests.read() - revertedPriorityRequests);
 
             if (self.totalBlocksCommitted.read() < self.totalBlocksProven.read()) {
                 self.totalBlocksProven.write(self.totalBlocksCommitted.read());
@@ -980,24 +1084,29 @@ mod Zklink {
                 self.totalBlocksSynchronized.write(self.totalBlocksProven.read());
             }
 
-            self.emit(
-                Event::BlocksRevert (
-                    BlocksRevert {
-                        totalBlocksVerified: self.totalBlocksExecuted.read(),
-                        totalBlocksCommitted: blocksCommitted
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::BlocksRevert(
+                        BlocksRevert {
+                            totalBlocksVerified: self.totalBlocksExecuted.read(),
+                            totalBlocksCommitted: blocksCommitted
+                        }
+                    )
+                );
 
             self.end();
         }
 
         // Combine the `progress` of the other chains of a `syncHash` with self
-        fn receiveSynchronizationProgress(ref self: ContractState, _syncHash: u256, _progress: u256) {
+        fn receiveSynchronizationProgress(
+            ref self: ContractState, _syncHash: u256, _progress: u256
+        ) {
             let sender = get_caller_address();
             assert(Zklink::isBridgeFromEnabled(@self, sender), 'C');
 
-            self.synchronizedChains.write(_syncHash, self.synchronizedChains.read(_syncHash) | _progress);
+            self
+                .synchronizedChains
+                .write(_syncHash, self.synchronizedChains.read(_syncHash) | _progress);
         }
 
         // Check if received all syncHash from other chains at the block height
@@ -1019,20 +1128,20 @@ mod Zklink {
         //  tokenId token that transfer to the receiver of accept request from acceptor or broker
         //  broker who are allowed to do accept by acceptor(the msg.sender)
         //  amount the accept allowance of broker
-        fn brokerApprove(ref self: ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128) -> bool {
+        fn brokerApprove(
+            ref self: ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
+        ) -> bool {
             assert(_broker != Zeroable::zero(), 'G');
             let sender = get_caller_address();
             self.brokerAllowances.write((_tokenId, sender, _broker), _amount);
-            self.emit(
-                Event::BrokerApprove (
-                    BrokerApprove {
-                        tokenId: _tokenId,
-                        owner: sender,
-                        spender: _broker,
-                        amount: _amount
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::BrokerApprove(
+                        BrokerApprove {
+                            tokenId: _tokenId, owner: sender, spender: _broker, amount: _amount
+                        }
+                    )
+                );
             true
         }
 
@@ -1046,13 +1155,7 @@ mod Zklink {
             assert(_newGovernor != Zeroable::zero(), 'H');
             if _newGovernor != self.networkGovernor.read() {
                 self.networkGovernor.write(_newGovernor);
-                self.emit(
-                    Event::NewGovernor (
-                        NewGovernor {
-                            governor: _newGovernor
-                        }
-                    )
-                );
+                self.emit(Event::NewGovernor(NewGovernor { governor: _newGovernor }));
             }
 
             self.end();
@@ -1064,7 +1167,13 @@ mod Zklink {
         //  _tokenAddress Address of the token
         //  _decimals Token decimals of layer one
         //  _standard If token is a standard erc20
-        fn addToken(ref self: ContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8, _standard: bool) {
+        fn addToken(
+            ref self: ContractState,
+            _tokenId: u16,
+            _tokenAddress: ContractAddress,
+            _decimals: u8,
+            _standard: bool
+        ) {
             self.onlyGovernor();
 
             // token id MUST be in a valid range
@@ -1085,15 +1194,12 @@ mod Zklink {
             rt.standard = _standard;
             self.tokens.write(_tokenId, rt);
             self.tokenIds.write(_tokenAddress, _tokenId);
-            self.emit(
-                Event::NewToken (
-                    NewToken {
-                        tokenId: _tokenId,
-                        token: _tokenAddress,
-                        decimals: _decimals
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::NewToken(
+                        NewToken { tokenId: _tokenId, token: _tokenAddress, decimals: _decimals }
+                    )
+                );
         }
 
         // Add tokens to the list of networks tokens
@@ -1106,7 +1212,9 @@ mod Zklink {
                     break ();
                 }
                 let _token: Token = *_tokenList[i];
-                Zklink::addToken(ref self, _token.tokenId, _token.tokenAddress, _token.decimals, _token.standard);
+                Zklink::addToken(
+                    ref self, _token.tokenId, _token.tokenAddress, _token.decimals, _token.standard
+                );
                 i += 1;
             };
         }
@@ -1124,14 +1232,12 @@ mod Zklink {
             if rt.paused != _tokenPaused {
                 rt.paused = _tokenPaused;
                 self.tokens.write(_tokenId, rt);
-                self.emit(
-                    Event::TokenPausedUpdate (
-                        TokenPausedUpdate {
-                            tokenId: _tokenId,
-                            paused: _tokenPaused
-                        }
-                    )
-                );
+                self
+                    .emit(
+                        Event::TokenPausedUpdate(
+                            TokenPausedUpdate { tokenId: _tokenId, paused: _tokenPaused }
+                        )
+                    );
             }
         }
 
@@ -1143,14 +1249,14 @@ mod Zklink {
             self.onlyGovernor();
             if self.validators.read(_validator) != _active {
                 self.validators.write(_validator, _active);
-                self.emit(
-                    Event::ValidatorStatusUpdate (
-                        ValidatorStatusUpdate {
-                            validatorAddress: _validator,
-                            isActive: _active
-                        }
-                    )
-                );
+                self
+                    .emit(
+                        Event::ValidatorStatusUpdate(
+                            ValidatorStatusUpdate {
+                                validatorAddress: _validator, isActive: _active
+                            }
+                        )
+                    );
             }
         }
 
@@ -1161,15 +1267,13 @@ mod Zklink {
         //  the index of new bridge
         fn addBridge(ref self: ContractState, _bridge: ContractAddress) -> usize {
             self.onlyGovernor();
-            
+
             assert(_bridge != Zeroable::zero(), 'L0');
             // the index of non-exist bridge is zero
             assert(self.bridgeIndex.read(_bridge) == 0, 'L1');
 
             let info: BridgeInfo = BridgeInfo {
-                bridge: _bridge,
-                enableBridgeTo: true,
-                enableBridgeFrom: true,
+                bridge: _bridge, enableBridgeTo: true, enableBridgeFrom: true, 
             };
 
             let mut length = self.bridgesLength.read();
@@ -1178,14 +1282,7 @@ mod Zklink {
             self.bridges.write(length, info);
             self.bridgeIndex.write(_bridge, length);
 
-            self.emit(
-                Event::AddBridge (
-                    AddBridge {
-                        bridge: _bridge,
-                        bridgeIndex: length
-                    }
-                )
-            );
+            self.emit(Event::AddBridge(AddBridge { bridge: _bridge, bridgeIndex: length }));
 
             length
         }
@@ -1198,7 +1295,9 @@ mod Zklink {
         //  _index the bridge info index
         //  _enableBridgeTo if set to false, bridge to will be disabled
         //  _enableBridgeFrom if set to false, bridge from will be disabled
-        fn updateBridge(ref self: ContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool) {
+        fn updateBridge(
+            ref self: ContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool
+        ) {
             self.onlyGovernor();
 
             assert(_index < self.bridgesLength.read(), 'M');
@@ -1207,15 +1306,16 @@ mod Zklink {
             info.enableBridgeFrom = _enableBridgeFrom;
             self.bridges.write(_index, info);
 
-            self.emit(
-                Event::UpdateBridge (
-                    UpdateBridge {
-                        bridgeIndex: _index,
-                        enableBridgeTo: _enableBridgeTo,
-                        enableBridgeFrom: _enableBridgeFrom
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::UpdateBridge(
+                        UpdateBridge {
+                            bridgeIndex: _index,
+                            enableBridgeTo: _enableBridgeTo,
+                            enableBridgeFrom: _enableBridgeFrom
+                        }
+                    )
+                );
         }
 
         // =============view functions=============
@@ -1229,7 +1329,10 @@ mod Zklink {
             } else {
                 progress = self.synchronizedChains.read(_block.syncHash);
                 // combine the current chain if it has proven this block
-                if (_block.blockNumber <= self.totalBlocksProven.read()) & (hashStoredBlockInfo(_block) == self.storedBlockHashes.read(_block.blockNumber)) {
+                if (_block.blockNumber <= self.totalBlocksProven.read())
+                    & (hashStoredBlockInfo(_block) == self
+                        .storedBlockHashes
+                        .read(_block.blockNumber)) {
                     progress = progress | CHAIN_INDEX;
                 } else {
                     progress = progress & ~CHAIN_INDEX;
@@ -1239,7 +1342,12 @@ mod Zklink {
         }
 
         // Return the accept allowance of broker
-        fn brokerAllowance(self: @ContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress) -> u128 {
+        fn brokerAllowance(
+            self: @ContractState,
+            _tokenId: u16,
+            _accepter: ContractAddress,
+            _broker: ContractAddress
+        ) -> u128 {
             self.brokerAllowances.read((_tokenId, _accepter, _broker))
         }
 
@@ -1272,23 +1380,38 @@ mod Zklink {
 
         // =============Test Interface=============
         // TODO: delete after test
-        fn StoredBlockInfoTest(self: @ContractState, _blocksData: Array<StoredBlockInfo>, i: usize) -> u64 {
+        fn StoredBlockInfoTest(
+            self: @ContractState, _blocksData: Array<StoredBlockInfo>, i: usize
+        ) -> u64 {
             let blockData: @StoredBlockInfo = _blocksData[i];
             *blockData.timestamp
         }
 
-        fn CommitBlockInfoTest(self: @ContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize) -> usize {
+        fn CommitBlockInfoTest(
+            self: @ContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize
+        ) -> usize {
             let blockData: @CommitBlockInfo = _blocksData[i];
-            let onchainOperation : @OnchainOperationData = blockData.onchainOperations[j];
+            let onchainOperation: @OnchainOperationData = blockData.onchainOperations[j];
             *onchainOperation.publicDataOffset
         }
 
-        fn CompressedBlockExtraInfoTest(self: @ContractState, _blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize) -> u256 {
+        fn CompressedBlockExtraInfoTest(
+            self: @ContractState,
+            _blocksExtraData: Array<CompressedBlockExtraInfo>,
+            i: usize,
+            j: usize
+        ) -> u256 {
             let blockExtraData: @CompressedBlockExtraInfo = _blocksExtraData[i];
             *blockExtraData.onchainOperationPubdataHashs[j]
         }
 
-        fn ExecuteBlockInfoTest(self: @ContractState, _blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8) -> u8 {
+        fn ExecuteBlockInfoTest(
+            self: @ContractState,
+            _blocksData: Array<ExecuteBlockInfo>,
+            i: usize,
+            j: usize,
+            _opType: u8
+        ) -> u8 {
             let blockData: @ExecuteBlockInfo = _blocksData[i];
             let bytes: @Bytes = blockData.pendingOnchainOpsPubdata[j];
             let opType: OpType = _opType.try_into().unwrap();
@@ -1358,10 +1481,9 @@ mod Zklink {
 
         // Set logic contract must be called through proxy
         #[inline(always)]
-        fn onlyDelegateCall(self: @ContractState) {
-            // TODO
+        fn onlyDelegateCall(self: @ContractState) { // TODO
         }
-        
+
         // Check if msg sender is a governor
         #[inline(always)]
         fn onlyGovernor(self: @ContractState) {
@@ -1382,7 +1504,14 @@ mod Zklink {
         //  _zkLinkAddress The receiver Layer 2 address
         //  _subAccountId The receiver sub account
         //  _mapping If true and token has a mapping token, user will receive mapping token at l2
-        fn deposit(ref self: ContractState, _tokenAddress: ContractAddress, _amount: u128, _zkLinkAddress: felt252, _subAccountId: u8, _mapping: bool) {
+        fn deposit(
+            ref self: ContractState,
+            _tokenAddress: ContractAddress,
+            _amount: u128,
+            _zkLinkAddress: felt252,
+            _subAccountId: u8,
+            _mapping: bool
+        ) {
             self.active();
             // checks
             // disable deposit to zero address or global asset account
@@ -1404,15 +1533,23 @@ mod Zklink {
             let this = get_contract_address();
             let mut _amount = _amount;
             if rt.standard {
-                IERC20Dispatcher {contract_address: _tokenAddress}.transfer_from(sender, this, _amount.into());
+                IERC20Dispatcher {
+                    contract_address: _tokenAddress
+                }.transfer_from(sender, this, _amount.into());
             } else {
                 // support non-standard tokens
-                let balanceBefore = IERC20Dispatcher {contract_address: _tokenAddress}.balance_of(this);
+                let balanceBefore = IERC20Dispatcher {
+                    contract_address: _tokenAddress
+                }.balance_of(this);
                 // NOTE, the balance of this contract will be increased
                 // if the token is not a pure erc20 token, it could do anything within the transferFrom
                 // we MUST NOT use `token.balanceOf(address(this))` in any control structures
-                IERC20Dispatcher {contract_address: _tokenAddress}.transfer_from(sender, this, _amount.into());
-                let balanceAfter = IERC20Dispatcher {contract_address: _tokenAddress}.balance_of(this);
+                IERC20Dispatcher {
+                    contract_address: _tokenAddress
+                }.transfer_from(sender, this, _amount.into());
+                let balanceAfter = IERC20Dispatcher {
+                    contract_address: _tokenAddress
+                }.balance_of(this);
                 _amount = (balanceAfter - balanceBefore).try_into().unwrap();
             }
 
@@ -1424,7 +1561,9 @@ mod Zklink {
             // only stable tokens(e.g. USDC, BUSD) support mapping to USD when deposit
             let mut targetTokenId = tokenId;
             if _mapping {
-                assert(tokenId >= MIN_USD_STABLE_TOKEN_ID && tokenId <= MAX_USD_STABLE_TOKEN_ID, 'e5');
+                assert(
+                    tokenId >= MIN_USD_STABLE_TOKEN_ID && tokenId <= MAX_USD_STABLE_TOKEN_ID, 'e5'
+                );
                 targetTokenId = USD_TOKEN_ID;
             }
 
@@ -1432,7 +1571,7 @@ mod Zklink {
             // Priority Queue request
             let op = Deposit {
                 chainId: CHAIN_ID,
-                accountId: 0,   // unknown at this point
+                accountId: 0, // unknown at this point
                 subAccountId: _subAccountId,
                 tokenId: tokenId,
                 targetTokenId: targetTokenId,
@@ -1443,7 +1582,7 @@ mod Zklink {
             let pubData = op.writeForPriorityQueue();
             self.addPriorityRequest(OpType::Deposit(()), pubData);
         }
-        
+
         // Saves priority request in storage
         // Calculates expiration block for request, store this request and emit NewPriorityRequest event
         // Parameters:
@@ -1457,25 +1596,24 @@ mod Zklink {
             let hashedPubData = u256_to_u160(_pubData.keccak());
 
             let priorityRequest = PriorityOperation {
-                hashedPubData: hashedPubData,
-                expirationBlock: expirationBlock,
-                opType: _opType
+                hashedPubData: hashedPubData, expirationBlock: expirationBlock, opType: _opType
             };
 
             self.priorityRequests.write(nextPriorityRequestId, priorityRequest);
 
             let sender = get_caller_address();
-            self.emit(
-                Event::NewPriorityRequest(
-                    NewPriorityRequest {
-                        sender: sender,
-                        serialId: nextPriorityRequestId,
-                        opType: _opType,
-                        pubData: _pubData,
-                        expirationBlock: expirationBlock
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::NewPriorityRequest(
+                        NewPriorityRequest {
+                            sender: sender,
+                            serialId: nextPriorityRequestId,
+                            opType: _opType,
+                            pubData: _pubData,
+                            expirationBlock: expirationBlock
+                        }
+                    )
+                );
             self.totalOpenPriorityRequests.write(toprs + 1);
         }
 
@@ -1485,45 +1623,78 @@ mod Zklink {
         //  _newBlocksData
         //  _compressed
         //  _newBlocksExtraData
-        fn _commitBlocks(ref self: ContractState, _lastCommittedBlockData: StoredBlockInfo, _newBlocksData: Array<CommitBlockInfo>, _compressed: bool, _newBlocksExtraData: Array<CompressedBlockExtraInfo>) {
+        fn _commitBlocks(
+            ref self: ContractState,
+            _lastCommittedBlockData: StoredBlockInfo,
+            _newBlocksData: Array<CommitBlockInfo>,
+            _compressed: bool,
+            _newBlocksExtraData: Array<CompressedBlockExtraInfo>
+        ) {
             self.start();
             self.active();
             self.onlyValidator();
             // Checks
             let _newBlocksData = _newBlocksData.span();
             assert(_newBlocksData.len() > 0, 'f0');
-            assert(self.storedBlockHashes.read(self.totalBlocksCommitted.read()) == hashStoredBlockInfo(_lastCommittedBlockData), 'f1');
+            assert(
+                self
+                    .storedBlockHashes
+                    .read(
+                        self.totalBlocksCommitted.read()
+                    ) == hashStoredBlockInfo(_lastCommittedBlockData),
+                'f1'
+            );
 
             // Effects
             let mut i = 0;
             let mut _lastCommittedBlockData = _lastCommittedBlockData;
             loop {
                 if i == _newBlocksData.len() {
-                    break();
+                    break ();
                 }
-                _lastCommittedBlockData = self.commitOneBlock(@_lastCommittedBlockData, _newBlocksData[i], _compressed, _newBlocksExtraData[i]);
+                _lastCommittedBlockData = self
+                    .commitOneBlock(
+                        @_lastCommittedBlockData,
+                        _newBlocksData[i],
+                        _compressed,
+                        _newBlocksExtraData[i]
+                    );
 
                 // forward `totalCommittedPriorityRequests` because it's will be reused in the next `commitOneBlock`
-                self.totalCommittedPriorityRequests.write(self.totalCommittedPriorityRequests.read() + _lastCommittedBlockData.priorityOperations);
-                self.storedBlockHashes.write(_lastCommittedBlockData.blockNumber, hashStoredBlockInfo(_lastCommittedBlockData));
+                self
+                    .totalCommittedPriorityRequests
+                    .write(
+                        self.totalCommittedPriorityRequests.read()
+                            + _lastCommittedBlockData.priorityOperations
+                    );
+                self
+                    .storedBlockHashes
+                    .write(
+                        _lastCommittedBlockData.blockNumber,
+                        hashStoredBlockInfo(_lastCommittedBlockData)
+                    );
                 i += 1;
             };
-            assert(self.totalCommittedPriorityRequests.read() <= self.totalOpenPriorityRequests.read(), 'f2');
+            assert(
+                self.totalCommittedPriorityRequests.read() <= self.totalOpenPriorityRequests.read(),
+                'f2'
+            );
 
-            self.totalBlocksCommitted.write(self.totalBlocksCommitted.read() + _newBlocksData.len().into());
+            self
+                .totalBlocksCommitted
+                .write(self.totalBlocksCommitted.read() + _newBlocksData.len().into());
 
             // If enable compressed commit then we can ignore prove and ensure that block is correct by sync
             if (_compressed & (ENABLE_COMMIT_COMPRESSED_BLOCK == 1)) {
                 self.totalBlocksProven.write(self.totalBlocksCommitted.read());
             }
 
-            self.emit(
-                Event::BlockCommit(
-                    BlockCommit {
-                        blockNumber: _lastCommittedBlockData.blockNumber
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::BlockCommit(
+                        BlockCommit { blockNumber: _lastCommittedBlockData.blockNumber }
+                    )
+                );
 
             self.end();
         }
@@ -1537,7 +1708,13 @@ mod Zklink {
         // Returns:
         //  new block StoredBlockInfo
         // NOTE: Does not change storage (except events, so we can't mark it view)
-        fn commitOneBlock(ref self: ContractState, _previousBlock: @StoredBlockInfo, _newBlock: @CommitBlockInfo, _compressed: bool, _newBlockExtra: @CompressedBlockExtraInfo) -> StoredBlockInfo {
+        fn commitOneBlock(
+            ref self: ContractState,
+            _previousBlock: @StoredBlockInfo,
+            _newBlock: @CommitBlockInfo,
+            _compressed: bool,
+            _newBlockExtra: @CompressedBlockExtraInfo
+        ) -> StoredBlockInfo {
             assert(*_newBlock.blockNumber == *_previousBlock.blockNumber + 1, 'g0');
             // There is not bool <=> felt252 in Cairo, so we define ENABLE_COMMIT_COMPRESSED_BLOCK in felt252
             // if true is 1, else is 0.
@@ -1553,10 +1730,14 @@ mod Zklink {
                 onchainOpsOffsetCommitment,
                 mut onchainOpPubdataHashsHigh,
                 mut onchainOpPubdataHashsLow
-            ) = self.collectOnchainOps(_newBlock);
+            ) =
+                self
+                .collectOnchainOps(_newBlock);
 
             // Create block commitment for verification proof
-            let commitment: u256 = createBlockCommitment(_previousBlock, _newBlock, _compressed, _newBlockExtra, onchainOpsOffsetCommitment);
+            let commitment: u256 = createBlockCommitment(
+                _previousBlock, _newBlock, _compressed, _newBlockExtra, onchainOpsOffsetCommitment
+            );
 
             // Create synchronization hash for cross chain block verify
             if _compressed {
@@ -1565,7 +1746,7 @@ mod Zklink {
                 assert(hashs.len() == MAX_CHAIN_ID.into() + 1, 'g3');
                 loop {
                     if i > MAX_CHAIN_ID {
-                        break();
+                        break ();
                     }
 
                     if i != CHAIN_ID {
@@ -1579,7 +1760,12 @@ mod Zklink {
                 };
             }
 
-            let syncHash = createSyncHash(*_previousBlock.syncHash, commitment, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow);
+            let syncHash = createSyncHash(
+                *_previousBlock.syncHash,
+                commitment,
+                ref onchainOpPubdataHashsHigh,
+                ref onchainOpPubdataHashsLow
+            );
 
             StoredBlockInfo {
                 blockNumber: *_newBlock.blockNumber,
@@ -1602,27 +1788,31 @@ mod Zklink {
         //  priorityOperationsProcessed - number of priority operations processed of the current chain in this block (Deposits, FullExits)
         //  offsetsCommitment - array where 1 is stored in chunk where onchainOperation begins and other are 0 (used in commitments)
         //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
-        fn collectOnchainOps(self: @ContractState, _newBlockData: @CommitBlockInfo) -> (u256, u64, u256, Felt252Dict<u128>, Felt252Dict<u128>) {
+        fn collectOnchainOps(
+            self: @ContractState, _newBlockData: @CommitBlockInfo
+        ) -> (u256, u64, u256, Felt252Dict<u128>, Felt252Dict<u128>) {
             let pubData = _newBlockData.publicData;
             // pubdata length must be a multiple of CHUNK_BYTES
             assert(pubData.size() % CHUNK_BYTES == 0, 'h0');
-            
+
             // Init return values
             let mut offsetsCommitment: u256 = 0; // use a u256 instead of Bytes to save gas
             let mut priorityOperationsProcessed: u64 = 0;
-            let (mut onchainOpPubdataHashsHigh, mut onchainOpPubdataHashsLow) = initOnchainOperationPubdataHashs();
+            let (mut onchainOpPubdataHashsHigh, mut onchainOpPubdataHashsLow) =
+                initOnchainOperationPubdataHashs();
             let mut processableOperationsHash: u256 = EMPTY_STRING_KECCAK;
 
-            let uncommittedPriorityRequestsOffset = self.firstPriorityRequestId.read() + self.totalCommittedPriorityRequests.read();
+            let uncommittedPriorityRequestsOffset = self.firstPriorityRequestId.read()
+                + self.totalCommittedPriorityRequests.read();
 
             let mut i = 0;
             loop {
                 if i == _newBlockData.onchainOperations.len() {
-                    break();
+                    break ();
                 }
                 let onchainOpData: @OnchainOperationData = _newBlockData.onchainOperations[i];
                 let pubdataOffset: usize = *onchainOpData.publicDataOffset;
-                
+
                 assert(pubdataOffset + 1 < pubData.size(), 'h1');
                 assert(pubdataOffset % CHUNK_BYTES == 0, 'h2');
 
@@ -1640,27 +1830,33 @@ mod Zklink {
 
                 let (_, opType) = ReadBytes::<OpType>::read(pubData, pubdataOffset);
 
-                let nextPriorityOpIndex: u64 = uncommittedPriorityRequestsOffset + priorityOperationsProcessed;
-                
-                let (newPriorityProceeded, opPubData, processablePubData) = self.checkOnchainOp(
-                    opType,
-                    chainId,
-                    pubData,
-                    pubdataOffset,
-                    nextPriorityOpIndex,
-                    onchainOpData.ethWitness);
+                let nextPriorityOpIndex: u64 = uncommittedPriorityRequestsOffset
+                    + priorityOperationsProcessed;
+
+                let (newPriorityProceeded, opPubData, processablePubData) = self
+                    .checkOnchainOp(
+                        opType,
+                        chainId,
+                        pubData,
+                        pubdataOffset,
+                        nextPriorityOpIndex,
+                        onchainOpData.ethWitness
+                    );
 
                 priorityOperationsProcessed += newPriorityProceeded;
                 // group onchain operations pubdata hash by chain id
-                updateOnchainOperationPubdataHashs(chainId, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow, @opPubData);
+                updateOnchainOperationPubdataHashs(
+                    chainId, ref onchainOpPubdataHashsHigh, ref onchainOpPubdataHashsLow, @opPubData
+                );
 
                 if processablePubData.size() > 0 {
-                    processableOperationsHash = concatHash(processableOperationsHash, @processablePubData);
+                    processableOperationsHash =
+                        concatHash(processableOperationsHash, @processablePubData);
                 }
 
                 i += 1;
             };
-            
+
             (
                 processableOperationsHash,
                 priorityOperationsProcessed,
@@ -1670,9 +1866,16 @@ mod Zklink {
             )
         }
 
-        
 
-        fn checkOnchainOp(self: @ContractState, _opType: OpType, _chainId: u8, _pubData: @Bytes, _pubdataOffset: usize, _nextPriorityOpIdx: u64, _ethWitness: @Bytes) -> (u64, Bytes, Bytes) {
+        fn checkOnchainOp(
+            self: @ContractState,
+            _opType: OpType,
+            _chainId: u8,
+            _pubData: @Bytes,
+            _pubdataOffset: usize,
+            _nextPriorityOpIdx: u64,
+            _ethWitness: @Bytes
+        ) -> (u64, Bytes, Bytes) {
             let mut priorityOperationsProcessed: u64 = 0;
             let mut processablePubData: Bytes = BytesTrait::new_empty();
             let mut opPubData: Bytes = BytesTrait::new_empty();
@@ -1686,23 +1889,29 @@ mod Zklink {
                 }
                 opPubData = opPubData_internal;
             } else if _opType == OpType::ChangePubKey(()) {
-                let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
+                let (_, opPubData_internal) = _pubData
+                    .read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
                 if _chainId == CHAIN_ID {
                     let (_, op) = ChangePubKeyOperation::readFromPubdata(@opPubData_internal);
                     // Now, starknet only support on-chain change pubkey
-                    let valid: bool = self.authFacts.read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
+                    let valid: bool = self
+                        .authFacts
+                        .read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
                     assert(valid, 'k1');
                 }
                 opPubData = opPubData_internal;
             } else {
                 if _opType == OpType::Withdraw(()) {
-                    let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
+                    let (_, opPubData_internal) = _pubData
+                        .read_bytes(_pubdataOffset, WITHDRAW_BYTES);
                     opPubData = opPubData_internal;
                 } else if _opType == OpType::ForcedExit(()) {
-                    let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
+                    let (_, opPubData_internal) = _pubData
+                        .read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
                     opPubData = opPubData_internal;
                 } else if _opType == OpType::FullExit(()) {
-                    let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                    let (_, opPubData_internal) = _pubData
+                        .read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
                         let (_, op) = FullExitOperation::readFromPubdata(@opPubData_internal);
                         op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
@@ -1720,11 +1929,11 @@ mod Zklink {
                     processablePubData = opPubData.clone();
                 }
             }
-            
+
             (priorityOperationsProcessed, opPubData, processablePubData)
         }
 
-        
+
         // TODO
         // Now, Starknet only support on-chain changepubkey type
         // Checks that change operation is correct
@@ -1735,10 +1944,22 @@ mod Zklink {
         // Executes one block
         // 1. Processes all pending operations (Send Exits, Complete priority requests)
         // 2. Finalizes block on Ethereum
-        fn executeOneBlock(ref self: ContractState, _blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: usize) {
+        fn executeOneBlock(
+            ref self: ContractState, _blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: usize
+        ) {
             // Ensure block was committed
-            assert(hashStoredBlockInfo(*_blockExecuteData.storedBlock) == self.storedBlockHashes.read(*_blockExecuteData.storedBlock.blockNumber), 'm0');
-            assert(*_blockExecuteData.storedBlock.blockNumber == self.totalBlocksExecuted.read() + _executedBlockIdx.into() + 1, 'm1');
+            assert(
+                hashStoredBlockInfo(*_blockExecuteData.storedBlock) == self
+                    .storedBlockHashes
+                    .read(*_blockExecuteData.storedBlock.blockNumber),
+                'm0'
+            );
+            assert(
+                *_blockExecuteData.storedBlock.blockNumber == self.totalBlocksExecuted.read()
+                    + _executedBlockIdx.into()
+                    + 1,
+                'm1'
+            );
 
             let mut pendingOnchainOpsHash: u256 = EMPTY_STRING_KECCAK;
             let mut i: usize = 0;
@@ -1757,12 +1978,34 @@ mod Zklink {
                 if opType == OpType::Withdraw(()) {
                     let (_, op) = WithdrawOperation::readFromPubdata(pubData);
                     // account request fast withdraw and sub account supply nonce
-                    self._executeWithdraw(op.accountId, op.accountId, op.subAccountId, op.nonce, op.owner, op.tokenId, op.amount, op.fastWithdrawFeeRate, op.fastWithdraw);
+                    self
+                        ._executeWithdraw(
+                            op.accountId,
+                            op.accountId,
+                            op.subAccountId,
+                            op.nonce,
+                            op.owner,
+                            op.tokenId,
+                            op.amount,
+                            op.fastWithdrawFeeRate,
+                            op.fastWithdraw
+                        );
                 } else if opType == OpType::ForcedExit(()) {
                     let (_, op) = ForcedExitOperatoin::readFromPubdata(pubData);
                     // request forced exit for target account but initiator sub account supply nonce
                     // forced exit require fast withdraw default and take no fee for fast withdraw
-                    self._executeWithdraw(op.targetAccountId, op.initiatorAccountId, op.initiatorSubAccountId, op.initiatorNonce, op.target, op.tokenId, op.amount, 0, 1);
+                    self
+                        ._executeWithdraw(
+                            op.targetAccountId,
+                            op.initiatorAccountId,
+                            op.initiatorSubAccountId,
+                            op.initiatorNonce,
+                            op.target,
+                            op.tokenId,
+                            op.amount,
+                            0,
+                            1
+                        );
                 } else if opType == OpType::FullExit(()) {
                     let (_, op) = FullExitOperation::readFromPubdata(pubData);
                     self.increasePendingBalance(op.tokenId, op.owner, op.amount);
@@ -1775,11 +2018,27 @@ mod Zklink {
                 i += 1;
             };
 
-            assert(pendingOnchainOpsHash == *_blockExecuteData.storedBlock.pendingOnchainOperationsHash, 'm3');
+            assert(
+                pendingOnchainOpsHash == *_blockExecuteData
+                    .storedBlock
+                    .pendingOnchainOperationsHash,
+                'm3'
+            );
         }
 
         // Execute fast withdraw or normal withdraw according by fastWithdraw flag
-        fn _executeWithdraw(ref self: ContractState, _accountId: u32, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16, _fastWithdraw: u8) {
+        fn _executeWithdraw(
+            ref self: ContractState,
+            _accountId: u32,
+            _accountIdOfNonce: u32,
+            _subAccountIdOfNonce: u8,
+            _nonce: u32,
+            _owner: ContractAddress,
+            _tokenId: u16,
+            _amount: u128,
+            _fastWithdrawFeeRate: u16,
+            _fastWithdraw: u8
+        ) {
             // token MUST be registered
             let rt: RegisteredToken = self.tokens.read(_tokenId);
             assert(rt.registered, 'o0');
@@ -1788,7 +2047,15 @@ mod Zklink {
                 // recover withdraw amount
                 let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
                 let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
-                let fwHash = getFastWithdrawHash(_accountIdOfNonce, _subAccountIdOfNonce, _nonce, _owner, _tokenId, acceptAmount, _fastWithdrawFeeRate);
+                let fwHash = getFastWithdrawHash(
+                    _accountIdOfNonce,
+                    _subAccountIdOfNonce,
+                    _nonce,
+                    _owner,
+                    _tokenId,
+                    acceptAmount,
+                    _fastWithdrawFeeRate
+                );
                 let acceptor: ContractAddress = self.accepts.read((_accountId, fwHash));
 
                 if acceptor == Zeroable::zero() {
@@ -1813,27 +2080,41 @@ mod Zklink {
         //  _tokenId
         //  _recipient
         //  _amount amount that need to recovery decimals when withdraw
-        fn increasePendingBalance(ref self: ContractState, _tokenId: u16, _recipient: ContractAddress, _amount: u128) {
+        fn increasePendingBalance(
+            ref self: ContractState, _tokenId: u16, _recipient: ContractAddress, _amount: u128
+        ) {
             self.increaseBalanceToWithdraw(_recipient.into(), _tokenId, _amount);
-            self.emit(
-                Event::WithdrawalPending(
-                    WithdrawalPending {
-                        tokenId: _tokenId,
-                        recepient: _recipient.into(),
-                        amount: _amount
-                    }
-                )
-            );
+            self
+                .emit(
+                    Event::WithdrawalPending(
+                        WithdrawalPending {
+                            tokenId: _tokenId, recepient: _recipient.into(), amount: _amount
+                        }
+                    )
+                );
         }
 
-        fn increaseBalanceToWithdraw(ref self: ContractState, _address: felt252, _tokenId: u16, _amount: u128) {
+        fn increaseBalanceToWithdraw(
+            ref self: ContractState, _address: felt252, _tokenId: u16, _amount: u128
+        ) {
             let balance: u128 = self.pendingBalances.read((_address, _tokenId));
             // overflow should not happen here
             // (2^128 / 10^18 = 3.4 * 10^20) is enough to meet the really token balance of L2 account
             self.pendingBalances.write((_address, _tokenId), balance + _amount);
         }
 
-        fn _checkAccept(ref self: ContractState, _acceptor: ContractAddress, _accountId: u32, _receiver: ContractAddress, _tokenId: u16, _amount: u128, _withdrawFeeRate: u16, _accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32) -> (u128, ContractAddress) {
+        fn _checkAccept(
+            ref self: ContractState,
+            _acceptor: ContractAddress,
+            _accountId: u32,
+            _receiver: ContractAddress,
+            _tokenId: u16,
+            _amount: u128,
+            _withdrawFeeRate: u16,
+            _accountIdOfNonce: u32,
+            _subAccountIdOfNonce: u8,
+            _nonce: u32
+        ) -> (u128, ContractAddress) {
             // acceptor and receiver MUST be set and MUST not be the same
             assert(_acceptor != Zeroable::zero(), 'H0');
             assert(_receiver != Zeroable::zero(), 'H1');
@@ -1847,10 +2128,19 @@ mod Zklink {
 
             // feeRate MUST be valid and MUST not be 100%
             assert(_withdrawFeeRate <= MAX_ACCEPT_FEE_RATE, 'H4');
-            let amountReceive: u128 = _amount * ((MAX_ACCEPT_FEE_RATE - _withdrawFeeRate) / MAX_ACCEPT_FEE_RATE).into();
+            let amountReceive: u128 = _amount
+                * ((MAX_ACCEPT_FEE_RATE - _withdrawFeeRate) / MAX_ACCEPT_FEE_RATE).into();
 
             // accept tx may be later than block exec tx(with user withdraw op)
-            let hash = getFastWithdrawHash(_accountIdOfNonce, _subAccountIdOfNonce, _nonce, _receiver, _tokenId, _amount, _withdrawFeeRate);
+            let hash = getFastWithdrawHash(
+                _accountIdOfNonce,
+                _subAccountIdOfNonce,
+                _nonce,
+                _receiver,
+                _tokenId,
+                _amount,
+                _withdrawFeeRate
+            );
             assert(self.accepts.read((_accountId, hash)) == Zeroable::zero(), 'H6');
 
             // ===Effects===
@@ -1875,7 +2165,15 @@ mod Zklink {
     }
 
     // Return accept record hash for fast withdraw
-    fn getFastWithdrawHash(_accountIdOfNonce: u32, _subAccountIdOfNonce: u8, _nonce: u32, _owner: ContractAddress, _tokenId: u16, _amount: u128, _fastWithdrawFeeRate: u16) -> u256 {
+    fn getFastWithdrawHash(
+        _accountIdOfNonce: u32,
+        _subAccountIdOfNonce: u8,
+        _nonce: u32,
+        _owner: ContractAddress,
+        _tokenId: u16,
+        _amount: u128,
+        _fastWithdrawFeeRate: u16
+    ) -> u256 {
         let mut bytes: Bytes = BytesTrait::new_empty();
         bytes.append_u32(_accountIdOfNonce);
         bytes.append_u8(_subAccountIdOfNonce);
@@ -1908,7 +2206,7 @@ mod Zklink {
         let mut i = MIN_CHAIN_ID;
         loop {
             if i > MAX_CHAIN_ID {
-                break();
+                break ();
             }
             let chainIndex: u256 = u256_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
@@ -1928,10 +2226,15 @@ mod Zklink {
         assert((chainIndex & ALL_CHAINS) == chainIndex, 'i2');
     }
 
-    fn updateOnchainOperationPubdataHashs(_chainId: u8, ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>, ref _onchainOpPubdataHashsLow: Felt252Dict<u128>, _opPubData: @Bytes) {
+    fn updateOnchainOperationPubdataHashs(
+        _chainId: u8,
+        ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>,
+        ref _onchainOpPubdataHashsLow: Felt252Dict<u128>,
+        _opPubData: @Bytes
+    ) {
         let (high_entry, high_value) = _onchainOpPubdataHashsHigh.entry(_chainId.into());
         let (low_entry, low_value) = _onchainOpPubdataHashsLow.entry(_chainId.into());
-        let old_hash = u256{high: high_value, low: low_value};
+        let old_hash = u256 { high: high_value, low: low_value };
         let newHash = concatHash(old_hash, _opPubData);
 
         _onchainOpPubdataHashsHigh = high_entry.finalize(newHash.high);
@@ -1940,7 +2243,13 @@ mod Zklink {
 
     // Creates block commitment from its data
     // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
-    fn createBlockCommitment(_previousBlock: @StoredBlockInfo, _newBlockData: @CommitBlockInfo, _compressed: bool, _newBlockExtraData: @CompressedBlockExtraInfo, _offsetsCommitment: u256) -> u256 {
+    fn createBlockCommitment(
+        _previousBlock: @StoredBlockInfo,
+        _newBlockData: @CommitBlockInfo,
+        _compressed: bool,
+        _newBlockExtraData: @CompressedBlockExtraInfo,
+        _offsetsCommitment: u256
+    ) -> u256 {
         let offsetsCommitmentHash = if !_compressed {
             let mut offsetsCommitmentBytes = BytesTrait::new_empty();
             offsetsCommitmentBytes.append_u256(_offsetsCommitment);
@@ -1967,16 +2276,21 @@ mod Zklink {
     }
 
     // Create synchronization hash for cross chain block verify
-    fn createSyncHash(_preBlockSyncHash: u256, _commitment: u256, ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>, ref _onchainOpPubdataHashsLow: Felt252Dict<u128>) -> u256 {
+    fn createSyncHash(
+        _preBlockSyncHash: u256,
+        _commitment: u256,
+        ref _onchainOpPubdataHashsHigh: Felt252Dict<u128>,
+        ref _onchainOpPubdataHashsLow: Felt252Dict<u128>
+    ) -> u256 {
         let mut syncHash = concatTwoHash(_preBlockSyncHash, _commitment);
         let mut i = MIN_CHAIN_ID;
         loop {
             if i > MAX_CHAIN_ID {
-                break();
+                break ();
             }
             let chainIndex: u256 = u256_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
-                let onchainOperationPubdataHash = u256{
+                let onchainOperationPubdataHash = u256 {
                     low: _onchainOpPubdataHashsLow.get(i.into()),
                     high: _onchainOpPubdataHashsHigh.get(i.into())
                 };

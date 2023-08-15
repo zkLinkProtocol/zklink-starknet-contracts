@@ -1,10 +1,7 @@
 use traits::Into;
 use array::ArrayTrait;
 use starknet::{ContractAddress, ContractAddressIntoFelt252, contract_address_const};
-use zklink::utils::bytes::{
-    Bytes,
-    BytesTrait
-};
+use zklink::utils::bytes::{Bytes, BytesTrait};
 
 #[test]
 #[available_gas(20000000)]
@@ -160,7 +157,6 @@ fn test_bytes_read_felt252_packed() {
 //     let (new_offset, new_array) = bytes.read_felt252_packed(0, 32);
 // }
 
-
 #[test]
 #[available_gas(20000000)]
 fn test_bytes_read_u8() {
@@ -185,7 +181,7 @@ fn test_bytes_read_u16() {
     array.append(0x01020304050607080910000000000000);
 
     let bytes = BytesTrait::new(42, array);
-    
+
     let (new_offset, value) = bytes.read_u16(15);
     assert(new_offset == 17, 'read_u16_offset');
     assert(value == 0x1601, 'read_u16_value');
@@ -200,7 +196,7 @@ fn test_bytes_read_u32() {
     array.append(0x01020304050607080910000000000000);
 
     let bytes = BytesTrait::new(42, array);
-    
+
     let (new_offset, value) = bytes.read_u32(15);
     assert(new_offset == 19, 'read_u32_offset');
     assert(value == 0x16010203, 'read_u32_value');
@@ -284,10 +280,10 @@ fn test_bytes_read_u256_array() {
     assert(new_offset == 71, 'read_u256_array_offset');
     let result: u256 = *new_array[0];
     assert(result.high == 0x08091011121314151616151413121110, 'read_256_array_value_1_high');
-    assert(result.low ==  0x09080706050403020116151413121110, 'read_256_array_value_1_low');
+    assert(result.low == 0x09080706050403020116151413121110, 'read_256_array_value_1_low');
     let result: u256 = *new_array[1];
     assert(result.high == 0x09080706050403020101020304050607, 'read_256_array_value_2_high');
-    assert(result.low ==  0x08091011121314151601020304050607, 'read_256_array_value_2_low');
+    assert(result.low == 0x08091011121314151601020304050607, 'read_256_array_value_2_low');
 }
 
 #[test]
@@ -331,72 +327,72 @@ fn test_bytes_append() {
 
     // append_u128_packed
     bytes.append_u128_packed(0x101112131415161718, 9);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 9, 'append_u128_packed_1_size');
     assert(*data[0] == 0x10111213141516171800000000000000, 'append_u128_packed_1_value_1');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     bytes.append_u128_packed(0x101112131415161718, 9);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 18, 'append_u128_packed_2_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u128_packed_2_value_1');
     assert(*data[1] == 0x17180000000000000000000000000000, 'append_u128_packed_2_value_2');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_u8
     bytes.append_u8(0x01);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 19, 'append_u8_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u8_value_1');
     assert(*data[1] == 0x17180100000000000000000000000000, 'append_u8_value_2');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_u16
     bytes.append_u16(0x0102);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 21, 'append_u16_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u16_value_1');
     assert(*data[1] == 0x17180101020000000000000000000000, 'append_u16_value_2');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_u32
     bytes.append_u32(0x01020304);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 25, 'append_u32_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u32_value_1');
     assert(*data[1] == 0x17180101020102030400000000000000, 'append_u32_value_2');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_usize
     bytes.append_usize(0x01);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 29, 'append_usize_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_usize_value_1');
     assert(*data[1] == 0x17180101020102030400000001000000, 'append_usize_value_2');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_u64
     bytes.append_u64(0x030405060708);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 37, 'append_u64_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u64_value_1');
     assert(*data[1] == 0x17180101020102030400000001000003, 'append_u64_value_2');
     assert(*data[2] == 0x04050607080000000000000000000000, 'append_u64_value_3');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_u128
     bytes.append_u128(0x101112131415161718);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 53, 'append_u128_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u128_value_1');
     assert(*data[1] == 0x17180101020102030400000001000003, 'append_u128_value_2');
     assert(*data[2] == 0x04050607080000000000000010111213, 'append_u128_value_3');
     assert(*data[3] == 0x14151617180000000000000000000000, 'append_u128_value_4');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_u256
-    bytes.append_u256(u256 {low: 0x01020304050607, high: 0x010203040506070809});
-    let Bytes{size, mut data} = bytes;
+    bytes.append_u256(u256 { low: 0x01020304050607, high: 0x010203040506070809 });
+    let Bytes{size, mut data } = bytes;
     assert(size == 85, 'append_u256_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_u256_value_1');
     assert(*data[1] == 0x17180101020102030400000001000003, 'append_u256_value_2');
@@ -404,21 +400,22 @@ fn test_bytes_append() {
     assert(*data[3] == 0x14151617180000000000000001020304, 'append_u256_value_4');
     assert(*data[4] == 0x05060708090000000000000000000102, 'append_u256_value_5');
     assert(*data[5] == 0x03040506070000000000000000000000, 'append_u256_value_6');
-    bytes = Bytes {size: size, data: data};
+    bytes = Bytes { size: size, data: data };
 
     // append_address
-    let address = contract_address_const::<0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f>();
+    let address =
+        contract_address_const::<0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f>();
     bytes.append_address(address);
-    let Bytes{size, mut data} = bytes;
+    let Bytes{size, mut data } = bytes;
     assert(size == 117, 'append_address_size');
     assert(*data[0] == 0x10111213141516171810111213141516, 'append_address_value_1');
     assert(*data[1] == 0x17180101020102030400000001000003, 'append_address_value_2');
     assert(*data[2] == 0x04050607080000000000000010111213, 'append_address_value_3');
     assert(*data[3] == 0x14151617180000000000000001020304, 'append_address_value_4');
     assert(*data[4] == 0x05060708090000000000000000000102, 'append_address_value_5');
-    assert(*data[5] == 0x0304050607015401855d7796176b05d1,  'append_address_value_6');
-    assert(*data[6] == 0x60196ff92381eb7910f5446c2e0e04e1,  'append_address_value_7');
-    assert(*data[7] == 0x3db2194a4f0000000000000000000000,  'append_address_value_8');
+    assert(*data[5] == 0x0304050607015401855d7796176b05d1, 'append_address_value_6');
+    assert(*data[6] == 0x60196ff92381eb7910f5446c2e0e04e1, 'append_address_value_7');
+    assert(*data[7] == 0x3db2194a4f0000000000000000000000, 'append_address_value_8');
 }
 
 #[test]

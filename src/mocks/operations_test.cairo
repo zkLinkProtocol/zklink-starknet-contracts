@@ -15,12 +15,8 @@ trait IOperationsMock<TContractState> {
 #[starknet::contract]
 mod OperationsMock {
     use zklink::utils::operations::Operations::{
-        OperationTrait,
-        Deposit, DepositOperation,
-        Withdraw, WithdrawOperation,
-        FullExit, FullExitOperation,
-        ForcedExit, ForcedExitOperatoin,
-        ChangePubKey, ChangePubKeyOperation
+        OperationTrait, Deposit, DepositOperation, Withdraw, WithdrawOperation, FullExit,
+        FullExitOperation, ForcedExit, ForcedExitOperatoin, ChangePubKey, ChangePubKeyOperation
     };
     use zklink::utils::bytes::Bytes;
     use debug::PrintTrait;

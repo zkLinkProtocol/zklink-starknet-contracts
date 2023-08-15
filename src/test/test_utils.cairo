@@ -1,11 +1,6 @@
 use array::ArrayTrait;
 use zklink::utils::utils::{
-    u8_array_to_u256,
-    u128_array_slice,
-    u64_array_slice,
-    concatHash,
-    concatTwoHash,
-    pubKeyHash
+    u8_array_to_u256, u128_array_slice, u64_array_slice, concatHash, concatTwoHash, pubKeyHash
 };
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use debug::PrintTrait;
@@ -17,14 +12,16 @@ fn test_u8_array_to_u256() {
     let mut i = 0;
     loop {
         if i == 32 {
-            break();
+            break ();
         }
         array.append(i % 8);
         i += 1;
     };
 
     let res: u256 = u8_array_to_u256(array.span());
-    assert(res == 0x0001020304050607000102030405060700010203040506070001020304050607, 'invalid u256');
+    assert(
+        res == 0x0001020304050607000102030405060700010203040506070001020304050607, 'invalid u256'
+    );
 }
 
 #[test]
@@ -82,7 +79,9 @@ fn test_concatHash() {
     let bytes: Bytes = BytesTrait::new(117, array);
 
     let res = concatHash(hash, @bytes);
-    assert(res == 0x03f334207a3bf13253da30866be22b0df83fa8257e9eac68969278fe4bc1f5d0, 'invalid hash');
+    assert(
+        res == 0x03f334207a3bf13253da30866be22b0df83fa8257e9eac68969278fe4bc1f5d0, 'invalid hash'
+    );
 }
 
 #[test]
@@ -92,7 +91,9 @@ fn test_concatTwoHash() {
     let hash2: u256 = 0x03f334207a3bf13253da30866be22b0df83fa8257e9eac68969278fe4bc1f5d0;
 
     let res = concatTwoHash(hash1, hash2);
-    assert(res == 0x8edd237e38318c42a3387e350bd0c3de4581c1e6477f00a0df0a6ded12e70989, 'invalid hash');
+    assert(
+        res == 0x8edd237e38318c42a3387e350bd0c3de4581c1e6477f00a0df0a6ded12e70989, 'invalid hash'
+    );
 }
 
 #[test]
@@ -101,5 +102,7 @@ fn test_pubKeyHash() {
     let pubKeyHash: felt252 = 0x0bd0c3de4581c1e6477f00a0df0a6ded12e70989;
 
     let res = pubKeyHash(pubKeyHash);
-    assert(res == 0xbf0ce4dca350adf44df47b8833c5f84b87c8208b4323944d3a07311939a1d15f, 'invalid hash');
+    assert(
+        res == 0xbf0ce4dca350adf44df47b8833c5f84b87c8208b4323944d3a07311939a1d15f, 'invalid hash'
+    );
 }
