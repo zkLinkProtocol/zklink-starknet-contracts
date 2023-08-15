@@ -75,34 +75,6 @@ fn u128_join(left: u128, right: u128, right_size: usize) -> u128 {
     left * shit + right
 }
 
-impl U32IntoU256 of Into<u32, u256> {
-    fn into(self: u32) -> u256 {
-        u256{low: self.into(), high: 0}
-    }
-}
-
-impl U64IntoU256 of Into<u64, u256> {
-    fn into(self: u64) -> u256 {
-        u256{low: self.into(), high: 0}
-    }
-}
-
-impl U128IntoU256 of Into<u128, u256> {
-    fn into(self: u128) -> u256 {
-        u256{low: self, high: 0}
-    }
-}
-
-impl U256TryIntoU128 of TryInto<u256, u128> {
-    fn try_into(self: u256) -> Option<u128> {
-        if self.high == 0 {
-            return Option::Some(self.low);
-        } else {
-            return Option::None(());
-        }
-    }
-}
-
 // common u64 pow
 fn u64_pow(base: u64, mut exp: usize) -> u64 {
     let mut res = 1;

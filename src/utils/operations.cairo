@@ -6,7 +6,7 @@ mod Operations {
     use traits::TryInto;
     use option::OptionTrait;
     use starknet::{
-        StorageAccess,
+        Store,
         StorageBaseAddress,
         SyscallResult,
         storage_read_syscall,
@@ -24,7 +24,7 @@ mod Operations {
     };
     
     // zkLink circuit operation type
-    #[derive(Copy, Drop, PartialEq, Serde)]
+    #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]
     enum OpType {
         Noop: (),           // 0
         Deposit: (),        // 1 L1 op
@@ -108,25 +108,21 @@ mod Operations {
     const PUBKEY_HASH_BYTES: usize = 20;
 
     // Priority operations: Deposit, FullExit
-    #[derive(Copy, Drop, Serde)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
     struct PriorityOperation {
         hashedPubData: felt252,
         expirationBlock: u64,
         opType: OpType
     }
 
-    // This trait impl is just for devlopment progress going on.
-    // TODO: remove this after StorageAccess support Array
-    impl PriorityOperationStorageAccess of StorageAccess<PriorityOperation> {
-        fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<PriorityOperation> {
-            SyscallResult::Ok(PriorityOperation {
+    impl PriorityOperationDefault of Default<PriorityOperation> {
+        #[always_inline]
+        fn default() -> PriorityOperation {
+            PriorityOperation {
                 hashedPubData: 0,
                 expirationBlock: 0,
                 opType: OpType::Noop(())
-            })
-        }
-        fn write(address_domain: u32, base: StorageBaseAddress, value: PriorityOperation) -> SyscallResult<()> {
-            SyscallResult::Ok(())
+            }
         }
     }
 
@@ -140,15 +136,15 @@ mod Operations {
     }
 
     // Deposit operation: 58 bytes(59 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct Deposit {
-        chainId: u8,            // 1 byte, deposit from which chain that identified by l2 chain id
+        chainId: u8,            // 1 byte, deposit from which chain that identified by L2 chain id
         accountId: u32,         // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
         subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        tokenId: u16,           // 2 bytes, the token that registered to l2
-        targetTokenId: u16,     // 2 bytes, the token that user increased in l2
-        amount: u128,           // 16 bytes, the token amount deposited to l2
-        owner: ContractAddress, // 32 bytes, the address that receive deposited token at l2
+        tokenId: u16,           // 2 bytes, the token that registered to L2
+        targetTokenId: u16,     // 2 bytes, the token that user increased in L2
+        amount: u128,           // 16 bytes, the token amount deposited to L2
+        owner: felt252,         // 32 bytes, the address that receive deposited token at L2
     }
 
     impl DepositOperation of OperationTrait<Deposit> {
@@ -161,7 +157,7 @@ mod Operations {
             let (offset, tokenId) = pubData.read_u16(offset);
             let (offset, targetTokenId) = pubData.read_u16(offset);
             let (offset, amount) = pubData.read_u128(offset);
-            let (offset, owner) = pubData.read_address(offset);
+            let (offset, owner) = pubData.read_felt252(offset);
 
             let deposit = Deposit {
                 chainId: chainId,
@@ -185,7 +181,7 @@ mod Operations {
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.targetTokenId);
             pubData.append_u128(*self.amount);
-            pubData.append_address(*self.owner);
+            pubData.append_felt252(*self.owner);
 
             pubData
         }
@@ -198,14 +194,14 @@ mod Operations {
     }
 
     // FullExit operation: 58 bytes(59 with opType)
-    #[derive(Copy, Drop)]
+    #[derive(Copy, Drop, Serde)]
     struct FullExit {
-        chainId: u8,            // 1 byte, withdraw to which chain that identified by l2 chain id
+        chainId: u8,            // 1 byte, withdraw to which chain that identified by L2 chain id
         accountId: u32,         // 4 bytes, the account id to withdraw from
         subAccountId: u8,       // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
-        owner: ContractAddress, // 32 bytes, the address that own the account at l2
+        owner: ContractAddress, // 32 bytes, the address that own the account at L2
         tokenId: u16,           // 2 bytes, the token that withdraw to l1
-        srcTokenId: u16,        // 2 bytes, the token that deducted in l2
+        srcTokenId: u16,        // 2 bytes, the token that deducted in L2
         amount: u128,           // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
     }
 
@@ -255,16 +251,18 @@ mod Operations {
         }
     }
 
-    // Withdraw operation: 61 bytes
-    #[derive(Copy, Drop)]
+    // Withdraw operation: 63 bytes(68 with opType)
+    #[derive(Copy, Drop, Serde)]
     struct Withdraw {
         chainId: u8,                // 1 byte, which chain the withdraw happened
         accountId: u32,             // 4 bytes, the account id to withdraw from
+        subAccountId: u8,           // 1 byte, the sub account to withdraw from
         tokenId: u16,               // 2 bytes, the token that to withdraw
         amount: u128,               // 16 bytes, the token amount to withdraw
         owner: ContractAddress,     // 32 bytes, the address to receive token
-        nonce: u32,                 // 4 bytes, zero means normal withdraw, not zero means fast withdraw and the value is the account nonce
-        fastWithdrawFeeRate: u16,   // 2 bytes, fast withdraw fee rate taken by accepter
+        nonce: u32,                 // 4 bytes, the sub account nonce
+        fastWithdrawFeeRate: u16,   // 2 bytes, fast withdraw fee rate taken by acceptor
+        fastWithdraw: u8,           // 1 byte, 0 means normal withdraw, 1 means fast withdraw
     }
 
     impl WithdrawOperation of OperationTrait<Withdraw> {
@@ -272,7 +270,7 @@ mod Operations {
         //  opType, u8, ignored at serialization
         //  chainId,
         //  accountId,
-        //  subAccountId, u8, ignored at serialization
+        //  subAccountId,
         //  tokenId,
         //  srcTokenId, u16, ignored at serialization
         //  amount,
@@ -285,10 +283,9 @@ mod Operations {
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
             let (offset, accountId) = pubData.read_u32(offset);
-            // uint8 subAccountId, present in pubdata, ignored at serialization
-            let offset = offset + SUB_ACCOUNT_ID_BYTES;
+            let (offset, subAccountId) = pubData.read_u8(offset);
             let (offset, tokenId) = pubData.read_u16(offset);
-            // uint16 srcTokenId, the token that decreased in l2, present in pubdata, ignored at serialization
+            // uint16 srcTokenId, the token that decreased in L2, present in pubdata, ignored at serialization
             let offset = offset + TOKEN_BYTES;
             let (offset, amount) = pubData.read_u128(offset);
             // uint16 fee, present in pubdata, ignored at serialization
@@ -296,15 +293,18 @@ mod Operations {
             let (offset, owner) = pubData.read_address(offset);
             let (offset, nonce) = pubData.read_u32(offset);
             let (offset, fastWithdrawFeeRate) = pubData.read_u16(offset);
+            let (offset, fastWithdraw) = pubData.read_u8(offset);
 
             let withdraw = Withdraw {
                 chainId: chainId,
                 accountId: accountId,
+                subAccountId: subAccountId,
                 tokenId: tokenId,
                 amount: amount,
                 owner: owner,
                 nonce: nonce,
-                fastWithdrawFeeRate: fastWithdrawFeeRate
+                fastWithdrawFeeRate: fastWithdrawFeeRate,
+                fastWithdraw: fastWithdraw
             };
             (offset, withdraw)
         }
@@ -319,48 +319,53 @@ mod Operations {
         }
     }
 
-    // ForcedExit operation: 51 Bytes
-    #[derive(Copy, Drop)]
+    // ForcedExit operation: 64 Bytes(68 with opType)
+    #[derive(Copy, Drop, Serde)]
     struct ForcedExit {
-        chainId: u8,            // 1 byte, which chain the force exit happened
-        tokenId: u16,           // 2 bytes, the token that to withdraw
-        amount: u128,           // 16 bytes, the token amount to withdraw
-        target: ContractAddress // 32 bytes, the address to receive token
+        chainId: u8,                // 1 byte, which chain the force exit happened
+        initiatorAccountId: u32,    // 4 bytes, the account id of initiator
+        initiatorSubAccountId: u8,  // 1 byte, the sub account id of initiator
+        initiatorNonce: u32,        // 4 bytes, the sub account nonce of initiator
+        targetAccountId: u32,       // 4 bytes, the account id of target
+        tokenId: u16,               // 2 bytes, the token that to withdraw
+        amount: u128,               // 16 bytes, the token amount to withdraw
+        target: ContractAddress     // 32 bytes, the address to receive token
     }
 
     impl ForcedExitOperatoin of OperationTrait<ForcedExit> {
         // ForcedExit operation pubdata looks like this:
         //  opType, u8, ignored at serialization
         //  chainId,
-        //  initiatorAccountId, u32, ignored at serialization
-        //  initiatorSubAccountId, u8, ignored at serialization
-        //  targetAccountId, u32, ignored at serialization
+        //  initiatorAccountId,
+        //  initiatorSubAccountId,
+        //  initiatorNonce,
+        //  targetAccountId,
         //  targetSubAccountId, u8, ignored at serialization
         //  tokenId,
         //  srcTokenId, u16, ignored at serialization
-        //  feeTokenId, u16, ignored at serialization
         //  amount,
-        //  fee, u16, ignored at serialization
         //  target
         fn readFromPubdata(pubData: @Bytes) -> (usize, ForcedExit) {
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
-            // initiatorAccountId, u32, ignored at serialization
-            // initiatorSubAccountId, u8, ignored at serialization
-            // targetAccountId, u32, ignored at serialization
+            let (offset, initiatorAccountId) = pubData.read_u32(offset);
+            let (offset, initiatorSubAccountId) = pubData.read_u8(offset);
+            let (offset, initiatorNonce) = pubData.read_u32(offset);
+            let (offset, targetAccountId) = pubData.read_u32(offset);
             // targetSubAccountId, u8, ignored at serialization
-            let offset = offset + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES;
+            let offset = offset + SUB_ACCOUNT_ID_BYTES;
             let (offset, tokenId) = pubData.read_u16(offset);
             // srcTokenId, u16, ignored at serialization
-            // feeTokenId, u16, ignored at serialization
-            let offset = offset + TOKEN_BYTES + TOKEN_BYTES;
+            let offset = offset + TOKEN_BYTES;
             let (offset, amount) = pubData.read_u128(offset);
-            // fee, u16, ignored at serialization
-            let offset = offset + FEE_BYTES;
             let (offset, target) = pubData.read_address(offset);
 
             let forcedExit = ForcedExit {
                 chainId: chainId,
+                initiatorAccountId: initiatorAccountId,
+                initiatorSubAccountId: initiatorSubAccountId,
+                initiatorNonce: initiatorNonce,
+                targetAccountId: targetAccountId,
                 tokenId: tokenId,
                 amount: amount,
                 target: target
@@ -379,8 +384,8 @@ mod Operations {
         }
     }
 
-    // ChangePubKey operation: 61 bytes
-    #[derive(Copy, Drop)]
+    // ChangePubKey operation: 61 bytes(67 with opType)
+    #[derive(Copy, Drop, Serde)]
     struct ChangePubKey {
         chainId: u8,                // 1 byte, which chain to verify(only one chain need to verify for gas saving)
         accountId: u32,             // 4 bytes, the account that to change pubkey

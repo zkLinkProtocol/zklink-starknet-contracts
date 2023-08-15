@@ -2,11 +2,8 @@
 
 const EMPTY_STRING_KECCAK: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 
-// ERC20 tokens and ETH withdrawals gas limit, used only for complete withdrawals
-const WITHDRAWAL_GAS_LIMIT: u256 = 100000;
-
 // Bytes in one chunk
-const CHUNK_BYTES: usize = 19;
+const CHUNK_BYTES: usize = 23;
 
 // Bytes of L2 PubKey hash
 const PUBKEY_HASH_BYTES: usize = 20;
@@ -120,10 +117,6 @@ const TOKEN_DECIMALS_OF_LAYER2: u8 = 18;
 // Global asset account in the network
 // Can not deposit to or full exit this account
 const GLOBAL_ASSET_ACCOUNT_ID: u32 = 1;
-// Now, in cairo only literal constants are currently supported.
-// So we use felt252 to represent address
-// Before use this constant, we should convert it to ContractAddress
-const GLOBAL_ASSET_ACCOUNT_ADDRESS: felt252 = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
 // USD and USD stable tokens defined by zkLink
 // User can deposit USD stable token(eg. USDC, BUSD) to get USD in layer two

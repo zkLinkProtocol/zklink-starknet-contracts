@@ -1,9 +1,10 @@
 use starknet::ContractAddress;
 
-#[abi]
-trait IVerifier {
+#[starknet::interface]
+trait IVerifier<TContractState> {
     #[external]
     fn verifyAggregatedBlockProof(
+        ref self: TContractState,
         _recursiveInput: Array<u256>,
         _proof: Array<u256>,
         _vkIndexes: Array<u8>,
@@ -13,6 +14,7 @@ trait IVerifier {
 
     #[external]
     fn verifyExitProof(
+        ref self: TContractState,
         _rootHash: u256,
         _chainId: u8,
         _accountId: u8,
