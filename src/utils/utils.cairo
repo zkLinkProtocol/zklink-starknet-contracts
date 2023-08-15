@@ -2,15 +2,8 @@ use traits::Into;
 use array::{ArrayTrait, SpanTrait};
 use traits::TryInto;
 use option::OptionTrait;
-use zklink::utils::math::{
-    u128_split,
-    u128_join,
-    felt252_fast_pow2
-};
-use zklink::utils::bytes::{
-    Bytes,
-    BytesTrait
-};
+use zklink::utils::math::{u128_split, u128_join, felt252_fast_pow2};
+use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_data_structures::array_ext::ArrayTraitExt;
 
@@ -24,10 +17,10 @@ fn u8_array_to_u256(arr: Span<u8>) -> u256 {
     // process high
     loop {
         if i >= arr.len() {
-            break();
+            break ();
         }
         if i == 16 {
-            break();
+            break ();
         }
         high = u128_join(high, (*arr[i]).into(), 1);
         i += 1;
@@ -35,16 +28,16 @@ fn u8_array_to_u256(arr: Span<u8>) -> u256 {
     // process low
     loop {
         if i >= arr.len() {
-            break();
+            break ();
         }
         if i == 32 {
-            break();
+            break ();
         }
         low = u128_join(low, (*arr[i]).into(), 1);
         i += 1;
     };
 
-    u256{low, high}
+    u256 { low, high }
 }
 
 // https://github.com/keep-starknet-strange/alexandria/blob/main/alexandria/data_structures/src/data_structures.cairo
@@ -101,7 +94,7 @@ fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {
     let mut bytes_data = u128_array_slice(_bytes.data, 0, last_data_index);
     // To cumpute hash, we should remove 0 padded
     let (last_element_value, _) = u128_split(*_bytes.data[last_data_index], 16, last_element_size);
-    
+
     // append _bytes
     hash_data.append_all(ref bytes_data);
     hash_data.append(last_element_value);

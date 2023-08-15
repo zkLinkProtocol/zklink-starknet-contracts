@@ -19,9 +19,7 @@ use zklink::utils::bytes::{Bytes, BytesTrait};
 
 fn deploy_contract(name: felt252) -> ContractAddress {
     let class_hash = declare(name);
-    let prepared = PreparedContract {
-        class_hash, constructor_calldata: @ArrayTrait::new()
-    };
+    let prepared = PreparedContract { class_hash, constructor_calldata: @ArrayTrait::new() };
     deploy(prepared).unwrap()
 }
 
@@ -32,7 +30,6 @@ fn deploy_contract(name: felt252) -> ContractAddress {
 // data += b'\x00' * (16 - size % 16)
 // data = [int.from_bytes(x, 'big') for x in [data[i:i+16] for i in range(0, len(data), 16)]]
 
-
 #[test]
 fn test_zklink_read_deposit_pubdata() {
     let contract_address = deploy_contract('OperationsMock');
@@ -40,12 +37,12 @@ fn test_zklink_read_deposit_pubdata() {
     let owner: felt252 = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d;
 
     let _example: Deposit = Deposit {
-        chainId:1,
-        accountId:13,
-        subAccountId:0,
-        tokenId:25,
-        targetTokenId:23,
-        amount:100,
+        chainId: 1,
+        accountId: 13,
+        subAccountId: 0,
+        tokenId: 25,
+        targetTokenId: 23,
+        amount: 100,
         owner: owner
     };
 
@@ -57,7 +54,14 @@ fn test_zklink_read_deposit_pubdata() {
 
     let mut _pubData: Bytes = BytesTrait::new_empty();
     _pubData.size = 59;
-    _pubData.data = array![1334420292659166737988792875596382208, 109982469853070, 179892997260459296479640320015568236610, 3577810954935998486498406173769728000];
+    _pubData
+        .data =
+            array![
+                1334420292659166737988792875596382208,
+                109982469853070,
+                179892997260459296479640320015568236610,
+                3577810954935998486498406173769728000
+            ];
 
     dispatcher.testDepositPubdata(_example, _pubData);
 }
@@ -69,12 +73,12 @@ fn test_zklink_write_deposit_pubdata() {
     let owner: felt252 = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d;
 
     let _example: Deposit = Deposit {
-        chainId:1,
-        accountId:13,
-        subAccountId:0,
-        tokenId:25,
-        targetTokenId:23,
-        amount:100,
+        chainId: 1,
+        accountId: 13,
+        subAccountId: 0,
+        tokenId: 25,
+        targetTokenId: 23,
+        amount: 100,
         owner: owner
     };
 
@@ -85,7 +89,9 @@ fn test_zklink_write_deposit_pubdata() {
 fn test_zklink_read_withdraw_pubdata() {
     let contract_address = deploy_contract('OperationsMock');
     let dispatcher = IOperationsMockDispatcher { contract_address };
-    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d.try_into().unwrap();
+    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+        .try_into()
+        .unwrap();
 
     let _example: Withdraw = Withdraw {
         chainId: 1,
@@ -107,7 +113,15 @@ fn test_zklink_read_withdraw_pubdata() {
 
     let mut _pubData: Bytes = BytesTrait::new_empty();
     _pubData.size = 68;
-    _pubData.data = array![3992876284251986964483546870026600448, 35184607447564, 20678471039984701855585286363423409824, 149216281713636543258803496807561166848, 59816172597981541120104732932467326976];
+    _pubData
+        .data =
+            array![
+                3992876284251986964483546870026600448,
+                35184607447564,
+                20678471039984701855585286363423409824,
+                149216281713636543258803496807561166848,
+                59816172597981541120104732932467326976
+            ];
 
     dispatcher.testWithdrawPubdata(_example, _pubData);
 }
@@ -116,7 +130,9 @@ fn test_zklink_read_withdraw_pubdata() {
 fn test_zklink_read_fullexit_pubdata() {
     let contract_address = deploy_contract('OperationsMock');
     let dispatcher = IOperationsMockDispatcher { contract_address };
-    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d.try_into().unwrap();
+    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+        .try_into()
+        .unwrap();
 
     let _example: FullExit = FullExit {
         chainId: 1,
@@ -136,7 +152,14 @@ fn test_zklink_read_fullexit_pubdata() {
 
     let mut _pubData: Bytes = BytesTrait::new_empty();
     _pubData.size = 59;
-    _pubData.data = array![6651332275824326418906434470835265930, 200395919779929312501285245198324010931, 6100388676413382880207601728340623360, 16492674416640];
+    _pubData
+        .data =
+            array![
+                6651332275824326418906434470835265930,
+                200395919779929312501285245198324010931,
+                6100388676413382880207601728340623360,
+                16492674416640
+            ];
 
     dispatcher.testFullExitPubdata(_example, _pubData);
 }
@@ -145,7 +168,9 @@ fn test_zklink_read_fullexit_pubdata() {
 fn test_zklink_write_fullexit_pubdata() {
     let contract_address = deploy_contract('OperationsMock');
     let dispatcher = IOperationsMockDispatcher { contract_address };
-    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d.try_into().unwrap();
+    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+        .try_into()
+        .unwrap();
 
     let _example: FullExit = FullExit {
         chainId: 1,
@@ -164,7 +189,9 @@ fn test_zklink_write_fullexit_pubdata() {
 fn test_zklink_read_forceexit_pubdata() {
     let contract_address = deploy_contract('OperationsMock');
     let dispatcher = IOperationsMockDispatcher { contract_address };
-    let target: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d.try_into().unwrap();
+    let target: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+        .try_into()
+        .unwrap();
 
     let _example: ForcedExit = ForcedExit {
         chainId: 1,
@@ -185,7 +212,15 @@ fn test_zklink_read_forceexit_pubdata() {
 
     let mut _pubData: Bytes = BytesTrait::new_empty();
     _pubData.size = 68;
-    _pubData.data = array![9309788267355368511960897543844397828, 25961880433486709464340449365852160, 477624887620356151319952016089, 227142569737839188506614686513323349732, 130444596926336721081525902839130357760];
+    _pubData
+        .data =
+            array![
+                9309788267355368511960897543844397828,
+                25961880433486709464340449365852160,
+                477624887620356151319952016089,
+                227142569737839188506614686513323349732,
+                130444596926336721081525902839130357760
+            ];
 
     dispatcher.testForcedExitPubdata(_example, _pubData);
 }
@@ -195,14 +230,12 @@ fn test_zklink_read_changepubkey_pubdata() {
     let contract_address = deploy_contract('OperationsMock');
     let dispatcher = IOperationsMockDispatcher { contract_address };
     let pubKeyHash: felt252 = 0x823B747710C5bC9b8A47243f2c3d1805F1aA00c5;
-    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d.try_into().unwrap();
+    let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+        .try_into()
+        .unwrap();
 
     let _example: ChangePubKey = ChangePubKey {
-        chainId: 1,
-        accountId: 2,
-        pubKeyHash: pubKeyHash,
-        owner: owner,
-        nonce: 3
+        chainId: 1, accountId: 2, pubKeyHash: pubKeyHash, owner: owner, nonce: 3
     };
 
     // encode_format = ["uint8","uint8","uint32","uint8","uint160","uint256","uint32","uint16","uint16"]
@@ -213,7 +246,15 @@ fn test_zklink_read_changepubkey_pubdata() {
 
     let mut _pubData: Bytes = BytesTrait::new_empty();
     _pubData.size = 67;
-    _pubData.data = array![7980560271570464486150960366994889610, 94563391684388089342185505966699319182, 179892997260459296479640320015568236610, 3577810954935998486498406173769728768, 5317013395187681749967347977377808384];
+    _pubData
+        .data =
+            array![
+                7980560271570464486150960366994889610,
+                94563391684388089342185505966699319182,
+                179892997260459296479640320015568236610,
+                3577810954935998486498406173769728768,
+                5317013395187681749967347977377808384
+            ];
 
     dispatcher.testChangePubkeyPubdata(_example, _pubData);
 }

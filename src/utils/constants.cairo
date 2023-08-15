@@ -1,6 +1,7 @@
 // zkLink configuration constants
 
-const EMPTY_STRING_KECCAK: u256 = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+const EMPTY_STRING_KECCAK: u256 =
+    0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 
 // Bytes in one chunk
 const CHUNK_BYTES: usize = 23;
@@ -60,7 +61,8 @@ const TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT: u64 = 172800;
 const UPGRADE_NOTICE_PERIOD: u64 = 1814400;
 
 // Max commitment produced in zk proof where highest 3 bits is 0
-const MAX_PROOF_COMMITMENT: u256 = 0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+const MAX_PROOF_COMMITMENT: u256 =
+    0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
 // Bit mask to apply for verifier public input before verifying.
 const INPUT_MASK: u256 = 0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
@@ -103,13 +105,17 @@ const MAX_ACCEPT_FEE_RATE: u16 = 10000;
 
 // see EIP-712
 // CHANGE_PUBKEY_DOMAIN_SEPARATOR = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-const CHANGE_PUBKEY_DOMAIN_SEPARATOR: u256 = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
+const CHANGE_PUBKEY_DOMAIN_SEPARATOR: u256 =
+    0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
 // CHANGE_PUBKEY_HASHED_NAME =  keccak256("ZkLink");
-const CHANGE_PUBKEY_HASHED_NAME: u256 = 0x5d27f4d7e0e8a0cba7984286ccb8f517d40889161f782642f4bde6b8ac718965;
+const CHANGE_PUBKEY_HASHED_NAME: u256 =
+    0x5d27f4d7e0e8a0cba7984286ccb8f517d40889161f782642f4bde6b8ac718965;
 // CHANGE_PUBKEY_HASHED_VERSION = keccak256("1");
-const CHANGE_PUBKEY_HASHED_VERSION: u256 = 0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6;
+const CHANGE_PUBKEY_HASHED_VERSION: u256 =
+    0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6;
 // CHANGE_PUBKEY_TYPE_HASH = keccak256("ChangePubKey(bytes20 pubKeyHash,uint32 nonce,uint32 accountId)");
-const CHANGE_PUBKEY_TYPE_HASH: u256 = 0x8012078cc90c4c82e493f1a538159fd8621f39392101b34fba2ecd141432580b;
+const CHANGE_PUBKEY_TYPE_HASH: u256 =
+    0x8012078cc90c4c82e493f1a538159fd8621f39392101b34fba2ecd141432580b;
 
 // Token decimals is a fixed value at layer two in ZkLink
 const TOKEN_DECIMALS_OF_LAYER2: u8 = 18;

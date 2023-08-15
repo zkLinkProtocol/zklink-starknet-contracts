@@ -3,31 +3,20 @@ mod DataStructures {
     use traits::{Into, TryInto};
     use option::OptionTrait;
     use clone::Clone;
-    use starknet::contract_address::{
-        ContractAddress,
-        ContractAddressZeroable,
-    };
+    use starknet::contract_address::{ContractAddress, ContractAddressZeroable, };
     use starknet::{
-        Store,
-        StorageBaseAddress,
-        SyscallResult,
-        storage_read_syscall,
-        storage_write_syscall,
+        Store, StorageBaseAddress, SyscallResult, storage_read_syscall, storage_write_syscall,
         storage_address_from_base_and_offset
     };
-    use zklink::utils::bytes::{
-        Bytes,
-        BytesTrait,
-        ReadBytes
-    };
+    use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
 
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct RegisteredToken {
-        registered: bool,               // whether token registered to ZkLink or not, default is false
-        paused: bool,                   // whether token can deposit to ZkLink or not, default is false
-        tokenAddress: ContractAddress,  // the token address
-        decimals: u8,                   // the token decimals of layer one
-        standard: bool                  // we will not check the balance different of zkLink contract after transfer when a token comply with erc20 standard
+        registered: bool, // whether token registered to ZkLink or not, default is false
+        paused: bool, // whether token can deposit to ZkLink or not, default is false
+        tokenAddress: ContractAddress, // the token address
+        decimals: u8, // the token decimals of layer one
+        standard: bool // we will not check the balance different of zkLink contract after transfer when a token comply with erc20 standard
     }
 
     // We can set `enableBridgeTo` and `enableBridgeTo` to false
@@ -44,13 +33,13 @@ mod DataStructures {
     // `priorityOperations`,`pendingOnchainOperationsHash` is different for each chain
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct StoredBlockInfo {
-        blockNumber: u64,                   // Rollup block number
-        priorityOperations: u64,            // Number of priority operations processed
+        blockNumber: u64, // Rollup block number
+        priorityOperations: u64, // Number of priority operations processed
         pendingOnchainOperationsHash: u256, // Hash of all operations that must be processed after verify
-        timestamp: u64,                     // Rollup block timestamp
-        stateHash: u256,                    // Root hash of the rollup state
-        commitment: u256,                   // Verified input for the ZkLink circuit
-        syncHash: u256                      // Used for cross chain block verify
+        timestamp: u64, // Rollup block timestamp
+        stateHash: u256, // Root hash of the rollup state
+        commitment: u256, // Verified input for the ZkLink circuit
+        syncHash: u256 // Used for cross chain block verify
     }
 
     impl StoredBlockInfoIntoBytes of Into<StoredBlockInfo, Bytes> {
@@ -66,10 +55,10 @@ mod DataStructures {
             bytes
         }
     }
-    
+
     #[derive(Copy, Drop, PartialEq)]
     enum ChangePubkeyType {
-        ECRECOVER: (),
+        ECRECOVER: (), 
     }
 
     impl ChangePubkeyTypeReadBytes of ReadBytes<ChangePubkeyType> {
@@ -83,7 +72,7 @@ mod DataStructures {
     impl ChangePubkeyTypeIntoU8 of Into<ChangePubkeyType, u8> {
         fn into(self: ChangePubkeyType) -> u8 {
             match self {
-                ChangePubkeyType::ECRECOVER(_) => 0,
+                ChangePubkeyType::ECRECOVER(_) => 0, 
             }
         }
     }
@@ -102,7 +91,7 @@ mod DataStructures {
     // Onchain operations is operations that need some processing on L1: Deposits, Withdrawals, ChangePubKey.
     #[derive(Drop, Serde)]
     struct OnchainOperationData {
-        ethWitness: Bytes,      // Some external data that can be needed for operation processing
+        ethWitness: Bytes, // Some external data that can be needed for operation processing
         publicDataOffset: usize // Byte offset in public data for onchain operation
     }
 
@@ -123,25 +112,25 @@ mod DataStructures {
 
     #[derive(Drop, Serde)]
     struct CompressedBlockExtraInfo {
-        publicDataHash: u256,                       // pubdata hash of all chains
-        offsetCommitmentHash: u256,                 // all chains pubdata offset commitment hash
-        onchainOperationPubdataHashs: Array<u256>   // onchain operation pubdata hash of the all other chains
+        publicDataHash: u256, // pubdata hash of all chains
+        offsetCommitmentHash: u256, // all chains pubdata offset commitment hash
+        onchainOperationPubdataHashs: Array<u256> // onchain operation pubdata hash of the all other chains
     }
 
     // Data needed to execute committed and verified block
     #[derive(Drop, Serde)]
     struct ExecuteBlockInfo {
-        storedBlock: StoredBlockInfo,           // the block info that will be executed
-        pendingOnchainOpsPubdata: Array<Bytes>  // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
+        storedBlock: StoredBlockInfo, // the block info that will be executed
+        pendingOnchainOpsPubdata: Array<Bytes> // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
     }
 
     // Token info stored in zkLink
     #[derive(Drop, Copy, Serde)]
     struct Token {
-        tokenId: u16,                   // token id defined by zkLink
-        tokenAddress: ContractAddress,  // token address in l1
-        decimals: u8,                   // token decimals in l1
-        standard: bool                  // if token a pure erc20 or not
+        tokenId: u16, // token id defined by zkLink
+        tokenAddress: ContractAddress, // token address in l1
+        decimals: u8, // token decimals in l1
+        standard: bool // if token a pure erc20 or not
     }
 
     // Recursive proof input data (individual commitments are constructed onchain)
