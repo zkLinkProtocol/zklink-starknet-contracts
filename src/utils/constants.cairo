@@ -76,7 +76,7 @@ const MAX_DEPOSIT_AMOUNT: u128 = 20282409603651670423947251286015;
 
 // Chain id defined by ZkLink
 // TODO: check before deploy
-const CHAIN_ID: u8 = 10;
+const CHAIN_ID: u8 = 1;
 
 // Min chain id defined by ZkLink
 // TODO: check before deploy
@@ -84,15 +84,15 @@ const MIN_CHAIN_ID: u8 = 1;
 
 // Max chain id defined by ZkLink
 // TODO: check before deploy
-const MAX_CHAIN_ID: u8 = 10;
+const MAX_CHAIN_ID: u8 = 4;
 
 // All chain index, for example [1, 2, 3, 4] => 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 = 15
 // TODO: check before deploy
-const ALL_CHAINS: u256 = 1023;
+const ALL_CHAINS: u256 = 15;
 
 // Chain index, CHAIN_ID is non-zero value
 // TODO: check before deploy
-const CHAIN_INDEX: u256 = 512;
+const CHAIN_INDEX: u256 = 1;
 
 // Enable commit a compressed block
 // TODO: check before deploy
