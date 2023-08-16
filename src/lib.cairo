@@ -1,5 +1,5 @@
 mod contracts;
 mod libraries;
 mod utils;
-mod test;
-mod mocks;
+#[cfg(test)]
+mod tests;
