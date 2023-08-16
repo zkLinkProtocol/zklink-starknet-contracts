@@ -156,7 +156,7 @@ mod Zklink {
         ChangePubkeyType, ChangePubkeyTypeReadBytes
     };
     use zklink::utils::math::{
-        u128_pow, felt252_fast_pow2, u256_pow2, u256_to_u160, u32_min, u64_min, u128_min,
+        fast_power10, felt252_fast_pow2, u256_pow2, u256_to_u160, u32_min, u64_min, u128_min,
     };
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash, update_u256_array_at};
     use zklink::utils::constants::{
@@ -2147,12 +2147,12 @@ mod Zklink {
     // because all token decimals defined in layer two is 18
     // so the `_amount` in deposit pubdata should be 2 * 10^6 * 10^(18 - 6) = 2 * 10^18
     fn improveDecimals(_amount: u128, _decimals: u8) -> u128 {
-        _amount * u128_pow(10, (TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
+        _amount * fast_power10((TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
     }
 
     // recover decimals when withdraw, this is the opposite of improve decimals
     fn recoveryDecimals(_amount: u128, _decimals: u8) -> u128 {
-        _amount / u128_pow(10, (TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
+        _amount / fast_power10((TOKEN_DECIMALS_OF_LAYER2 - _decimals).into())
     }
 
     // Return accept record hash for fast withdraw

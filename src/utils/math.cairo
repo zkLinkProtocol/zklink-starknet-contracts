@@ -74,32 +74,6 @@ fn u128_join(left: u128, right: u128, right_size: usize) -> u128 {
     left * shit + right
 }
 
-// common u64 pow
-fn u64_pow(base: u64, mut exp: usize) -> u64 {
-    let mut res = 1;
-    loop {
-        if exp == 0 {
-            break res;
-        } else {
-            res = base * res;
-        }
-        exp = exp - 1;
-    }
-}
-
-// common u128 pow
-fn u128_pow(base: u128, mut exp: usize) -> u128 {
-    let mut res = 1;
-    loop {
-        if exp == 0 {
-            break res;
-        } else {
-            res = base * res;
-        }
-        exp = exp - 1;
-    }
-}
-
 // common 256 pow2
 fn u256_pow2(mut exp: usize) -> u256 {
     let mut res: u256 = 1;
@@ -155,10 +129,56 @@ fn u256_to_u160(src: u256) -> felt252 {
     (src & U256_TO_U160_MASK).try_into().unwrap()
 }
 
+// return 10^exp where exp in [0, 18]
+fn fast_power10(exp: usize) -> u128 {
+    assert(exp <= 18, 'invalid exp');
 
-// u128 fast pow2 function
-// TODO: Now cairo match just support 0, future we use fast pow2 will be better
+    if exp == 0_usize {
+        1_u128
+    } else if exp == 1_usize {
+        10_u128
+    } else if exp == 2_usize {
+        100_u128
+    } else if exp == 3_usize {
+        1000_u128
+    } else if exp == 4_usize {
+        10000_u128
+    } else if exp == 5_usize {
+        100000_u128
+    } else if exp == 6_usize {
+        1000000_u128
+    } else if exp == 7_usize {
+        10000000_u128
+    } else if exp == 8_usize {
+        100000000_u128
+    } else if exp == 9_usize {
+        1000000000_u128
+    } else if exp == 10_usize {
+        10000000000_u128
+    } else if exp == 11_usize {
+        100000000000_u128
+    } else if exp == 12_usize {
+        1000000000000_u128
+    } else if exp == 13_usize {
+        10000000000000_u128
+    } else if exp == 14_usize {
+        100000000000000_u128
+    } else if exp == 15_usize {
+        1000000000000000_u128
+    } else if exp == 16_usize {
+        10000000000000000_u128
+    } else if exp == 17_usize {
+        100000000000000000_u128
+    } else {
+        1000000000000000000_u128
+    }
+}
+
+
+// return 2^exp where exp in [0, 127]
 fn u128_fast_pow2(exp: usize) -> u128 {
+    assert(exp <= 127, 'invalid exp');
+
     if exp == 0_usize {
         1_u128
     } else if exp == 1_usize {
@@ -413,16 +433,15 @@ fn u128_fast_pow2(exp: usize) -> u128 {
         42535295865117307932921825928971026432_u128
     } else if exp == 126_usize {
         85070591730234615865843651857942052864_u128
-    } else if exp == 127_usize {
-        170141183460469231731687303715884105728_u128
     } else {
-        0
+        170141183460469231731687303715884105728_u128
     }
 }
 
-// felt252 fast pow2 function
-// TODO: Now cairo match just support 0, future we use fast pow2 will be better
+// return 2^exp where exp in [0, 251]
 fn felt252_fast_pow2(exp: usize) -> felt252 {
+    assert(exp <= 251, 'invalid exp');
+
     if exp == 0_usize {
         1
     } else if exp == 1_usize {
@@ -926,6 +945,6 @@ fn felt252_fast_pow2(exp: usize) -> felt252 {
     } else if exp == 250_usize {
         1809251394333065553493296640760748560207343510400633813116524750123642650624
     } else {
-        0
+        3618502788666131106986593281521497120414687020801267626233049500247285301248
     }
 }
