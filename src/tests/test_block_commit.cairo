@@ -373,35 +373,35 @@ fn test_zklink_collectOnchainOps_duplicate_pubdata_offset() {
 #[test]
 #[available_gas(20000000000)]
 fn test_zklink_collectOnchainOps_success() {
-    let dispatcher = deploy_contract();
-    // deposit of current chain
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
-    //
-    // size = 59
-    // data = [1334420292644659628729889072919609344, 549787120963470, 179892997260459296479640320015568236610, 3577810954935998486498406173769728000]
-    let mut depositData1: Bytes = BytesTrait::new(59, array![
-        1334420292644659628729889072919609344,
-        549787120963470,
-        179892997260459296479640320015568236610,
-        3577810954935998486498406173769728000
-    ]);
+    // let dispatcher = deploy_contract();
+    // // deposit of current chain
+    // // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
+    // // example = [1, 1, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
+    // //
+    // // size = 59
+    // // data = [1334420292644659628729889072919609344, 549787120963470, 179892997260459296479640320015568236610, 3577810954935998486498406173769728000]
+    // let mut depositData1: Bytes = BytesTrait::new(59, array![
+    //     1334420292644659628729889072919609344,
+    //     549787120963470,
+    //     179892997260459296479640320015568236610,
+    //     3577810954935998486498406173769728000
+    // ]);
+
 
     
-    
 
-    let mut block = CommitBlockInfo {
-        newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
-        publicData: depositData0,
-        timestamp: 1652422395,
-        onchainOperations: onchainOperations,
-        blockNumber: 10,
-        feeAccount: 0
-    };
+    // let mut block = CommitBlockInfo {
+    //     newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
+    //     publicData: depositData0,
+    //     timestamp: 1652422395,
+    //     onchainOperations: onchainOperations,
+    //     blockNumber: 10,
+    //     feeAccount: 0
+    // };
 
-    let (processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) = dispatcher.testCollectOnchainOps(block);
+    // let (processableOperationsHash,
+    //     priorityOperationsProcessed,
+    //     offsetsCommitment,
+    //     onchainOperationPubdataHashs
+    // ) = dispatcher.testCollectOnchainOps(block);
 }

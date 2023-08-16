@@ -425,13 +425,13 @@ impl BytesImpl of BytesTrait {
         let mut offset = 0;
         let mut sub_bytes_full_array_len = *other.size / BYTES_PER_ELEMENT;
         loop {
+            if sub_bytes_full_array_len == 0 {
+                break ();
+            };
             let (new_offset, value) = other.read_u128(offset);
             self.append_u128(value);
             offset = new_offset;
             sub_bytes_full_array_len -= 1;
-            if sub_bytes_full_array_len == 0 {
-                break ();
-            };
         };
 
         // process last array element for right
