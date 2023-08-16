@@ -416,6 +416,29 @@ fn test_bytes_append() {
     assert(*data[5] == 0x0304050607015401855d7796176b05d1, 'append_address_value_6');
     assert(*data[6] == 0x60196ff92381eb7910f5446c2e0e04e1, 'append_address_value_7');
     assert(*data[7] == 0x3db2194a4f0000000000000000000000, 'append_address_value_8');
+    bytes = Bytes { size: size, data: data };
+
+    // concat
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213140154);
+    array.append(0x01855d7796176b05d160196ff92381eb);
+    array.append(0x7910f5446c2e0e04e13db2194a4f0000);
+
+    let other = BytesTrait::new(46, array);
+    bytes.concat(@other);
+    let Bytes{size, mut data } = bytes;
+    assert(size == 163, 'concat_size');
+    assert(*data[0] == 0x10111213141516171810111213141516, 'concat_value_1');
+    assert(*data[1] == 0x17180101020102030400000001000003, 'concat_value_2');
+    assert(*data[2] == 0x04050607080000000000000010111213, 'concat_value_3');
+    assert(*data[3] == 0x14151617180000000000000001020304, 'concat_value_4');
+    assert(*data[4] == 0x05060708090000000000000000000102, 'concat_value_5');
+    assert(*data[5] == 0x0304050607015401855d7796176b05d1, 'concat_value_6');
+    assert(*data[6] == 0x60196ff92381eb7910f5446c2e0e04e1, 'concat_value_7');
+    assert(*data[7] == 0x3db2194a4f0102030405060708091011, 'concat_value_8');
+    assert(*data[8] == 0x121314015401855d7796176b05d16019, 'concat_value_9');
+    assert(*data[9] == 0x6ff92381eb7910f5446c2e0e04e13db2, 'concat_value_10');
+    assert(*data[10] == 0x194a4f00000000000000000000000000, 'concat_value_11');
 }
 
 #[test]

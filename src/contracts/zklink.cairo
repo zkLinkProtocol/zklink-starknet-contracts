@@ -2188,6 +2188,8 @@ mod Zklink {
         // use index of onchainOperationPubdataHashs as chain id
         // index start from [0, MIN_CHAIN_ID - 1] left unused
         let mut onchainOpPubdataHashs: Array<u256> = ArrayTrait::new();
+        // index 0 is unused
+        onchainOpPubdataHashs.append(0);
         let mut i = MIN_CHAIN_ID;
         loop {
             if i > MAX_CHAIN_ID {

@@ -7,7 +7,37 @@ use starknet::ContractAddress;
 use starknet::testing;
 use starknet::SyscallResultTrait;
 use traits::TryInto;
+use zklink::utils::bytes::{Bytes, BytesTrait};
+use zklink::utils::constants::CHUNK_BYTES;
+use zklink::utils::math::u128_join;
 
+const OP_NOOP: usize = 0;
+const OP_DEPOSIT: usize = 1;
+const OP_TRANSFER_TO_NEW: usize = 2;
+const OP_WITHDRAW: usize = 3;
+const OP_TRANSFER: usize = 4;
+const OP_FULL_EXIT: usize = 5;
+const OP_CHANGE_PUBKEY: usize = 6;
+const OP_FORCE_EXIT: usize = 7;
+const OP_ORDER_MATCHING: usize = 11;
+const OP_NOOP_CHUNKS: usize = 1;
+const OP_DEPOSIT_CHUNKS: usize = 3;
+const OP_TRANSFER_TO_NEW_CHUNKS: usize = 3;
+const OP_WITHDRAW_CHUNKS: usize = 3;
+const OP_TRANSFER_CHUNKS: usize = 2;
+const OP_FULL_EXIT_CHUNKS: usize = 3;
+const OP_CHANGE_PUBKEY_CHUNKS: usize = 3;
+const OP_FORCE_EXIT_CHUNKS: usize = 3;
+const OP_ORDER_MATCHING_CHUNKS: usize = 4;
+const OP_DEPOSIT_SIZE: usize = 59;
+const OP_TRANSFER_TO_NEW_SIZE: usize = 52;
+const OP_WITHDRAW_SIZE: usize = 68;
+const OP_TRANSFER_SIZE: usize = 20;
+const OP_FULL_EXIT_SIZE: usize = 59;
+const OP_CHANGE_PUBKEY_SIZE: usize = 67;
+const OP_FORCE_EXIT_SIZE: usize = 68;
+const OP_ORDER_MATCHING_SIZE: usize = 77;
+const BYTES_PER_ELEMENT: usize = 16;
 
 fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAddress {
     let (address, _) = starknet::deploy_syscall(
@@ -15,4 +45,15 @@ fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAdd
     )
         .unwrap_syscall();
     address
+}
+
+fn paddingChunk(ref pubdata: Bytes, chunks: usize) {
+    let mut zeroPadding = CHUNK_BYTES * chunks - pubdata.size;
+    loop {
+        if zeroPadding == 0 {
+            break;
+        }
+        pubdata.append_u8(0);
+        zeroPadding -= 1;
+    }
 }

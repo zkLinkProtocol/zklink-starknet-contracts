@@ -107,6 +107,8 @@ trait BytesTrait {
     fn append_felt252(ref self: Bytes, value: felt252);
     // Write address into Bytes
     fn append_address(ref self: Bytes, value: ContractAddress);
+    // concat with other Bytes
+    fn concat(ref self: Bytes, other: @Bytes);
     // keccak hash
     fn keccak(self: @Bytes) -> u256;
     // sha256 hash
@@ -415,6 +417,29 @@ impl BytesImpl of BytesTrait {
         let address_felt256: felt252 = value.into();
         let address_u256: u256 = address_felt256.into();
         self.append_u256(address_u256)
+    }
+
+    // concat with other Bytes
+    fn concat(ref self: Bytes, other: @Bytes) {
+        // read full array element for other
+        let mut offset = 0;
+        let mut sub_bytes_full_array_len = *other.size / BYTES_PER_ELEMENT;
+        loop {
+            let (new_offset, value) = other.read_u128(offset);
+            self.append_u128(value);
+            offset = new_offset;
+            sub_bytes_full_array_len -= 1;
+            if sub_bytes_full_array_len == 0 {
+                break ();
+            };
+        };
+
+        // process last array element for right
+        let sub_bytes_last_element_size = *other.size % BYTES_PER_ELEMENT;
+        if sub_bytes_last_element_size > 0 {
+            let (new_offset, value) = other.read_u128_packed(offset, sub_bytes_last_element_size);
+            self.append_u128_packed(value, sub_bytes_last_element_size);
+        }
     }
 
     // keccak hash
