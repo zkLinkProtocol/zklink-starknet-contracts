@@ -1,7 +1,7 @@
 use array::ArrayTrait;
 use zklink::utils::utils::{
-    u8_array_to_u256, u128_array_slice, u64_array_slice,
-    concatHash, concatTwoHash, pubKeyHash, update_u256_array_at
+    u8_array_to_u256, u128_array_slice, u64_array_slice, concatHash, concatTwoHash, pubKeyHash,
+    update_u256_array_at
 };
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use debug::PrintTrait;
@@ -9,7 +9,7 @@ use debug::PrintTrait;
 #[test]
 #[available_gas(20000000000)]
 fn test_update_u256_array_at() {
-    let array: Array<u256> = array![1,2,3,4,5];
+    let array: Array<u256> = array![1, 2, 3, 4, 5];
     let array = update_u256_array_at(@array, 0, 6);
     assert(array.len() == 5, 'invalid length');
     assert(array[0] == @6, 'invalid value');

@@ -1750,16 +1750,15 @@ mod Zklink {
 
                     if i != CHAIN_ID {
                         let hash: u256 = *hashs[i.into()];
-                        onchainOpPubdataHashs = update_u256_array_at(@onchainOpPubdataHashs, i.into(), hash);
+                        onchainOpPubdataHashs =
+                            update_u256_array_at(@onchainOpPubdataHashs, i.into(), hash);
                     }
                     i += 1;
                 };
             }
 
             let syncHash = createSyncHash(
-                *_previousBlock.syncHash,
-                commitment,
-                @onchainOpPubdataHashs
+                *_previousBlock.syncHash, commitment, @onchainOpPubdataHashs
             );
 
             StoredBlockInfo {
@@ -1839,7 +1838,8 @@ mod Zklink {
 
                 priorityOperationsProcessed += newPriorityProceeded;
                 // group onchain operations pubdata hash by chain id
-                onchainOpPubdataHashs = updateOnchainOperationPubdataHashs(chainId, @onchainOpPubdataHashs, @opPubData);
+                onchainOpPubdataHashs =
+                    updateOnchainOperationPubdataHashs(chainId, @onchainOpPubdataHashs, @opPubData);
 
                 if processablePubData.size() > 0 {
                     processableOperationsHash =
@@ -2213,9 +2213,7 @@ mod Zklink {
     }
 
     fn updateOnchainOperationPubdataHashs(
-        _chainId: u8,
-        _onchainOpPubdataHashs: @Array<u256>,
-        _opPubData: @Bytes
+        _chainId: u8, _onchainOpPubdataHashs: @Array<u256>, _opPubData: @Bytes
     ) -> Array<u256> {
         let old_hash: u256 = *_onchainOpPubdataHashs[_chainId.into()];
         let newHash = concatHash(old_hash, _opPubData);
@@ -2259,9 +2257,7 @@ mod Zklink {
 
     // Create synchronization hash for cross chain block verify
     fn createSyncHash(
-        _preBlockSyncHash: u256,
-        _commitment: u256,
-        _onchainOpPubdataHashs: @Array<u256>
+        _preBlockSyncHash: u256, _commitment: u256, _onchainOpPubdataHashs: @Array<u256>
     ) -> u256 {
         let mut syncHash = concatTwoHash(_preBlockSyncHash, _commitment);
         let mut i = MIN_CHAIN_ID;
