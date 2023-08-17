@@ -4,6 +4,10 @@ const EMPTY_STRING_KECCAK: u256 =
     0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 
 // Bytes in one chunk
+// Attention: cairo only supports literal constants now.
+//            If you want to change CHUNK_BYTES, you should
+//            change the value of Operation chunks such as
+//            DEPOSIT_BYTES as well!
 const CHUNK_BYTES: usize = 23;
 
 // Bytes of L2 PubKey hash
@@ -29,11 +33,11 @@ const BLOCK_PERIOD: u64 = 15;
 // WITHDRAW_BYTES = 3 * CHUNK_BYTES
 // FORCED_EXIT_BYTES = 3 * CHUNK_BYTES
 // CHANGE_PUBKEY_BYTES = 3 * CHUNK_BYTES
-const DEPOSIT_BYTES: usize = 57;
-const FULL_EXIT_BYTES: usize = 57;
-const WITHDRAW_BYTES: usize = 57;
-const FORCED_EXIT_BYTES: usize = 57;
-const CHANGE_PUBKEY_BYTES: usize = 57;
+const DEPOSIT_BYTES: usize = 69;
+const FULL_EXIT_BYTES: usize = 69;
+const WITHDRAW_BYTES: usize = 69;
+const FORCED_EXIT_BYTES: usize = 69;
+const CHANGE_PUBKEY_BYTES: usize = 69;
 
 // Expiration delta for priority request to be satisfied (in seconds)
 // NOTE: Priority expiration should be > (EXPECT_VERIFICATION_IN * BLOCK_PERIOD)

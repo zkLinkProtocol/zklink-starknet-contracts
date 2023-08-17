@@ -9,17 +9,17 @@ use starknet::SyscallResultTrait;
 use traits::TryInto;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::constants::CHUNK_BYTES;
-use zklink::utils::math::u128_join;
+use zklink::utils::math::{u128_join, u256_pow2};
 
-const OP_NOOP: usize = 0;
-const OP_DEPOSIT: usize = 1;
-const OP_TRANSFER_TO_NEW: usize = 2;
-const OP_WITHDRAW: usize = 3;
-const OP_TRANSFER: usize = 4;
-const OP_FULL_EXIT: usize = 5;
-const OP_CHANGE_PUBKEY: usize = 6;
-const OP_FORCE_EXIT: usize = 7;
-const OP_ORDER_MATCHING: usize = 11;
+const OP_NOOP: u8 = 0;
+const OP_DEPOSIT: u8 = 1;
+const OP_TRANSFER_TO_NEW: u8 = 2;
+const OP_WITHDRAW: u8 = 3;
+const OP_TRANSFER: u8 = 4;
+const OP_FULL_EXIT: u8 = 5;
+const OP_CHANGE_PUBKEY: u8 = 6;
+const OP_FORCE_EXIT: u8 = 7;
+const OP_ORDER_MATCHING: u8 = 11;
 const OP_NOOP_CHUNKS: usize = 1;
 const OP_DEPOSIT_CHUNKS: usize = 3;
 const OP_TRANSFER_TO_NEW_CHUNKS: usize = 3;
@@ -56,4 +56,13 @@ fn paddingChunk(ref pubdata: Bytes, chunks: usize) {
         pubdata.append_u8(0);
         zeroPadding -= 1;
     }
+}
+
+fn createOffsetCommitment(ref offsetsCommitment: u256, pubdataOffset: usize, is_onchainOp: bool) {
+    if !is_onchainOp {
+        return;
+    }
+    let chunkId = pubdataOffset / CHUNK_BYTES;
+    let chunkIdCommitment = u256_pow2(chunkId);
+    offsetsCommitment = offsetsCommitment | chunkIdCommitment;
 }
