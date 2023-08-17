@@ -52,7 +52,9 @@ mod Operations {
 
     impl U8TryIntoOpType of TryInto<u8, OpType> {
         fn try_into(self: u8) -> Option<OpType> {
-            if self == 1 {
+            if self == 0 {
+                Option::Some(OpType::Noop(()))
+            } else if self == 1 {
                 Option::Some(OpType::Deposit(()))
             } else if self == 2 {
                 Option::Some(OpType::TransferToNew(()))

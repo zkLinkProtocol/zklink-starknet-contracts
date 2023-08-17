@@ -4,23 +4,20 @@ use option::OptionTrait;
 use traits::TryInto;
 use starknet::ContractAddress;
 use starknet::Felt252TryIntoContractAddress;
-use cheatcodes::PreparedContract;
-use forge_print::PrintTrait;
 
-use zklink::mocks::operations_test::IOperationsMockSafeDispatcher;
-use zklink::mocks::operations_test::IOperationsMockSafeDispatcherTrait;
-use zklink::mocks::operations_test::IOperationsMockDispatcher;
-use zklink::mocks::operations_test::IOperationsMockDispatcherTrait;
-
+use zklink::tests::mocks::operations_test::OperationsMock;
+use zklink::tests::mocks::operations_test::IOperationsMockDispatcher;
+use zklink::tests::mocks::operations_test::IOperationsMockDispatcherTrait;
 use zklink::utils::operations::Operations::{
     OperationTrait, Deposit, Withdraw, FullExit, ForcedExit, ChangePubKey
 };
 use zklink::utils::bytes::{Bytes, BytesTrait};
+use zklink::tests::utils;
 
-fn deploy_contract(name: felt252) -> ContractAddress {
-    let class_hash = declare(name);
-    let prepared = PreparedContract { class_hash, constructor_calldata: @ArrayTrait::new() };
-    deploy(prepared).unwrap()
+fn deploy_contract() -> IOperationsMockDispatcher {
+    let calldata = array![];
+    let address = utils::deploy(OperationsMock::TEST_CLASS_HASH, calldata);
+    IOperationsMockDispatcher { contract_address: address }
 }
 
 // calculate pubData from Python
@@ -31,9 +28,9 @@ fn deploy_contract(name: felt252) -> ContractAddress {
 // data = [int.from_bytes(x, 'big') for x in [data[i:i+16] for i in range(0, len(data), 16)]]
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_read_deposit_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let owner: felt252 = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d;
 
     let _example: Deposit = Deposit {
@@ -67,9 +64,9 @@ fn test_zklink_read_deposit_pubdata() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_write_deposit_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let owner: felt252 = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d;
 
     let _example: Deposit = Deposit {
@@ -86,9 +83,9 @@ fn test_zklink_write_deposit_pubdata() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_read_withdraw_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
         .try_into()
         .unwrap();
@@ -127,9 +124,9 @@ fn test_zklink_read_withdraw_pubdata() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_read_fullexit_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
         .try_into()
         .unwrap();
@@ -165,9 +162,9 @@ fn test_zklink_read_fullexit_pubdata() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_write_fullexit_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
         .try_into()
         .unwrap();
@@ -186,9 +183,9 @@ fn test_zklink_write_fullexit_pubdata() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_read_forceexit_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let target: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
         .try_into()
         .unwrap();
@@ -226,9 +223,9 @@ fn test_zklink_read_forceexit_pubdata() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_zklink_read_changepubkey_pubdata() {
-    let contract_address = deploy_contract('OperationsMock');
-    let dispatcher = IOperationsMockDispatcher { contract_address };
+    let dispatcher = deploy_contract();
     let pubKeyHash: felt252 = 0x823B747710C5bC9b8A47243f2c3d1805F1aA00c5;
     let owner: ContractAddress = 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
         .try_into()
