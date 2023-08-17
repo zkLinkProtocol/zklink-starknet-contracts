@@ -1,24 +1,7 @@
 use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
-
-// usize div mod function
-// value = q * div + r
-fn usize_div_rem(value: usize, div: usize) -> (usize, usize) {
-    let q = value / div;
-    let r = value % div;
-    assert(q * div + r == value, 'div_rem error');
-    (q, r)
-}
-
-// u128 div mod function
-// value = q * div + r
-fn u128_div_rem(value: u128, div: u128) -> (u128, u128) {
-    let q = value / div;
-    let r = value % div;
-    assert(q * div + r == value, 'div_rem error');
-    (q, r)
-}
+use traits::DivRem;
 
 // Split a u128 into two parts, [0, size-1] and [size, end]
 // Parameters:
@@ -35,7 +18,9 @@ fn u128_split(value: u128, value_size: usize, size: usize) -> (u128, u128) {
     if size == 0 {
         return (0_u128, value);
     } else {
-        let (left, right) = u128_div_rem(value, u128_fast_pow2((value_size - size) * 8));
+        let (left, right) = DivRem::div_rem(
+            value, u128_fast_pow2((value_size - size) * 8).try_into().unwrap()
+        );
         return (left, right);
     }
 }
