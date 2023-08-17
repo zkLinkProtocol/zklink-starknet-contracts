@@ -2,12 +2,10 @@ use clone::Clone;
 use array::ArrayTrait;
 use traits::Into;
 use traits::TryInto;
+use traits::DivRem;
 use option::OptionTrait;
 use starknet::{ContractAddress, Felt252TryIntoContractAddress};
-use zklink::utils::math::{
-    felt252_fast_pow2, u128_fast_pow2, u128_div_rem, u128_join, u128_split, u128_sub_value,
-    usize_div_rem
-};
+use zklink::utils::math::{felt252_fast_pow2, u128_fast_pow2, u128_join, u128_split, u128_sub_value};
 use zklink::utils::utils::{u128_array_slice, u8_array_to_u256};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_math::sha256::sha256;
@@ -132,7 +130,7 @@ impl BytesImpl of BytesTrait {
     //  - element_index: the index of the element in Bytes
     //  - element_offset: the offset in the element
     fn locate(offset: usize) -> (usize, usize) {
-        usize_div_rem(offset, BYTES_PER_ELEMENT)
+        DivRem::div_rem(offset, BYTES_PER_ELEMENT.try_into().unwrap())
     }
 
     // Get Bytes size

@@ -1,7 +1,10 @@
+use core::option::OptionTrait;
+use core::traits::TryInto;
 use core::traits::Into;
+use core::traits::DivRem;
 use zklink::utils::math::{
-    felt252_fast_pow2, u128_fast_pow2, usize_div_rem, u128_div_rem, u128_join, u128_split,
-    u128_sub_value, u256_to_u160, u8_min, u32_min, u64_min, u128_min, fast_power10
+    felt252_fast_pow2, u128_fast_pow2, u128_join, u128_split, u128_sub_value, u256_to_u160, u8_min,
+    u32_min, u64_min, u128_min, fast_power10
 };
 
 #[test]
@@ -72,21 +75,12 @@ fn common_pow(base: u256, exp: usize) -> u256 {
 }
 
 #[test]
-fn test_usize_div_rem() {
-    let value = 10349;
-    let div = 7;
-    let (q, r) = usize_div_rem(value, div);
-    assert(q == value / div, 'invalid result');
-    assert(r == value % div, 'invalid result');
-}
-
-#[test]
 fn test_u128_div_rem() {
-    let value = 10349;
-    let div = 7;
-    let (q, r) = u128_div_rem(value, div);
-    assert(q == value / div, 'invalid result');
-    assert(r == value % div, 'invalid result');
+    let value = 10349_u128;
+    let div = 7_u128;
+    let (q, r) = DivRem::div_rem(value, div.try_into().unwrap());
+    assert(q == 1478, 'invalid result');
+    assert(r == 3, 'invalid result');
 }
 
 #[test]
