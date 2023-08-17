@@ -1,6 +1,7 @@
+use core::traits::Into;
 use zklink::utils::math::{
     felt252_fast_pow2, u128_fast_pow2, usize_div_rem, u128_div_rem, u128_join, u128_split,
-    u128_sub_value, u256_to_u160, u8_min, u32_min, u64_min, u128_min, u64_pow, u128_pow
+    u128_sub_value, u256_to_u160, u8_min, u32_min, u64_min, u128_min, fast_power10
 };
 
 #[test]
@@ -14,22 +15,60 @@ fn test_u256_to_u160() {
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_felt252_fast_pow2() {
-    assert(felt252_fast_pow2(0) == 1, 'felt pow(2, 0)');
-    assert(
-        felt252_fast_pow2(
-            250
-        ) == 1809251394333065553493296640760748560207343510400633813116524750123642650624,
-        'felt pow(2, 250)'
-    );
-    assert(felt252_fast_pow2(251) == 0, 'felt pow(2, 251)');
+    let mut i = 0;
+    let max_exp = 251;
+    loop {
+        if i > max_exp {
+            break;
+        }
+        assert(common_pow(2, i) == felt252_fast_pow2(i).into(), 'invalid result');
+        i = i + 1;
+    }
 }
 
 #[test]
+#[available_gas(20000000000)]
 fn test_u128_fast_pow2() {
-    assert(u128_fast_pow2(0) == 1, 'invalid result');
-    assert(u128_fast_pow2(127) == 170141183460469231731687303715884105728, 'invalid result');
-    assert(u128_fast_pow2(128) == 0, 'invalid result');
+    let mut i = 0;
+    let max_exp = 127;
+    loop {
+        if i > max_exp {
+            break;
+        }
+        assert(common_pow(2, i) == u128_fast_pow2(i).into(), 'invalid result');
+        i = i + 1;
+    }
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_fast_power10() {
+    let mut i = 0;
+    let max_exp = 18;
+    loop {
+        if i > max_exp {
+            break;
+        }
+        assert(common_pow(10, i) == fast_power10(i).into(), 'invalid result');
+        i = i + 1;
+    }
+}
+
+// return base^exp
+fn common_pow(base: u256, exp: usize) -> u256 {
+    let mut res = 1;
+    let mut count = 0;
+    loop {
+        if count == exp {
+            break;
+        } else {
+            res = base * res;
+        }
+        count = count + 1;
+    };
+    res
 }
 
 #[test]
@@ -175,22 +214,4 @@ fn test_min() {
     assert(u128_min(1, 2) == 1, 'invalid result');
     assert(u128_min(2, 1) == 1, 'invalid result');
     assert(u128_min(1, 1) == 1, 'invalid result');
-}
-
-#[test]
-#[available_gas(20000000000)]
-fn test_u64_pow() {
-    // u64_pow
-    assert(u64_pow(3, 0) == 1, 'invalid result');
-    assert(u64_pow(3, 1) == 3, 'invalid result');
-    assert(u64_pow(3, 10) == 59049, 'invalid result');
-}
-
-#[test]
-#[available_gas(20000000000)]
-fn test_u128_pow() {
-    // u128_pow
-    assert(u128_pow(3, 0) == 1, 'invalid result');
-    assert(u128_pow(3, 1) == 3, 'invalid result');
-    assert(u128_pow(3, 10) == 59049, 'invalid result');
 }

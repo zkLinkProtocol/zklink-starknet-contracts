@@ -4,7 +4,7 @@ use traits::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
 use keccak::{u128_to_u64, u128_split as u128_split_to_u64, cairo_keccak};
-use zklink::utils::math::{u32_min, u128_split, u128_div_rem, u128_fast_pow2, u64_pow, u128_join};
+use zklink::utils::math::{u32_min, u128_split, u128_div_rem, u128_fast_pow2, u128_join};
 use zklink::utils::utils::u64_array_slice;
 
 const KECCAK_FULL_RATE_IN_U64S: usize = 17;
