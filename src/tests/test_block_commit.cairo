@@ -10,7 +10,8 @@ use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::utils::data_structures::DataStructures::{
-    CommitBlockInfo, OnchainOperationData, StoredBlockInfo, CompressedBlockExtraInfo};
+    CommitBlockInfo, OnchainOperationData, StoredBlockInfo, CompressedBlockExtraInfo
+};
 use zklink::utils::constants::{EMPTY_STRING_KECCAK, CHUNK_BYTES};
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::operations::Operations::{OpType, U8TryIntoOpType};
@@ -512,11 +513,7 @@ fn test_zklink_collectOnchainOps_success() {
     // size = 20
     // data = [5316911983449149110179127749911773184, 5332491567472793459488297910603350016]
     let mut op: Bytes = BytesTrait::new(
-        20,
-        array![
-            5316911983449149110179127749911773184,
-            5332491567472793459488297910603350016
-        ]
+        20, array![5316911983449149110179127749911773184, 5332491567472793459488297910603350016]
     );
     utils::paddingChunk(ref op, utils::OP_TRANSFER_CHUNKS);
     pubdatas.concat(@op);
@@ -778,11 +775,14 @@ fn test_zklink_collectOnchainOps_success() {
         feeAccount: 0
     };
 
-    let (actual_processableOperationsHash,
+    let (
+        actual_processableOperationsHash,
         actual_priorityOperationsProcessed,
         actual_offsetsCommitment,
         actual_onchainOperationPubdataHashs
-    ) = dispatcher.testCollectOnchainOps(block);
+    ) =
+        dispatcher
+        .testCollectOnchainOps(block);
 
     assert(actual_processableOperationsHash == processableOpPubdataHash, 'invaid value1');
     assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invaid value2');
@@ -801,7 +801,7 @@ fn test_zklink_collectOnchainOps_success() {
 #[should_panic(expected: ('g0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_testCommitOneBlock_invalid_block_number() {
     let dispatcher = deploy_contract();
-    
+
     let preBlock = StoredBlockInfo {
         blockNumber: 10,
         priorityOperations: 0,
@@ -822,9 +822,7 @@ fn test_zklink_testCommitOneBlock_invalid_block_number() {
     };
 
     let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: 0,
-        offsetCommitmentHash: 0,
-        onchainOperationPubdataHashs: array![]
+        publicDataHash: 0, offsetCommitmentHash: 0, onchainOperationPubdataHashs: array![]
     };
 
     commitBlock.blockNumber = 12;
@@ -837,7 +835,7 @@ fn test_zklink_testCommitOneBlock_invalid_block_number() {
 #[should_panic(expected: ('g2', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_testCommitOneBlock_invalid_timestamp() {
     let dispatcher = deploy_contract();
-    
+
     let mut preBlock = StoredBlockInfo {
         blockNumber: 10,
         priorityOperations: 0,
@@ -858,9 +856,7 @@ fn test_zklink_testCommitOneBlock_invalid_timestamp() {
     };
 
     let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: 0,
-        offsetCommitmentHash: 0,
-        onchainOperationPubdataHashs: array![]
+        publicDataHash: 0, offsetCommitmentHash: 0, onchainOperationPubdataHashs: array![]
     };
 
     commitBlock.timestamp = preBlock.timestamp - 1;
@@ -974,11 +970,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // size = 20
     // data = [5316911983449149110179127749911773184, 5332491567472793459488297910603350016]
     let mut op: Bytes = BytesTrait::new(
-        20,
-        array![
-            5316911983449149110179127749911773184,
-            5332491567472793459488297910603350016
-        ]
+        20, array![5316911983449149110179127749911773184, 5332491567472793459488297910603350016]
     );
     utils::paddingChunk(ref op, utils::OP_TRANSFER_CHUNKS);
     pubdatas.concat(@op);
@@ -1242,11 +1234,9 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     };
 
     let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: 0,
-        offsetCommitmentHash: 0,
-        onchainOperationPubdataHashs: array![]
+        publicDataHash: 0, offsetCommitmentHash: 0, onchainOperationPubdataHashs: array![]
     };
-    
+
     let mut commitBlock = CommitBlockInfo {
         newStateHash: 5,
         publicData: BytesTrait::new_empty(),
@@ -1259,7 +1249,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     commitBlock.publicData = pubdatas.clone();
     commitBlock.onchainOperations = ops;
 
-    let r0: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, commitBlock, false, extraBlock);
+    let r0: StoredBlockInfo = dispatcher
+        .testCommitOneBlock(preBlock, commitBlock, false, extraBlock);
 
     let compressedBlock = CommitBlockInfo {
         newStateHash: 5,
@@ -1272,7 +1263,10 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
 
     let extraBlock = CompressedBlockExtraInfo {
         publicDataHash: pubdatas.sha256(),
-        offsetCommitmentHash: BytesTrait::new(32, array![offsetsCommitment.high, offsetsCommitment.low]).sha256(),
+        offsetCommitmentHash: BytesTrait::new(
+            32, array![offsetsCommitment.high, offsetsCommitment.low]
+        )
+            .sha256(),
         onchainOperationPubdataHashs: array![
             0,
             onchainOpPubdataHash1,
@@ -1282,7 +1276,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         ]
     };
 
-    let r1: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, compressedBlock, true, extraBlock);
+    let r1: StoredBlockInfo = dispatcher
+        .testCommitOneBlock(preBlock, compressedBlock, true, extraBlock);
 
     assert(r1.blockNumber == r0.blockNumber, 'invaid value1');
     assert(r1.priorityOperations == r0.priorityOperations, 'invaid value2');
@@ -1291,5 +1286,4 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     assert(r1.stateHash == r0.stateHash, 'invaid value5');
     assert(r1.commitment == r0.commitment, 'invaid value6');
     assert(r1.syncHash == r0.syncHash, 'invaid value7');
-
 }
