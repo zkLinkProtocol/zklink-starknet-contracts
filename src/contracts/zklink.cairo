@@ -155,9 +155,7 @@ mod Zklink {
         CompressedBlockExtraInfo, ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
         ChangePubkeyType, ChangePubkeyTypeReadBytes
     };
-    use zklink::utils::math::{
-        fast_power10, felt252_fast_pow2, u256_pow2, u256_to_u160, u32_min, u64_min, u128_min,
-    };
+    use zklink::utils::math::{fast_power10, u256_pow2, u256_to_u160, u32_min, u64_min, u128_min, };
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash, update_u256_array_at};
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,

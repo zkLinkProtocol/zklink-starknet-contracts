@@ -2,7 +2,7 @@ use traits::Into;
 use array::{ArrayTrait, SpanTrait};
 use traits::TryInto;
 use option::OptionTrait;
-use zklink::utils::math::{u128_split, u128_join, felt252_fast_pow2};
+use zklink::utils::math::{u128_split, u128_join};
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_data_structures::array_ext::ArrayTraitExt;

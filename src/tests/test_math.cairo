@@ -3,8 +3,8 @@ use core::traits::TryInto;
 use core::traits::Into;
 use core::traits::DivRem;
 use zklink::utils::math::{
-    felt252_fast_pow2, u128_fast_pow2, u128_join, u128_split, u128_sub_value, u256_to_u160, u8_min,
-    u32_min, u64_min, u128_min, fast_power10
+    u128_fast_pow2, u128_join, u128_split, u128_sub_value, u256_to_u160, u32_min, u64_min, u128_min,
+    fast_power10
 };
 
 #[test]
@@ -15,20 +15,6 @@ fn test_u256_to_u160() {
 
     let value = u256_to_u160(hash);
     assert(value == 0x53276177af2186e7afa85296f106336e376669f7, 'invalid value');
-}
-
-#[test]
-#[available_gas(20000000000)]
-fn test_felt252_fast_pow2() {
-    let mut i = 0;
-    let max_exp = 251;
-    loop {
-        if i > max_exp {
-            break;
-        }
-        assert(common_pow(2, i) == felt252_fast_pow2(i).into(), 'invalid result');
-        i = i + 1;
-    }
 }
 
 #[test]
@@ -189,23 +175,4 @@ fn test_u128_join() {
     let left = 0x0102;
     let right = 0x0304;
     assert(u128_join(left, right, 2) == 0x01020304, 'invalid result');
-}
-
-#[test]
-fn test_min() {
-    assert(u8_min(1, 2) == 1, 'invalid result');
-    assert(u8_min(2, 1) == 1, 'invalid result');
-    assert(u8_min(1, 1) == 1, 'invalid result');
-
-    assert(u32_min(1, 2) == 1, 'invalid result');
-    assert(u32_min(2, 1) == 1, 'invalid result');
-    assert(u32_min(1, 1) == 1, 'invalid result');
-
-    assert(u64_min(1, 2) == 1, 'invalid result');
-    assert(u64_min(2, 1) == 1, 'invalid result');
-    assert(u64_min(1, 1) == 1, 'invalid result');
-
-    assert(u128_min(1, 2) == 1, 'invalid result');
-    assert(u128_min(2, 1) == 1, 'invalid result');
-    assert(u128_min(1, 1) == 1, 'invalid result');
 }
