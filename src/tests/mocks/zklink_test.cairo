@@ -1,4 +1,4 @@
-use zklink::utils::data_structures::DataStructures::{CommitBlockInfo};
+use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo};
 use zklink::utils::operations::Operations::{OpType};
 use zklink::utils::bytes::Bytes;
 
@@ -7,13 +7,14 @@ trait IZklinkMock<TContractState> {
     fn testCollectOnchainOps(
         self: @TContractState, _newBlockData: CommitBlockInfo
     ) -> (u256, u64, u256, Array<u256>);
-    fn testAddPriorityRequest(ref self: TContractState, _opType: OpType, _opData: Bytes);
+    fn testAddPriorityRequest(self: @TContractState, _opType: OpType, _opData: Bytes);
+    fn testCommitOneBlock(self: @TContractState, _previousBlock: StoredBlockInfo, _newBlock: CommitBlockInfo, _compressed: bool, _newBlockExtra: CompressedBlockExtraInfo) -> StoredBlockInfo;
 }
 
 #[starknet::contract]
 mod ZklinkMock {
     use zklink::contracts::zklink::Zklink;
-    use zklink::utils::data_structures::DataStructures::{CommitBlockInfo};
+    use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo};
     use zklink::utils::operations::Operations::{OpType};
     use zklink::utils::bytes::Bytes;
 
@@ -29,9 +30,14 @@ mod ZklinkMock {
             Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
         }
 
-        fn testAddPriorityRequest(ref self: ContractState, _opType: OpType, _opData: Bytes) {
+        fn testAddPriorityRequest(self: @ContractState, _opType: OpType, _opData: Bytes) {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::InternalFunctions::addPriorityRequest(ref state, _opType, _opData);
+        }
+
+        fn testCommitOneBlock(self: @ContractState, _previousBlock: StoredBlockInfo, _newBlock: CommitBlockInfo, _compressed: bool, _newBlockExtra: CompressedBlockExtraInfo) -> StoredBlockInfo {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+             Zklink::InternalFunctions::commitOneBlock(ref state, @_previousBlock, @_newBlock, _compressed, @_newBlockExtra)
         }
     }
 }
