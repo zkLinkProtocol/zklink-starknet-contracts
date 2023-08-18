@@ -165,6 +165,7 @@ impl BytesImpl of BytesTrait {
 
     // update specific value (1 bytes) at specific offset
     fn update(ref self: Bytes, offset: usize, value: u8) {
+        assert(offset < self.size(), 'update out of bound');
         let mut new_bytes = BytesTrait::new_empty();
 
         // if update first bytes, ignore

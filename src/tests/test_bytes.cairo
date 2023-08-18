@@ -24,6 +24,14 @@ fn test_bytes_zero() {
 
 #[test]
 #[available_gas(200000000)]
+#[should_panic(expected: ('update out of bound', ))]
+fn test_bytes_update_panic() {
+    let mut bytes = BytesTrait::new_empty();
+    bytes.update(0, 0x01);
+}
+
+#[test]
+#[available_gas(200000000)]
 fn test_bytes_update() {
     let mut bytes = BytesTrait::new(5, array![0x01020304050000000000000000000000]);
 
