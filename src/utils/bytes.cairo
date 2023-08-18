@@ -53,10 +53,14 @@ trait BytesTrait {
     fn new(size: usize, data: Array::<u128>) -> Bytes;
     // Create an empty Bytes
     fn new_empty() -> Bytes;
+    // Create a Bytes with size bytes 0
+    fn zero(size: usize) -> Bytes;
     // Locate offset in Bytes
     fn locate(offset: usize) -> (usize, usize);
     // Get Bytes size
     fn size(self: @Bytes) -> usize;
+    // update specific value (1 bytes) at specific offset
+    fn update(ref self: Bytes, offset: usize, value: u8);
     // Read value with size bytes from Bytes, and packed into u128
     fn read_u128_packed(self: @Bytes, offset: usize, size: usize) -> (usize, u128);
     // Read value with element_size bytes from Bytes, and packed into u128 array
@@ -125,6 +129,25 @@ impl BytesImpl of BytesTrait {
         Bytes { size: 0_usize, data: data }
     }
 
+    fn zero(size: usize) -> Bytes {
+        let mut data = ArrayTrait::<u128>::new();
+        let aligned = size % BYTES_PER_ELEMENT == 0;
+        let mut data_len = size / BYTES_PER_ELEMENT;
+        if !aligned {
+            data_len += 1;
+        }
+
+        loop {
+            if data_len == 0 {
+                break ();
+            };
+            data.append(0_u128);
+            data_len -= 1;
+        };
+
+        Bytes { size, data }
+    }
+
     // Locat offset in Bytes
     // Arguments:
     //  - offset: the offset in Bytes
@@ -138,6 +161,26 @@ impl BytesImpl of BytesTrait {
     // Get Bytes size
     fn size(self: @Bytes) -> usize {
         *self.size
+    }
+
+    // update specific value (1 bytes) at specific offset
+    fn update(ref self: Bytes, offset: usize, value: u8) {
+        assert(offset < self.size(), 'update out of bound');
+        let mut new_bytes = BytesTrait::new_empty();
+
+        // if update first bytes, ignore
+        if offset > 0 {
+            let (_, left) = self.read_bytes(0, offset);
+            new_bytes.concat(@left);
+        }
+        new_bytes.append_u8(value);
+
+        // if update last bytes, ignore
+        if offset < self.size() - 1 {
+            let (_, right) = self.read_bytes(offset + 1, self.size() - offset - 1);
+            new_bytes.concat(@right);
+        }
+        self = new_bytes;
     }
 
     // Read value with size bytes from Bytes, and packed into u128
@@ -298,13 +341,13 @@ impl BytesImpl of BytesTrait {
         let mut offset = offset;
         let mut sub_bytes_full_array_len = size / BYTES_PER_ELEMENT;
         loop {
+            if sub_bytes_full_array_len == 0 {
+                break ();
+            };
             let (new_offset, value) = self.read_u128(offset);
             array.append(value);
             offset = new_offset;
             sub_bytes_full_array_len -= 1;
-            if sub_bytes_full_array_len == 0 {
-                break ();
-            };
         };
 
         // process last array element for sub_bytes

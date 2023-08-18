@@ -100,7 +100,7 @@ fn test_zklink_collectOnchainOps_no_pubdata() {
 
     assert(processableOperationsHash == EMPTY_STRING_KECCAK, 'invalid value 0');
     assert(priorityOperationsProcessed == 0, 'invalid value 1');
-    assert(offsetsCommitment == 0, 'invalid value 2');
+    assert(offsetsCommitment.size() == 0, 'invalid value 2');
     assert(*onchainOperationPubdataHashs[0] == 0, 'invalid value 3');
     assert(*onchainOperationPubdataHashs[1] == EMPTY_STRING_KECCAK, 'invalid value 3');
     assert(*onchainOperationPubdataHashs[2] == EMPTY_STRING_KECCAK, 'invalid value 4');
@@ -425,7 +425,7 @@ fn test_zklink_collectOnchainOps_success() {
     let mut publicDataOffsetOfChain1: usize = 0;
     let mut priorityOperationsProcessed: u64 = 0;
     let mut processableOpPubdataHash: u256 = EMPTY_STRING_KECCAK;
-    let mut offsetsCommitment: u256 = 0;
+    let mut offsetsCommitment: Bytes = BytesTrait::new_empty();
 
     // deposit of current chain(chain 1)
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -473,10 +473,10 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
     publicDataOffsetOfChain1 += op.size;
     priorityOperationsProcessed += 1;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // change pubkey of chain 3
     // encode_format = ["uint8","uint8","uint32","uint8","uint160","uint256","uint32","uint16","uint16"]
@@ -503,8 +503,8 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // transfer of chain 4
     // encode_format = ["uint8","uint32","uint8","uint16","uint40","uint32","uint8","uint16"]
@@ -517,8 +517,8 @@ fn test_zklink_collectOnchainOps_success() {
     );
     utils::paddingChunk(ref op, utils::OP_TRANSFER_CHUNKS);
     pubdatas.concat(@op);
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, false);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, false);
 
     // deposit of chain4
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -544,8 +544,8 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // full exit of chain4
     // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
@@ -571,8 +571,8 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // mock Noop
     // encode_format = ["uint8"]
@@ -583,8 +583,8 @@ fn test_zklink_collectOnchainOps_success() {
     let mut op: Bytes = BytesTrait::new(1, array![0]);
     utils::paddingChunk(ref op, utils::OP_NOOP_CHUNKS);
     pubdatas.concat(@op);
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, false);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, false);
 
     // force exit of chain3
     // encode_format = ["uint8","uint8","uint32","uint8","uint32","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -611,8 +611,8 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // withdraw of current chain(chain 1)
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
@@ -647,9 +647,9 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
     publicDataOffsetOfChain1 += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // full exit of current chain
     // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
@@ -698,10 +698,10 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
     publicDataOffsetOfChain1 += op.size;
     priorityOperationsProcessed += 1;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // force exit of current chain
     // encode_format = ["uint8","uint8","uint32","uint8","uint32","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -736,8 +736,8 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // withdraw of chain 4
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
@@ -764,7 +764,7 @@ fn test_zklink_collectOnchainOps_success() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
@@ -786,13 +786,14 @@ fn test_zklink_collectOnchainOps_success() {
 
     assert(actual_processableOperationsHash == processableOpPubdataHash, 'invaid value1');
     assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invaid value2');
-    assert(actual_offsetsCommitment == offsetsCommitment, 'invaid value3');
-
-    assert(*actual_onchainOperationPubdataHashs[0] == 0, 'invaid value4');
-    assert(*actual_onchainOperationPubdataHashs[1] == onchainOpPubdataHash1, 'invaid value4');
-    assert(*actual_onchainOperationPubdataHashs[2] == EMPTY_STRING_KECCAK, 'invaid value4');
-    assert(*actual_onchainOperationPubdataHashs[3] == onchainOpPubdataHash3, 'invaid value4');
-    assert(*actual_onchainOperationPubdataHashs[4] == onchainOpPubdataHash4, 'invaid value4');
+    assert(actual_offsetsCommitment.size() == offsetsCommitment.size(), 'invaid value3');
+    assert(*actual_offsetsCommitment.data[0] == *offsetsCommitment.data[0], 'invaid value4');
+    assert(*actual_offsetsCommitment.data[1] == *offsetsCommitment.data[1], 'invaid value5');
+    assert(*actual_onchainOperationPubdataHashs[0] == 0, 'invaid value6');
+    assert(*actual_onchainOperationPubdataHashs[1] == onchainOpPubdataHash1, 'invaid value7');
+    assert(*actual_onchainOperationPubdataHashs[2] == EMPTY_STRING_KECCAK, 'invaid value8');
+    assert(*actual_onchainOperationPubdataHashs[3] == onchainOpPubdataHash3, 'invaid value9');
+    assert(*actual_onchainOperationPubdataHashs[4] == onchainOpPubdataHash4, 'invaid value10');
 }
 
 
@@ -882,7 +883,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     let mut publicDataOffsetOfChain1: usize = 0;
     let mut priorityOperationsProcessed: u64 = 0;
     let mut processableOpPubdataHash: u256 = EMPTY_STRING_KECCAK;
-    let mut offsetsCommitment: u256 = 0;
+    let mut offsetsCommitment: Bytes = BytesTrait::new_empty();
 
     // deposit of current chain(chain 1)
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -930,10 +931,10 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
-    publicDataOffset += op.size;
-    publicDataOffsetOfChain1 += op.size;
+    publicDataOffset += op.size();
+    publicDataOffsetOfChain1 += op.size();
     priorityOperationsProcessed += 1;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // change pubkey of chain 3
     // encode_format = ["uint8","uint8","uint32","uint8","uint160","uint256","uint32","uint16","uint16"]
@@ -960,8 +961,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // transfer of chain 4
     // encode_format = ["uint8","uint32","uint8","uint16","uint40","uint32","uint8","uint16"]
@@ -974,8 +975,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     );
     utils::paddingChunk(ref op, utils::OP_TRANSFER_CHUNKS);
     pubdatas.concat(@op);
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, false);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, false);
 
     // deposit of chain4
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -1001,8 +1002,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // full exit of chain4
     // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
@@ -1028,8 +1029,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // mock Noop
     // encode_format = ["uint8"]
@@ -1040,8 +1041,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     let mut op: Bytes = BytesTrait::new(1, array![0]);
     utils::paddingChunk(ref op, utils::OP_NOOP_CHUNKS);
     pubdatas.concat(@op);
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, false);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, false);
 
     // force exit of chain3
     // encode_format = ["uint8","uint8","uint32","uint8","uint32","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -1068,8 +1069,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // withdraw of current chain(chain 1)
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
@@ -1104,9 +1105,9 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
     publicDataOffsetOfChain1 += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // full exit of current chain
     // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
@@ -1155,10 +1156,10 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
     publicDataOffsetOfChain1 += op.size;
     priorityOperationsProcessed += 1;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // force exit of current chain
     // encode_format = ["uint8","uint8","uint32","uint8","uint32","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -1193,8 +1194,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffsetOfChain1
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
     publicDataOffset += op.size;
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // withdraw of chain 4
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
@@ -1221,7 +1222,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
                 ethWitness: BytesTrait::new_empty(), publicDataOffset: publicDataOffset
             }
         );
-    utils::createOffsetCommitment(ref offsetsCommitment, publicDataOffset, true);
+    utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     let preBlock = StoredBlockInfo {
         blockNumber: 10,
@@ -1263,10 +1264,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
 
     let extraBlock = CompressedBlockExtraInfo {
         publicDataHash: pubdatas.sha256(),
-        offsetCommitmentHash: BytesTrait::new(
-            32, array![offsetsCommitment.high, offsetsCommitment.low]
-        )
-            .sha256(),
+        offsetCommitmentHash: offsetsCommitment.sha256(),
         onchainOperationPubdataHashs: array![
             0,
             onchainOpPubdataHash1,
