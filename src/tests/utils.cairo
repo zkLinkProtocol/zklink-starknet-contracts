@@ -9,7 +9,7 @@ use starknet::SyscallResultTrait;
 use traits::TryInto;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::constants::CHUNK_BYTES;
-use zklink::utils::math::{u128_join, u256_pow2};
+use zklink::utils::math::u128_join;
 
 const OP_NOOP: u8 = 0;
 const OP_DEPOSIT: u8 = 1;
@@ -58,11 +58,22 @@ fn paddingChunk(ref pubdata: Bytes, chunks: usize) {
     }
 }
 
-fn createOffsetCommitment(ref offsetsCommitment: u256, pubdataOffset: usize, is_onchainOp: bool) {
-    if !is_onchainOp {
-        return;
-    }
-    let chunkId = pubdataOffset / CHUNK_BYTES;
-    let chunkIdCommitment = u256_pow2(chunkId);
-    offsetsCommitment = offsetsCommitment | chunkIdCommitment;
+fn createOffsetCommitment(ref offsetsCommitment: Bytes, opPadding: @Bytes, is_onchainOp: bool) {
+    let chunk_size = opPadding.size() / CHUNK_BYTES;
+    let mut commitment: u128 = if is_onchainOp {
+        0x01
+    } else {
+        0x00
+    };
+
+    let mut i = 1;
+    loop {
+        if i == chunk_size {
+            break;
+        }
+        commitment = u128_join(commitment, 0x00, 1);
+        i += 1;
+    };
+
+    offsetsCommitment.append_u128_packed(commitment, chunk_size);
 }

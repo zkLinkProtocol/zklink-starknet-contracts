@@ -1782,13 +1782,14 @@ mod Zklink {
         //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
         fn collectOnchainOps(
             self: @ContractState, _newBlockData: @CommitBlockInfo
-        ) -> (u256, u64, u256, Array<u256>) {
+        ) -> (u256, u64, Bytes, Array<u256>) {
             let pubData = _newBlockData.publicData;
             // pubdata length must be a multiple of CHUNK_BYTES
             assert(pubData.size() % CHUNK_BYTES == 0, 'h0');
 
             // Init return values
-            let mut offsetsCommitment: u256 = 0; // use a u256 instead of Bytes to save gas
+            // Because of chunks in one block maybe over 256, we use a Bytes instead of u256
+            let mut offsetsCommitment: Bytes = BytesTrait::zero(pubData.size() / CHUNK_BYTES);
             let mut priorityOperationsProcessed: u64 = 0;
             let mut onchainOpPubdataHashs: Array<u256> = initOnchainOperationPubdataHashs();
             let mut processableOperationsHash: u256 = EMPTY_STRING_KECCAK;
@@ -1809,10 +1810,10 @@ mod Zklink {
 
                 {
                     let chunkId: u32 = pubdataOffset / CHUNK_BYTES;
-                    let chunkIdCommitment = u256_pow2(chunkId);
+                    let (_, chunkIdCommitment) = offsetsCommitment.read_u8(chunkId);
                     // offset commitment should be empty
-                    assert((offsetsCommitment & chunkIdCommitment) == 0, 'h3');
-                    offsetsCommitment = offsetsCommitment | chunkIdCommitment;
+                    assert(chunkIdCommitment == 0, 'h3');
+                    offsetsCommitment.update(chunkId, 0x01);
                 }
 
                 // chainIdOffset = pubdataOffset + 1
@@ -2228,12 +2229,10 @@ mod Zklink {
         _newBlockData: @CommitBlockInfo,
         _compressed: bool,
         _newBlockExtraData: @CompressedBlockExtraInfo,
-        _offsetsCommitment: u256
+        _offsetsCommitment: Bytes
     ) -> u256 {
         let offsetsCommitmentHash = if !_compressed {
-            let mut offsetsCommitmentBytes = BytesTrait::new_empty();
-            offsetsCommitmentBytes.append_u256(_offsetsCommitment);
-            offsetsCommitmentBytes.sha256()
+            _offsetsCommitment.sha256()
         } else {
             *(_newBlockExtraData.offsetCommitmentHash)
         };

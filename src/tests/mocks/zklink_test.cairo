@@ -8,7 +8,7 @@ use zklink::utils::bytes::Bytes;
 trait IZklinkMock<TContractState> {
     fn testCollectOnchainOps(
         self: @TContractState, _newBlockData: CommitBlockInfo
-    ) -> (u256, u64, u256, Array<u256>);
+    ) -> (u256, u64, Bytes, Array<u256>);
     fn testAddPriorityRequest(self: @TContractState, _opType: OpType, _opData: Bytes);
     fn testCommitOneBlock(
         self: @TContractState,
@@ -35,7 +35,7 @@ mod ZklinkMock {
     impl ZklinkMockImpl of super::IZklinkMock<ContractState> {
         fn testCollectOnchainOps(
             self: @ContractState, _newBlockData: CommitBlockInfo
-        ) -> (u256, u64, u256, Array<u256>) {
+        ) -> (u256, u64, Bytes, Array<u256>) {
             let state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
         }

@@ -2,6 +2,72 @@ use traits::Into;
 use array::ArrayTrait;
 use starknet::{ContractAddress, ContractAddressIntoFelt252, contract_address_const};
 use zklink::utils::bytes::{Bytes, BytesTrait};
+use debug::PrintTrait;
+#[test]
+#[available_gas(20000000)]
+fn test_bytes_zero() {
+    let bytes = BytesTrait::zero(1);
+    assert(bytes.size == 1, 'invalid size');
+    assert(*bytes.data[0] == 0, 'invalid value');
+
+    let bytes = BytesTrait::zero(17);
+    assert(bytes.size == 17, 'invalid size');
+    assert(*bytes.data[0] == 0, 'invalid value');
+    assert(*bytes.data[1] == 0, 'invalid value');
+    let (_, value) = bytes.read_u8(15);
+    assert(value == 0, 'invalid value');
+    let (_, value) = bytes.read_u8(0);
+    assert(value == 0, 'invalid value');
+    let (_, value) = bytes.read_u8(16);
+    assert(value == 0, 'invalid value');
+}
+
+#[test]
+#[available_gas(200000000)]
+fn test_bytes_update() {
+    let mut bytes = BytesTrait::new(5, array![0x01020304050000000000000000000000]);
+
+    bytes.update(0, 0x05);
+    assert(bytes.size == 5, 'update_size1');
+    assert(*bytes.data[0] == 0x05020304050000000000000000000000, 'update_value_1');
+
+    bytes.update(1, 0x06);
+    assert(bytes.size == 5, 'update_size2');
+    assert(*bytes.data[0] == 0x05060304050000000000000000000000, 'update_value_2');
+
+    bytes.update(2, 0x07);
+    assert(bytes.size == 5, 'update_size3');
+    assert(*bytes.data[0] == 0x05060704050000000000000000000000, 'update_value_3');
+
+    bytes.update(3, 0x08);
+    assert(bytes.size == 5, 'update_size4');
+    assert(*bytes.data[0] == 0x05060708050000000000000000000000, 'update_value_4');
+
+    bytes.update(4, 0x09);
+    assert(bytes.size == 5, 'update_size5');
+    assert(*bytes.data[0] == 0x05060708090000000000000000000000, 'update_value_5');
+
+    let mut bytes = BytesTrait::new(
+        42,
+        array![
+            0x01020304050607080910111213141516,
+            0x01020304050607080910111213141516,
+            0x01020304050607080910000000000000
+        ]
+    );
+
+    bytes.update(16, 0x16);
+    assert(bytes.size == 42, 'update_size6');
+    assert(*bytes.data[0] == 0x01020304050607080910111213141516, 'update_value_6');
+    assert(*bytes.data[1] == 0x16020304050607080910111213141516, 'update_value_7');
+    assert(*bytes.data[2] == 0x01020304050607080910000000000000, 'update_value_8');
+
+    bytes.update(15, 0x01);
+    assert(bytes.size == 42, 'update_size7');
+    assert(*bytes.data[0] == 0x01020304050607080910111213141501, 'update_value_9');
+    assert(*bytes.data[1] == 0x16020304050607080910111213141516, 'update_value_10');
+    assert(*bytes.data[2] == 0x01020304050607080910000000000000, 'update_value_11');
+}
 
 #[test]
 #[available_gas(20000000)]
@@ -34,33 +100,33 @@ fn test_bytes_read_u128_packed() {
     assert(value == 0x07080910, 'read_u128_packed_5_value');
 }
 
-// #[test]
-// #[available_gas(20000000)]
-// #[should_panic(expected: ('out of bound', ))]
-// fn test_bytes_read_u128_packed_out_of_bound() {
-//     let mut array = ArrayTrait::<u128>::new();
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910000000000000);
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('out of bound', ))]
+fn test_bytes_read_u128_packed_out_of_bound() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
 
-//     let bytes = BytesTrait::new(42, array);
+    let bytes = BytesTrait::new(42, array);
 
-//     let (new_offset, value) = bytes.read_u128_packed(0, 43);
-// }
+    let (new_offset, value) = bytes.read_u128_packed(0, 43);
+}
 
-// #[test]
-// #[available_gas(20000000)]
-// #[should_panic(expected: ('too large', ))]
-// fn test_bytes_read_u128_packed_too_large() {
-//     let mut array = ArrayTrait::<u128>::new();
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910000000000000);
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('too large', ))]
+fn test_bytes_read_u128_packed_too_large() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
 
-//     let bytes = BytesTrait::new(42, array);
+    let bytes = BytesTrait::new(42, array);
 
-//     let (new_offset, value) = bytes.read_u128_packed(0, 17);
-// }
+    let (new_offset, value) = bytes.read_u128_packed(0, 17);
+}
 
 #[test]
 #[available_gas(20000000)]
@@ -86,33 +152,33 @@ fn test_bytes_read_u128_array_packed() {
     assert(*new_array[3] == 0x15160102030405, 'read_u128_array_2_value_4');
 }
 
-// #[test]
-// #[available_gas(20000000)]
-// #[should_panic(expected: ('out of bound', ))]
-// fn test_bytes_read_u128_array_packed_out_of_bound() {
-//     let mut array = ArrayTrait::<u128>::new();
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910000000000000);
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('out of bound', ))]
+fn test_bytes_read_u128_array_packed_out_of_bound() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
 
-//     let bytes = BytesTrait::new(42, array);
+    let bytes = BytesTrait::new(42, array);
 
-//     let (new_offset, new_array) = bytes.read_u128_array_packed(0, 11, 4);
-// }
+    let (new_offset, new_array) = bytes.read_u128_array_packed(0, 11, 4);
+}
 
-// #[test]
-// #[available_gas(20000000)]
-// #[should_panic(expected: ('too large', ))]
-// fn test_bytes_read_u128_array_packed_too_large() {
-//     let mut array = ArrayTrait::<u128>::new();
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910000000000000);
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('too large', ))]
+fn test_bytes_read_u128_array_packed_too_large() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
 
-//     let bytes = BytesTrait::new(42, array);
+    let bytes = BytesTrait::new(42, array);
 
-//     let (new_offset, new_array) = bytes.read_u128_array_packed(0, 2, 17);
-// }
+    let (new_offset, new_array) = bytes.read_u128_array_packed(0, 2, 17);
+}
 
 #[test]
 #[available_gas(20000000)]
@@ -129,33 +195,33 @@ fn test_bytes_read_felt252_packed() {
     assert(value == 0x1415160102030405060708091011121314151601, 'read_felt252_1_value');
 }
 
-// #[test]
-// #[available_gas(20000000)]
-// #[should_panic(expected: ('out of bound', ))]
-// fn test_bytes_read_felt252_packed_out_of_bound() {
-//     let mut array = ArrayTrait::<u128>::new();
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910000000000000);
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('out of bound', ))]
+fn test_bytes_read_felt252_packed_out_of_bound() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
 
-//     let bytes = BytesTrait::new(42, array);
+    let bytes = BytesTrait::new(42, array);
 
-//     let (new_offset, new_array) = bytes.read_felt252_packed(0, 43);
-// }
+    let (new_offset, new_array) = bytes.read_felt252_packed(0, 43);
+}
 
-// #[test]
-// #[available_gas(20000000)]
-// #[should_panic(expected: ('too large', ))]
-// fn test_bytes_read_felt252_packed_too_large() {
-//     let mut array = ArrayTrait::<u128>::new();
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910111213141516);
-//     array.append(0x01020304050607080910000000000000);
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('too large', ))]
+fn test_bytes_read_felt252_packed_too_large() {
+    let mut array = ArrayTrait::<u128>::new();
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910111213141516);
+    array.append(0x01020304050607080910000000000000);
 
-//     let bytes = BytesTrait::new(42, array);
+    let bytes = BytesTrait::new(42, array);
 
-//     let (new_offset, new_array) = bytes.read_felt252_packed(0, 32);
-// }
+    let (new_offset, new_array) = bytes.read_felt252_packed(0, 32);
+}
 
 #[test]
 #[available_gas(20000000)]
@@ -315,9 +381,30 @@ fn test_bytes_read_bytes() {
     let (new_offset, sub_bytes) = bytes.read_bytes(4, 37);
     let sub_bytes_data = @sub_bytes.data;
     assert(new_offset == 41, 'read_bytes_offset');
+    assert(sub_bytes.size() == 37, 'read_bytes_size');
     assert(*sub_bytes_data[0] == 0x05060708091011121314015401855d77, 'read_bytes_value_1');
     assert(*sub_bytes_data[1] == 0x96176b05d160196ff92381eb7910f544, 'read_bytes_value_2');
     assert(*sub_bytes_data[2] == 0x6c2e0e04e10000000000000000000000, 'read_bytes_value_3');
+
+    let (new_offset, sub_bytes) = bytes.read_bytes(0, 14);
+    let sub_bytes_data = @sub_bytes.data;
+    assert(new_offset == 14, 'read_bytes_offset');
+    assert(sub_bytes.size() == 14, 'read_bytes_size');
+    assert(*sub_bytes_data[0] == 0x01020304050607080910111213140000, 'read_bytes_value_4');
+
+    // read first byte
+    let (new_offset, sub_bytes) = bytes.read_bytes(0, 1);
+    let sub_bytes_data = @sub_bytes.data;
+    assert(new_offset == 1, 'read_bytes_offset');
+    assert(sub_bytes.size() == 1, 'read_bytes_size');
+    assert(*sub_bytes_data[0] == 0x01000000000000000000000000000000, 'read_bytes_value_5');
+
+    // read last byte
+    let (new_offset, sub_bytes) = bytes.read_bytes(45, 1);
+    let sub_bytes_data = @sub_bytes.data;
+    assert(new_offset == 46, 'read_bytes_offset');
+    assert(sub_bytes.size() == 1, 'read_bytes_size');
+    assert(*sub_bytes_data[0] == 0x4f000000000000000000000000000000, 'read_bytes_value_6');
 }
 
 #[test]
