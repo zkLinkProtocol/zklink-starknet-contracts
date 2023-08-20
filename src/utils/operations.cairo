@@ -131,7 +131,7 @@ mod Operations {
         tokenId: u16, // 2 bytes, the token that registered to L2
         targetTokenId: u16, // 2 bytes, the token that user increased in L2
         amount: u128, // 16 bytes, the token amount deposited to L2
-        owner: felt252, // 32 bytes, the address that receive deposited token at L2
+        owner: u256, // 32 bytes, the address that receive deposited token at L2
     }
 
     impl DepositOperation of OperationTrait<Deposit> {
@@ -144,7 +144,7 @@ mod Operations {
             let (offset, tokenId) = pubData.read_u16(offset);
             let (offset, targetTokenId) = pubData.read_u16(offset);
             let (offset, amount) = pubData.read_u128(offset);
-            let (offset, owner) = pubData.read_felt252(offset);
+            let (offset, owner) = pubData.read_u256(offset);
 
             let deposit = Deposit {
                 chainId: chainId,
@@ -168,7 +168,7 @@ mod Operations {
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.targetTokenId);
             pubData.append_u128(*self.amount);
-            pubData.append_felt252(*self.owner);
+            pubData.append_u256(*self.owner);
 
             pubData
         }

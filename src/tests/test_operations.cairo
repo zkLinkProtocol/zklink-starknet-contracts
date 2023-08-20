@@ -1,3 +1,4 @@
+use core::traits::Into;
 use array::ArrayTrait;
 use result::ResultTrait;
 use option::OptionTrait;
@@ -40,7 +41,7 @@ fn test_zklink_read_deposit_pubdata() {
         tokenId: 25,
         targetTokenId: 23,
         amount: 100,
-        owner: owner
+        owner: owner.into()
     };
 
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -76,7 +77,7 @@ fn test_zklink_write_deposit_pubdata() {
         tokenId: 25,
         targetTokenId: 23,
         amount: 100,
-        owner: owner
+        owner: owner.into()
     };
 
     dispatcher.testWriteDepositPubdata(_example);
