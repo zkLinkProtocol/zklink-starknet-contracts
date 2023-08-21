@@ -10,7 +10,6 @@ mod Operations {
         storage_address_from_base_and_offset, ContractAddress
     };
     use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes, };
-    use zklink::utils::math::{u256_to_u160, };
 
     // zkLink circuit operation type
     #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]
@@ -101,7 +100,7 @@ mod Operations {
     // Priority operations: Deposit, FullExit
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct PriorityOperation {
-        hashedPubData: felt252,
+        hashedPubData: u256,
         expirationBlock: u64,
         opType: OpType
     }
@@ -177,8 +176,7 @@ mod Operations {
         fn checkPriorityOperation(self: @Deposit, priorityOperation: @PriorityOperation) {
             assert(*priorityOperation.opType == OpType::Deposit(()), 'OP: not deposit');
             assert(
-                u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation
-                    .hashedPubData,
+                self.writeForPriorityQueue().keccak() == *priorityOperation.hashedPubData,
                 'OP: invalid deposit hash'
             );
         }
@@ -239,8 +237,7 @@ mod Operations {
         fn checkPriorityOperation(self: @FullExit, priorityOperation: @PriorityOperation) {
             assert(*priorityOperation.opType == OpType::FullExit(()), 'OP: not fullExit');
             assert(
-                u256_to_u160(self.writeForPriorityQueue().keccak()) == *priorityOperation
-                    .hashedPubData,
+                self.writeForPriorityQueue().keccak() == *priorityOperation.hashedPubData,
                 'OP: invalid fullExit hash'
             );
         }

@@ -3,19 +3,8 @@ use core::traits::TryInto;
 use core::traits::Into;
 use core::traits::DivRem;
 use zklink::utils::math::{
-    u128_fast_pow2, u128_join, u128_split, u128_sub_value, u256_to_u160, u32_min, u64_min, u128_min,
-    fast_power10
+    u128_fast_pow2, u128_join, u128_split, u128_sub_value, u32_min, u64_min, u128_min, fast_power10
 };
-
-#[test]
-fn test_u256_to_u160() {
-    let hash = u256 {
-        low: 0xaf2186e7afa85296f106336e376669f7, high: 0x387a8233c96e1fc0ad5e284353276177
-    };
-
-    let value = u256_to_u160(hash);
-    assert(value == 0x53276177af2186e7afa85296f106336e376669f7, 'invalid value');
-}
 
 #[test]
 #[available_gas(20000000000)]
