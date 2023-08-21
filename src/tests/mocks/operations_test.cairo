@@ -15,8 +15,9 @@ trait IOperationsMock<TContractState> {
 #[starknet::contract]
 mod OperationsMock {
     use zklink::utils::operations::Operations::{
-        OperationTrait, Deposit, DepositOperation, Withdraw, WithdrawOperation, FullExit,
-        FullExitOperation, ForcedExit, ForcedExitOperatoin, ChangePubKey, ChangePubKeyOperation
+        OperationReadTrait, OperationWriteTrait, Deposit, DepositReadOperation, Withdraw,
+        WithdrawReadOperation, FullExit, FullExitReadOperation, ForcedExit, ForcedExitReadOperation,
+        ChangePubKey, ChangePubKeyReadOperation
     };
     use zklink::utils::bytes::Bytes;
     use debug::PrintTrait;
@@ -27,7 +28,7 @@ mod OperationsMock {
     #[external(v0)]
     impl OperationsImpl of super::IOperationsMock<ContractState> {
         fn testDepositPubdata(self: @ContractState, _example: Deposit, _pubData: Bytes) {
-            let parsed = DepositOperation::readFromPubdata(@_pubData);
+            let parsed = DepositReadOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cok');
             assert(_example.accountId == parsed.accountId, 'aok');
             assert(_example.subAccountId == parsed.subAccountId, 'sok');
@@ -39,7 +40,7 @@ mod OperationsMock {
 
         fn testWriteDepositPubdata(self: @ContractState, _example: Deposit) {
             let pubdata: Bytes = _example.writeForPriorityQueue();
-            let parsed = DepositOperation::readFromPubdata(@pubdata);
+            let parsed = DepositReadOperation::readFromPubdata(@pubdata);
             assert(0 == parsed.accountId, 'acc');
             assert(_example.chainId == parsed.chainId, 'cok');
             assert(_example.subAccountId == parsed.subAccountId, 'sok');
@@ -50,7 +51,7 @@ mod OperationsMock {
         }
 
         fn testWithdrawPubdata(self: @ContractState, _example: Withdraw, _pubData: Bytes) {
-            let parsed = WithdrawOperation::readFromPubdata(@_pubData);
+            let parsed = WithdrawReadOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cok');
             assert(_example.accountId == parsed.accountId, 'aok');
             assert(_example.subAccountId == parsed.subAccountId, 'saok');
@@ -63,7 +64,7 @@ mod OperationsMock {
         }
 
         fn testFullExitPubdata(self: @ContractState, _example: FullExit, _pubData: Bytes) {
-            let parsed = FullExitOperation::readFromPubdata(@_pubData);
+            let parsed = FullExitReadOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cid');
             assert(_example.accountId == parsed.accountId, 'acc');
             assert(_example.subAccountId == parsed.subAccountId, 'scc');
@@ -74,7 +75,7 @@ mod OperationsMock {
 
         fn testWriteFullExitPubdata(self: @ContractState, _example: FullExit) {
             let pubdata = _example.writeForPriorityQueue();
-            let parsed = FullExitOperation::readFromPubdata(@pubdata);
+            let parsed = FullExitReadOperation::readFromPubdata(@pubdata);
             assert(_example.chainId == parsed.chainId, 'cid');
             assert(_example.accountId == parsed.accountId, 'acc');
             assert(_example.subAccountId == parsed.subAccountId, 'scc');
@@ -84,7 +85,7 @@ mod OperationsMock {
         }
 
         fn testForcedExitPubdata(self: @ContractState, _example: ForcedExit, _pubData: Bytes) {
-            let parsed = ForcedExitOperatoin::readFromPubdata(@_pubData);
+            let parsed = ForcedExitReadOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cid');
             assert(_example.initiatorAccountId == parsed.initiatorAccountId, 'iaid');
             assert(_example.initiatorSubAccountId == parsed.initiatorSubAccountId, 'isaid');
@@ -96,7 +97,7 @@ mod OperationsMock {
         }
 
         fn testChangePubkeyPubdata(self: @ContractState, _example: ChangePubKey, _pubData: Bytes) {
-            let parsed = ChangePubKeyOperation::readFromPubdata(@_pubData);
+            let parsed = ChangePubKeyReadOperation::readFromPubdata(@_pubData);
             assert(_example.accountId == parsed.accountId, 'acc');
             assert(_example.pubKeyHash == parsed.pubKeyHash, 'pkh');
             assert(_example.owner == parsed.owner, 'own');
