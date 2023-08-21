@@ -112,9 +112,12 @@ mod Operations {
         }
     }
 
-    trait OperationTrait<T> {
+    trait OperationReadTrait<T> {
         // Deserialize operation from pubdata
         fn readFromPubdata(pubData: @Bytes) -> T;
+    }
+
+    trait OperationWriteTrait<T> {
         // Serialize operation to Bytes
         fn writeForPriorityQueue(self: @T) -> Bytes;
         // Checks the peration is same as operation in priority queue
@@ -133,7 +136,7 @@ mod Operations {
         owner: u256, // 32 bytes, the address that receive deposited token at L2
     }
 
-    impl DepositOperation of OperationTrait<Deposit> {
+    impl DepositReadOperation of OperationReadTrait<Deposit> {
         fn readFromPubdata(pubData: @Bytes) -> Deposit {
             // uint8 opType, present in pubdata, ignored at serialization
             let mut offset = OP_TYPE_BYTES;
@@ -156,7 +159,9 @@ mod Operations {
             };
             deposit
         }
+    }
 
+    impl DepositWriteOperation of OperationWriteTrait<Deposit> {
         fn writeForPriorityQueue(self: @Deposit) -> Bytes {
             let opType = OpType::Deposit(());
             let mut pubData = BytesTrait::new_empty();
@@ -182,6 +187,7 @@ mod Operations {
         }
     }
 
+
     // FullExit operation: 58 bytes(59 with opType)
     #[derive(Copy, Drop, Serde)]
     struct FullExit {
@@ -194,7 +200,7 @@ mod Operations {
         amount: u128, // 16 bytes, the token amount that fully withdrawn to owner, ignored at serialization and will be set when the block is submitted
     }
 
-    impl FullExitOperation of OperationTrait<FullExit> {
+    impl FullExitReadOperation of OperationReadTrait<FullExit> {
         fn readFromPubdata(pubData: @Bytes) -> FullExit {
             // uint8 opType, present in pubdata, ignored at serialization
             let mut offset = OP_TYPE_BYTES;
@@ -217,7 +223,9 @@ mod Operations {
             };
             fullExit
         }
+    }
 
+    impl FullExitWriteOperation of OperationWriteTrait<FullExit> {
         fn writeForPriorityQueue(self: @FullExit) -> Bytes {
             let opType = OpType::FullExit(());
             let mut pubData = BytesTrait::new_empty();
@@ -257,7 +265,7 @@ mod Operations {
         fastWithdraw: u8, // 1 byte, 0 means normal withdraw, 1 means fast withdraw
     }
 
-    impl WithdrawOperation of OperationTrait<Withdraw> {
+    impl WithdrawReadOperation of OperationReadTrait<Withdraw> {
         // Withdraw operation pubdata looks like this:
         //  opType, u8, ignored at serialization
         //  chainId,
@@ -300,13 +308,6 @@ mod Operations {
             };
             withdraw
         }
-
-        // Do nothing
-        fn writeForPriorityQueue(self: @Withdraw) -> Bytes {
-            BytesTrait::new_empty()
-        }
-        // Do nothing
-        fn checkPriorityOperation(self: @Withdraw, priorityOperation: @PriorityOperation) {}
     }
 
     // ForcedExit operation: 64 Bytes(68 with opType)
@@ -322,7 +323,7 @@ mod Operations {
         target: ContractAddress // 32 bytes, the address to receive token
     }
 
-    impl ForcedExitOperatoin of OperationTrait<ForcedExit> {
+    impl ForcedExitReadOperation of OperationReadTrait<ForcedExit> {
         // ForcedExit operation pubdata looks like this:
         //  opType, u8, ignored at serialization
         //  chainId,
@@ -362,14 +363,6 @@ mod Operations {
             };
             forcedExit
         }
-
-        // Do nothing
-        fn writeForPriorityQueue(self: @ForcedExit) -> Bytes {
-            BytesTrait::new_empty()
-        }
-
-        // Do nothing
-        fn checkPriorityOperation(self: @ForcedExit, priorityOperation: @PriorityOperation) {}
     }
 
     // ChangePubKey operation: 61 bytes(67 with opType)
@@ -382,7 +375,7 @@ mod Operations {
         nonce: u32, // 4 bytes, the account nonce
     }
 
-    impl ChangePubKeyOperation of OperationTrait<ChangePubKey> {
+    impl ChangePubKeyReadOperation of OperationReadTrait<ChangePubKey> {
         // ChangePubKey operation pubdata looks like this:
         //  opType, u8, ignored at serialization
         //  chainId,
@@ -412,13 +405,5 @@ mod Operations {
             };
             changePubKey
         }
-
-        // Do nothing
-        fn writeForPriorityQueue(self: @ChangePubKey) -> Bytes {
-            BytesTrait::new_empty()
-        }
-
-        // Do nothing
-        fn checkPriorityOperation(self: @ChangePubKey, priorityOperation: @PriorityOperation) {}
     }
 }

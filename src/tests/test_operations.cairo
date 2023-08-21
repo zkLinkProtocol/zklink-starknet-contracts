@@ -10,7 +10,7 @@ use zklink::tests::mocks::operations_test::OperationsMock;
 use zklink::tests::mocks::operations_test::IOperationsMockDispatcher;
 use zklink::tests::mocks::operations_test::IOperationsMockDispatcherTrait;
 use zklink::utils::operations::Operations::{
-    OperationTrait, Deposit, Withdraw, FullExit, ForcedExit, ChangePubKey
+    OperationReadTrait, Deposit, Withdraw, FullExit, ForcedExit, ChangePubKey
 };
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::tests::utils;
