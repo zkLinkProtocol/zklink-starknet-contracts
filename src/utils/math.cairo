@@ -110,12 +110,6 @@ fn u128_min(l: u128, r: u128) -> u128 {
     }
 }
 
-const U256_TO_U160_MASK: u256 = 0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff;
-// Take the 20-byte(u160) low-order bits of u256 and store them into felt252.
-fn u256_to_u160(src: u256) -> felt252 {
-    (src & U256_TO_U160_MASK).try_into().unwrap()
-}
-
 // Return the bytes len represent in u128
 // Examples:
 // u128_bytes_len(0x0102) -> 2
