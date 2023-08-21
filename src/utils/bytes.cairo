@@ -125,7 +125,7 @@ impl BytesImpl of BytesTrait {
     }
 
     fn new_empty() -> Bytes {
-        let mut data = ArrayTrait::<u128>::new();
+        let data = ArrayTrait::<u128>::new();
         Bytes { size: 0_usize, data: data }
     }
 
@@ -298,7 +298,6 @@ impl BytesImpl of BytesTrait {
         // check
         assert(offset + 32 <= self.size(), 'out of bound');
 
-        let (element_index, element_offset) = BytesTrait::locate(offset);
         let (new_offset, high) = self.read_u128(offset);
         let (new_offset, low) = self.read_u128(new_offset);
 
