@@ -115,7 +115,7 @@ mod Operations {
 
     trait OperationTrait<T> {
         // Deserialize operation from pubdata
-        fn readFromPubdata(pubData: @Bytes) -> (usize, T);
+        fn readFromPubdata(pubData: @Bytes) -> T;
         // Serialize operation to Bytes
         fn writeForPriorityQueue(self: @T) -> Bytes;
         // Checks the peration is same as operation in priority queue
@@ -135,7 +135,7 @@ mod Operations {
     }
 
     impl DepositOperation of OperationTrait<Deposit> {
-        fn readFromPubdata(pubData: @Bytes) -> (usize, Deposit) {
+        fn readFromPubdata(pubData: @Bytes) -> Deposit {
             // uint8 opType, present in pubdata, ignored at serialization
             let mut offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
@@ -155,7 +155,7 @@ mod Operations {
                 amount: amount,
                 owner: owner
             };
-            (offset, deposit)
+            deposit
         }
 
         fn writeForPriorityQueue(self: @Deposit) -> Bytes {
@@ -197,7 +197,7 @@ mod Operations {
     }
 
     impl FullExitOperation of OperationTrait<FullExit> {
-        fn readFromPubdata(pubData: @Bytes) -> (usize, FullExit) {
+        fn readFromPubdata(pubData: @Bytes) -> FullExit {
             // uint8 opType, present in pubdata, ignored at serialization
             let mut offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
@@ -217,7 +217,7 @@ mod Operations {
                 srcTokenId: srcTokenId,
                 amount: amount
             };
-            (offset, fullExit)
+            fullExit
         }
 
         fn writeForPriorityQueue(self: @FullExit) -> Bytes {
@@ -273,7 +273,7 @@ mod Operations {
         //  owner,
         //  nonce,
         //  fastWithdrawFeeRate
-        fn readFromPubdata(pubData: @Bytes) -> (usize, Withdraw) {
+        fn readFromPubdata(pubData: @Bytes) -> Withdraw {
             // uint8 opType, present in pubdata, ignored at serialization
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
@@ -301,7 +301,7 @@ mod Operations {
                 fastWithdrawFeeRate: fastWithdrawFeeRate,
                 fastWithdraw: fastWithdraw
             };
-            (offset, withdraw)
+            withdraw
         }
 
         // Do nothing
@@ -338,7 +338,7 @@ mod Operations {
         //  srcTokenId, u16, ignored at serialization
         //  amount,
         //  target
-        fn readFromPubdata(pubData: @Bytes) -> (usize, ForcedExit) {
+        fn readFromPubdata(pubData: @Bytes) -> ForcedExit {
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
             let (offset, initiatorAccountId) = pubData.read_u32(offset);
@@ -363,7 +363,7 @@ mod Operations {
                 amount: amount,
                 target: target
             };
-            (offset, forcedExit)
+            forcedExit
         }
 
         // Do nothing
@@ -396,7 +396,7 @@ mod Operations {
         //  nonce,
         //  tokenId, u16, ignored at serialization
         //  fee, u16, ignored at serialization
-        fn readFromPubdata(pubData: @Bytes) -> (usize, ChangePubKey) {
+        fn readFromPubdata(pubData: @Bytes) -> ChangePubKey {
             let offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
             let (offset, accountId) = pubData.read_u32(offset);
@@ -413,7 +413,7 @@ mod Operations {
                 owner: owner,
                 nonce: nonce
             };
-            (offset, changePubKey)
+            changePubKey
         }
 
         // Do nothing

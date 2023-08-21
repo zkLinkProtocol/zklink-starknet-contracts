@@ -27,7 +27,7 @@ mod OperationsMock {
     #[external(v0)]
     impl OperationsImpl of super::IOperationsMock<ContractState> {
         fn testDepositPubdata(self: @ContractState, _example: Deposit, _pubData: Bytes) {
-            let (_, parsed) = DepositOperation::readFromPubdata(@_pubData);
+            let parsed = DepositOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cok');
             assert(_example.accountId == parsed.accountId, 'aok');
             assert(_example.subAccountId == parsed.subAccountId, 'sok');
@@ -39,7 +39,7 @@ mod OperationsMock {
 
         fn testWriteDepositPubdata(self: @ContractState, _example: Deposit) {
             let pubdata: Bytes = _example.writeForPriorityQueue();
-            let (_, parsed) = DepositOperation::readFromPubdata(@pubdata);
+            let parsed = DepositOperation::readFromPubdata(@pubdata);
             assert(0 == parsed.accountId, 'acc');
             assert(_example.chainId == parsed.chainId, 'cok');
             assert(_example.subAccountId == parsed.subAccountId, 'sok');
@@ -50,7 +50,7 @@ mod OperationsMock {
         }
 
         fn testWithdrawPubdata(self: @ContractState, _example: Withdraw, _pubData: Bytes) {
-            let (_, parsed) = WithdrawOperation::readFromPubdata(@_pubData);
+            let parsed = WithdrawOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cok');
             assert(_example.accountId == parsed.accountId, 'aok');
             assert(_example.subAccountId == parsed.subAccountId, 'saok');
@@ -63,7 +63,7 @@ mod OperationsMock {
         }
 
         fn testFullExitPubdata(self: @ContractState, _example: FullExit, _pubData: Bytes) {
-            let (_, parsed) = FullExitOperation::readFromPubdata(@_pubData);
+            let parsed = FullExitOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cid');
             assert(_example.accountId == parsed.accountId, 'acc');
             assert(_example.subAccountId == parsed.subAccountId, 'scc');
@@ -74,7 +74,7 @@ mod OperationsMock {
 
         fn testWriteFullExitPubdata(self: @ContractState, _example: FullExit) {
             let pubdata = _example.writeForPriorityQueue();
-            let (_, parsed) = FullExitOperation::readFromPubdata(@pubdata);
+            let parsed = FullExitOperation::readFromPubdata(@pubdata);
             assert(_example.chainId == parsed.chainId, 'cid');
             assert(_example.accountId == parsed.accountId, 'acc');
             assert(_example.subAccountId == parsed.subAccountId, 'scc');
@@ -84,7 +84,7 @@ mod OperationsMock {
         }
 
         fn testForcedExitPubdata(self: @ContractState, _example: ForcedExit, _pubData: Bytes) {
-            let (_, parsed) = ForcedExitOperatoin::readFromPubdata(@_pubData);
+            let parsed = ForcedExitOperatoin::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cid');
             assert(_example.initiatorAccountId == parsed.initiatorAccountId, 'iaid');
             assert(_example.initiatorSubAccountId == parsed.initiatorSubAccountId, 'isaid');
@@ -96,7 +96,7 @@ mod OperationsMock {
         }
 
         fn testChangePubkeyPubdata(self: @ContractState, _example: ChangePubKey, _pubData: Bytes) {
-            let (_, parsed) = ChangePubKeyOperation::readFromPubdata(@_pubData);
+            let parsed = ChangePubKeyOperation::readFromPubdata(@_pubData);
             assert(_example.accountId == parsed.accountId, 'acc');
             assert(_example.pubKeyHash == parsed.pubKeyHash, 'pkh');
             assert(_example.owner == parsed.owner, 'own');

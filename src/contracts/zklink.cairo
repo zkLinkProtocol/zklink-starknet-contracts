@@ -803,7 +803,7 @@ mod Zklink {
                     assert(depositPubdataHash == pr.hashedPubData, 'A1');
                     currentDepositIdx += 1;
 
-                    let (_, op) = DepositOperation::readFromPubdata(depositPubdata);
+                    let op = DepositOperation::readFromPubdata(depositPubdata);
                     self.increaseBalanceToWithdraw(op.owner, op.tokenId, op.amount);
                 }
 
@@ -1416,19 +1416,19 @@ mod Zklink {
             let opType: OpType = _opType.try_into().unwrap();
 
             if opType == OpType::Deposit(()) {
-                let (_, op) = DepositOperation::readFromPubdata(bytes);
+                let op = DepositOperation::readFromPubdata(bytes);
                 return op.chainId;
             } else if opType == OpType::FullExit(()) {
-                let (_, op) = FullExitOperation::readFromPubdata(bytes);
+                let op = FullExitOperation::readFromPubdata(bytes);
                 return op.chainId;
             } else if opType == OpType::Withdraw(()) {
-                let (_, op) = WithdrawOperation::readFromPubdata(bytes);
+                let op = WithdrawOperation::readFromPubdata(bytes);
                 return op.chainId;
             } else if opType == OpType::ForcedExit(()) {
-                let (_, op) = ForcedExitOperatoin::readFromPubdata(bytes);
+                let op = ForcedExitOperatoin::readFromPubdata(bytes);
                 return op.chainId;
             } else if opType == OpType::ChangePubKey(()) {
-                let (_, op) = ChangePubKeyOperation::readFromPubdata(bytes);
+                let op = ChangePubKeyOperation::readFromPubdata(bytes);
                 return op.chainId;
             } else {
                 return 0;
@@ -1874,7 +1874,7 @@ mod Zklink {
             if _opType == OpType::Deposit(()) {
                 let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
                 if _chainId == CHAIN_ID {
-                    let (_, op) = DepositOperation::readFromPubdata(@opPubData_internal);
+                    let op = DepositOperation::readFromPubdata(@opPubData_internal);
                     op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                     priorityOperationsProcessed = 1;
                 }
@@ -1883,7 +1883,7 @@ mod Zklink {
                 let (_, opPubData_internal) = _pubData
                     .read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
                 if _chainId == CHAIN_ID {
-                    let (_, op) = ChangePubKeyOperation::readFromPubdata(@opPubData_internal);
+                    let op = ChangePubKeyOperation::readFromPubdata(@opPubData_internal);
                     // Now, starknet only support on-chain change pubkey
                     let valid: bool = self
                         .authFacts
@@ -1904,7 +1904,7 @@ mod Zklink {
                     let (_, opPubData_internal) = _pubData
                         .read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
-                        let (_, op) = FullExitOperation::readFromPubdata(@opPubData_internal);
+                        let op = FullExitOperation::readFromPubdata(@opPubData_internal);
                         op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                         priorityOperationsProcessed = 1;
                     }
@@ -1967,7 +1967,7 @@ mod Zklink {
                 // no need to check chain id
 
                 if opType == OpType::Withdraw(()) {
-                    let (_, op) = WithdrawOperation::readFromPubdata(pubData);
+                    let op = WithdrawOperation::readFromPubdata(pubData);
                     // account request fast withdraw and sub account supply nonce
                     self
                         ._executeWithdraw(
@@ -1982,7 +1982,7 @@ mod Zklink {
                             op.fastWithdraw
                         );
                 } else if opType == OpType::ForcedExit(()) {
-                    let (_, op) = ForcedExitOperatoin::readFromPubdata(pubData);
+                    let op = ForcedExitOperatoin::readFromPubdata(pubData);
                     // request forced exit for target account but initiator sub account supply nonce
                     // forced exit require fast withdraw default and take no fee for fast withdraw
                     self
@@ -1998,7 +1998,7 @@ mod Zklink {
                             1
                         );
                 } else if opType == OpType::FullExit(()) {
-                    let (_, op) = FullExitOperation::readFromPubdata(pubData);
+                    let op = FullExitOperation::readFromPubdata(pubData);
                     self.increasePendingBalance(op.tokenId, op.owner, op.amount);
                 } else {
                     panic_with_felt252('m2');
