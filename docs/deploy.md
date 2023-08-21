@@ -43,13 +43,13 @@ The example configuration file path is `etc/example.json`
 
 - `CHAIN_ID` is the id defined in zkLink network(not the blockchain id). You need to set the `CHAIN_ID` according to the actual deployment situation.
 - `ENABLE_COMMIT_COMPRESSED_BLOCK` is switch to enable block committed with compressed mode.
-- `BLOCK_PERIOD` is average the block generation time, for example, in ethereum mainnet it's value is `12 seconds`.
+- `BLOCK_PERIOD` is average the block generation time, for example, in ethereum mainnet its value is `12 seconds`.
 - `UPGRADE_NOTICE_PERIOD` is the contract upgrade lock time, when deploy in local development you could set this value to zero, and then we can upgrade contract immediately.
 - `PRIORITY_EXPIRATION` is how long we wait for priority operation to handle by zklink.
 
 `macro` also has three variables about constraints on `CHAIN_ID`:
 
-- MIN_CHAIN_ID, the min chain id of zkLink network , and **SHOULD** be 1.
+- MIN_CHAIN_ID, the min chain id of zkLink network, and **SHOULD** be 1.
 - MAX_CHAIN_ID, the max chain id of zkLink network.
 - ALL_CHAINS, the supported chain ids flag.
 
@@ -70,7 +70,7 @@ cd etc
 cp -f example.json devnet.json
 ```
 
-And run the follow command:
+And run the following command:
 
 ```shell
 NET=devnet npm run deploy
@@ -78,7 +78,7 @@ NET=devnet npm run deploy
 
 ### Start Starknet Devnet Node(Option)
 
-If you want deploy zkLink starknet contract on devnet, you should start the starknet devnet node.
+If you want to deploy zkLink starknet contract on devnet, you should start the starknet devnet node.
 
 The follow command will fork Testnet data when you start devnet node, and you can use the testnet account in the environment.
 

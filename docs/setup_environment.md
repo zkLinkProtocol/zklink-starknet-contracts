@@ -147,9 +147,9 @@ cairo-compile --version
 
 ### Installing `scarb`
 
-[scarb](https://github.com/software-mansion/scarb/releases) is the Cairo package manager. It can manages your dependencies, compiles your projects and works as an extensible platform assisting in development.
+[scarb](https://github.com/software-mansion/scarb/releases) is the Cairo package manager. It can manage your dependencies, compiles your projects and works as an extensible platform assisting in development.
 
-**For now, scarb only support specify cairo1 version. If you upgrade cairo, you may should upgrade scarb as well.**
+**For now, scarb only supports specific cairo1 version. If you upgrade cairo, you should upgrade scarb as well.**
 
 ```shell
 # Go to your $HOME directory
@@ -180,7 +180,7 @@ scarb --version
 
 [protostar](https://docs.swmansion.com/protostar/) is a toolchain for developing Starknet smart contracts that helps with tasks such as dependencies management.
 
-To installing `protostar` run the following command:
+To install `protostar` run the following command:
 
 ```
 curl -L https://raw.githubusercontent.com/software-mansion/protostar/master/install.sh | bash
