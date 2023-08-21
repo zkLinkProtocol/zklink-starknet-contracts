@@ -10,7 +10,7 @@ trait IZklink<TContractState> {
         ref self: TContractState,
         _token: ContractAddress,
         _amount: u128,
-        _zkLinkAddress: felt252,
+        _zkLinkAddress: u256,
         _subAccountId: u8,
         _mapping: bool
     );
@@ -42,7 +42,7 @@ trait IZklink<TContractState> {
     fn performExodus(
         ref self: TContractState,
         _storedBlockInfo: StoredBlockInfo,
-        _owner: felt252,
+        _owner: u256,
         _accountId: u32,
         _subAccountId: u8,
         _withdrawTokenId: u16,
@@ -97,7 +97,7 @@ trait IZklink<TContractState> {
     fn brokerAllowance(
         self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress
     ) -> u128;
-    fn getPendingBalance(self: @TContractState, _address: felt252, _tokenId: u16) -> u128;
+    fn getPendingBalance(self: @TContractState, _address: u256, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn networkGovernor(self: @TContractState) -> ContractAddress;
@@ -204,9 +204,9 @@ mod Zklink {
         exodusMode: bool,
         // internal
         // Balances to withdraw, (owner, tokenId) => amount
-        // The type of owner is felt252, which can both storing evm address and starknet address 
+        // The type of owner is u256, which can both storing evm address and starknet address 
         // the amount of pending balance need to recovery decimals when withdraw
-        pendingBalances: LegacyMap::<(felt252, u16), u128>,
+        pendingBalances: LegacyMap::<(u256, u16), u128>,
         // public
         // Flag indicates that a user has exited a certain token balance in the exodus mode
         // The struct of this map is (accountId ,subAccountId, withdrawTokenId, deductTokenId) => performed
@@ -295,7 +295,7 @@ mod Zklink {
     #[derive(Drop, starknet::Event)]
     struct WithdrawalPending {
         tokenId: u16,
-        recepient: felt252,
+        recepient: u256,
         amount: u128
     }
 
@@ -480,7 +480,7 @@ mod Zklink {
             ref self: ContractState,
             _token: ContractAddress,
             _amount: u128,
-            _zkLinkAddress: felt252,
+            _zkLinkAddress: u256,
             _subAccountId: u8,
             _mapping: bool
         ) {
@@ -721,7 +721,7 @@ mod Zklink {
         fn performExodus(
             ref self: ContractState,
             _storedBlockInfo: StoredBlockInfo,
-            _owner: felt252,
+            _owner: u256,
             _accountId: u32,
             _subAccountId: u8,
             _withdrawTokenId: u16,
@@ -888,7 +888,8 @@ mod Zklink {
             assert(rt.registered, 'b0');
 
             // Set the available amount to withdraw
-            let balance: u128 = self.pendingBalances.read((_owner.into(), _tokenId));
+            let owner: u256 = extendAddress(_owner);
+            let balance: u128 = self.pendingBalances.read((owner, _tokenId));
             let withdrawBalance = recoveryDecimals(balance, rt.decimals);
             let mut amount = u128_min(_amount, withdrawBalance);
             assert(amount > 0, 'b1');
@@ -902,7 +903,7 @@ mod Zklink {
 
             self
                 .pendingBalances
-                .write((_owner.into(), _tokenId), balance - improveDecimals(amount, rt.decimals));
+                .write((owner, _tokenId), balance - improveDecimals(amount, rt.decimals));
             self.emit(Event::Withdrawal(Withdrawal { tokenId: _tokenId, amount: amount }));
 
             self.end();
@@ -1355,7 +1356,7 @@ mod Zklink {
         //  _tokenId Token id
         // Returns:
         //  The pending balance(without recovery decimals) can be withdrawn
-        fn getPendingBalance(self: @ContractState, _address: felt252, _tokenId: u16) -> u128 {
+        fn getPendingBalance(self: @ContractState, _address: u256, _tokenId: u16) -> u128 {
             self.pendingBalances.read((_address, _tokenId))
         }
 
@@ -1506,7 +1507,7 @@ mod Zklink {
             ref self: ContractState,
             _tokenAddress: ContractAddress,
             _amount: u128,
-            _zkLinkAddress: felt252,
+            _zkLinkAddress: u256,
             _subAccountId: u8,
             _mapping: bool
         ) {
@@ -2073,19 +2074,20 @@ mod Zklink {
         fn increasePendingBalance(
             ref self: ContractState, _tokenId: u16, _recipient: ContractAddress, _amount: u128
         ) {
-            self.increaseBalanceToWithdraw(_recipient.into(), _tokenId, _amount);
+            let recipient: u256 = extendAddress(_recipient);
+            self.increaseBalanceToWithdraw(recipient, _tokenId, _amount);
             self
                 .emit(
                     Event::WithdrawalPending(
                         WithdrawalPending {
-                            tokenId: _tokenId, recepient: _recipient.into(), amount: _amount
+                            tokenId: _tokenId, recepient: recipient, amount: _amount
                         }
                     )
                 );
         }
 
         fn increaseBalanceToWithdraw(
-            ref self: ContractState, _address: felt252, _tokenId: u16, _amount: u128
+            ref self: ContractState, _address: u256, _tokenId: u16, _amount: u128
         ) {
             let balance: u128 = self.pendingBalances.read((_address, _tokenId));
             // overflow should not happen here
@@ -2272,5 +2274,10 @@ mod Zklink {
             i += 1;
         };
         syncHash
+    }
+
+    fn extendAddress(_address: ContractAddress) -> u256 {
+        let address: felt252 = _address.into();
+        address.into()
     }
 }
