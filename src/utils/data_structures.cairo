@@ -51,6 +51,7 @@ mod DataStructures {
             bytes.append_u64(self.timestamp);
             bytes.append_u256(self.stateHash);
             bytes.append_u256(self.commitment);
+            bytes.append_u256(self.syncHash);
 
             bytes
         }

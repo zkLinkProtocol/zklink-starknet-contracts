@@ -152,9 +152,9 @@ mod Zklink {
         ChangePubKey, ChangePubKeyReadOperation
     };
     use zklink::utils::data_structures::DataStructures::{
-        RegisteredToken, BridgeInfo, StoredBlockInfo, StoredBlockInfoIntoBytes, CommitBlockInfo,
-        CompressedBlockExtraInfo, ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
-        ChangePubkeyType, ChangePubkeyTypeReadBytes
+        RegisteredToken, BridgeInfo, StoredBlockInfo, CommitBlockInfo, CompressedBlockExtraInfo,
+        ExecuteBlockInfo, OnchainOperationData, Token, ProofInput, ChangePubkeyType,
+        ChangePubkeyTypeReadBytes
     };
     use zklink::utils::math::{fast_power10, u256_pow2, u32_min, u64_min, u128_min, };
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash, update_u256_array_at};
