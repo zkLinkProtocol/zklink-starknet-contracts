@@ -163,7 +163,8 @@ mod Zklink {
         FULL_EXIT_BYTES, PRIORITY_EXPIRATION, MAX_DEPOSIT_AMOUNT, MAX_PROOF_COMMITMENT, INPUT_MASK,
         AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
         ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE, TOKEN_DECIMALS_OF_LAYER2,
-        GLOBAL_ASSET_ACCOUNT_ID, USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID,
+        GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS, USD_TOKEN_ID,
+        MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
     };
 
     /// Storage
@@ -1537,7 +1538,7 @@ mod Zklink {
             // disable deposit to zero address or global asset account
             // global asset account is 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
             // user can not deposit to this account, skip this check
-            assert(_zkLinkAddress != 0, 'e1');
+            assert(_zkLinkAddress != 0 && _zkLinkAddress != GLOBAL_ASSET_ACCOUNT_ADDRESS, 'e1');
             // subAccountId MUST be valid
             assert(_subAccountId <= MAX_SUB_ACCOUNT_ID, 'e2');
             // token MUST be registered to ZkLink and deposit MUST be enabled

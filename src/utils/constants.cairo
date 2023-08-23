@@ -99,6 +99,8 @@ const TOKEN_DECIMALS_OF_LAYER2: u8 = 18;
 // Global asset account in the network
 // Can not deposit to or full exit this account
 const GLOBAL_ASSET_ACCOUNT_ID: u32 = 1;
+const GLOBAL_ASSET_ACCOUNT_ADDRESS: u256 =
+    0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
 // USD and USD stable tokens defined by zkLink
 // User can deposit USD stable token(eg. USDC, BUSD) to get USD in layer two
