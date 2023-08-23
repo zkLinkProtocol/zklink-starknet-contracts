@@ -270,24 +270,28 @@ mod Zklink {
     // Event emitted when a block is committed
     #[derive(Drop, starknet::Event)]
     struct BlockCommit {
+        #[key]
         blockNumber: u64
     }
 
     // Event emitted when a block is proven
     #[derive(Drop, starknet::Event)]
     struct BlockProven {
+        #[key]
         blockNumber: u64
     }
 
     // Event emitted when a block is executed
     #[derive(Drop, starknet::Event)]
     struct BlockExecuted {
+        #[key]
         blockNumber: u64
     }
 
     // Event emitted when user funds are withdrawn from the zkLink state and contract
     #[derive(Drop, starknet::Event)]
     struct Withdrawal {
+        #[key]
         tokenId: u16,
         amount: u128
     }
@@ -295,7 +299,9 @@ mod Zklink {
     // Event emitted when user funds are withdrawn from the zkLink state but not from contract
     #[derive(Drop, starknet::Event)]
     struct WithdrawalPending {
+        #[key]
         tokenId: u16,
+        #[key]
         recepient: u256,
         amount: u128
     }
@@ -303,6 +309,7 @@ mod Zklink {
     // Event emitted when user sends a authentication fact (e.g. pub-key hash)
     #[derive(Drop, starknet::Event)]
     struct FactAuth {
+        #[key]
         sender: ContractAddress,
         nonce: u32,
         fact: felt252
@@ -311,6 +318,7 @@ mod Zklink {
     // Event emitted when authentication fact reset clock start
     #[derive(Drop, starknet::Event)]
     struct FactAuthResetTime {
+        #[key]
         sender: ContractAddress,
         nonce: u32,
         time: u64
@@ -340,7 +348,9 @@ mod Zklink {
     // Event emitted when acceptor accept a fast withdraw
     #[derive(Drop, starknet::Event)]
     struct Accept {
+        #[key]
         acceptor: ContractAddress,
+        #[key]
         accountId: u32,
         #[key]
         receiver: ContractAddress,
@@ -357,8 +367,11 @@ mod Zklink {
     // Event emitted when set broker allowance
     #[derive(Drop, starknet::Event)]
     struct BrokerApprove {
+        #[key]
         tokenId: u16,
+        #[key]
         owner: ContractAddress,
+        #[key]
         spender: ContractAddress,
         amount: u128
     }
@@ -367,7 +380,9 @@ mod Zklink {
     // Log token decimals on this chain to let L2 know(token decimals maybe different on different chains)
     #[derive(Drop, starknet::Event)]
     struct NewToken {
+        #[key]
         tokenId: u16,
+        #[key]
         token: ContractAddress,
         decimals: u8
     }
@@ -381,6 +396,7 @@ mod Zklink {
     // Validator's status updated
     #[derive(Drop, starknet::Event)]
     struct ValidatorStatusUpdate {
+        #[key]
         validatorAddress: ContractAddress,
         isActive: bool
     }
@@ -388,6 +404,7 @@ mod Zklink {
     // Token pause status update
     #[derive(Drop, starknet::Event)]
     struct TokenPausedUpdate {
+        #[key]
         tokenId: u16,
         paused: bool
     }
@@ -395,6 +412,7 @@ mod Zklink {
     // New bridge added
     #[derive(Drop, starknet::Event)]
     struct AddBridge {
+        #[key]
         bridge: ContractAddress,
         bridgeIndex: usize
     }
@@ -402,6 +420,7 @@ mod Zklink {
     // Bridge update
     #[derive(Drop, starknet::Event)]
     struct UpdateBridge {
+        #[key]
         bridgeIndex: usize,
         enableBridgeTo: bool,
         enableBridgeFrom: bool
