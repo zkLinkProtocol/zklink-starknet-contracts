@@ -57,37 +57,6 @@ mod DataStructures {
         }
     }
 
-    #[derive(Copy, Drop, PartialEq)]
-    enum ChangePubkeyType {
-        ECRECOVER: (), 
-    }
-
-    impl ChangePubkeyTypeReadBytes of ReadBytes<ChangePubkeyType> {
-        fn read(bytes: @Bytes, offset: usize) -> (usize, ChangePubkeyType) {
-            let (new_offset, changePk) = bytes.read_u8(offset);
-            let changePk = changePk.try_into().unwrap();
-            (new_offset, changePk)
-        }
-    }
-
-    impl ChangePubkeyTypeIntoU8 of Into<ChangePubkeyType, u8> {
-        fn into(self: ChangePubkeyType) -> u8 {
-            match self {
-                ChangePubkeyType::ECRECOVER(_) => 0, 
-            }
-        }
-    }
-
-    impl U8TryIntoOpType of TryInto<u8, ChangePubkeyType> {
-        fn try_into(self: u8) -> Option<ChangePubkeyType> {
-            if self == 1 {
-                Option::Some(ChangePubkeyType::ECRECOVER(()))
-            } else {
-                Option::None(())
-            }
-        }
-    }
-
     // Data needed to process onchain operation from block public data.
     // Onchain operations is operations that need some processing on L1: Deposits, Withdrawals, ChangePubKey.
     #[derive(Drop, Serde)]

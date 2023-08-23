@@ -153,8 +153,7 @@ mod Zklink {
     };
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken, BridgeInfo, StoredBlockInfo, CommitBlockInfo, CompressedBlockExtraInfo,
-        ExecuteBlockInfo, OnchainOperationData, Token, ProofInput, ChangePubkeyType,
-        ChangePubkeyTypeReadBytes
+        ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
     };
     use zklink::utils::math::{fast_power10, u256_pow2, u32_min, u64_min, u128_min, };
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash, update_u256_array_at};
@@ -170,6 +169,8 @@ mod Zklink {
     /// Storage
     #[storage]
     struct Storage {
+        // internal
+        // ReentrancyGuard flag
         entered: bool,
         // public
         // Verifier contract. Used to verify block proof and exit proof
@@ -1943,14 +1944,6 @@ mod Zklink {
 
             (priorityOperationsProcessed, opPubData, processablePubData)
         }
-
-
-        // TODO
-        // Now, Starknet only support on-chain changepubkey type
-        // Checks that change operation is correct
-        // fn verifyChangePubkey(self: @ContractState, _ethWitness: @Bytes, _changePk: @ChangePubKey) -> bool {
-        //     true
-        // }
 
         // Executes one block
         // 1. Processes all pending operations (Send Exits, Complete priority requests)
