@@ -39,28 +39,14 @@ const WITHDRAW_BYTES: usize = 69;
 const FORCED_EXIT_BYTES: usize = 69;
 const CHANGE_PUBKEY_BYTES: usize = 69;
 
-// Expiration delta for priority request to be satisfied (in seconds)
-// NOTE: Priority expiration should be > (EXPECT_VERIFICATION_IN * BLOCK_PERIOD)
-// otherwise incorrect block with priority op could not be reverted.
-// PRIORITY_EXPIRATION_PERIOD default is 14 days
-const PRIORITY_EXPIRATION_PERIOD: u64 = 1209600;
-
 // Expiration delta for priority request to be satisfied (in ETH blocks)
 // PRIORITY_EXPIRATION = PRIORITY_EXPIRATION_PERIOD / BLOCK_PERIOD
 // TODO: replace before deploy
 const PRIORITY_EXPIRATION: u64 = 80640;
 
-// Reserved time for users to send full exit priority operation in case of an upgrade (in seconds)
-// MASS_FULL_EXIT_PERIOD default is 5 days
-const MASS_FULL_EXIT_PERIOD: u64 = 432000;
-
-// Reserved time for users to withdraw funds from full exit priority operation in case of an upgrade (in seconds)
-// TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT default is 2 days
-const TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT: u64 = 172800;
-
 // Notice period before activation preparation status of upgrade mode (in seconds)
 // NOTE: we must reserve for users enough time to send full exit operation, wait maximum time for processing this operation and withdraw funds from it.
-// UPGRADE_NOTICE_PERIOD = MASS_FULL_EXIT_PERIOD + PRIORITY_EXPIRATION_PERIOD + TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT
+// UPGRADE_NOTICE_PERIOD = MASS_FULL_EXIT_PERIOD(432000, 5 days) + PRIORITY_EXPIRATION_PERIOD + TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT(172800, 2 days)
 // TODO: replace before deploy
 const UPGRADE_NOTICE_PERIOD: u64 = 1814400;
 
@@ -106,20 +92,6 @@ const ENABLE_COMMIT_COMPRESSED_BLOCK: felt252 = 1;
 
 // When set fee = 100, it means 1%
 const MAX_ACCEPT_FEE_RATE: u16 = 10000;
-
-// see EIP-712
-// CHANGE_PUBKEY_DOMAIN_SEPARATOR = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-const CHANGE_PUBKEY_DOMAIN_SEPARATOR: u256 =
-    0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
-// CHANGE_PUBKEY_HASHED_NAME =  keccak256("ZkLink");
-const CHANGE_PUBKEY_HASHED_NAME: u256 =
-    0x5d27f4d7e0e8a0cba7984286ccb8f517d40889161f782642f4bde6b8ac718965;
-// CHANGE_PUBKEY_HASHED_VERSION = keccak256("1");
-const CHANGE_PUBKEY_HASHED_VERSION: u256 =
-    0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6;
-// CHANGE_PUBKEY_TYPE_HASH = keccak256("ChangePubKey(bytes20 pubKeyHash,uint32 nonce,uint32 accountId)");
-const CHANGE_PUBKEY_TYPE_HASH: u256 =
-    0x8012078cc90c4c82e493f1a538159fd8621f39392101b34fba2ecd141432580b;
 
 // Token decimals is a fixed value at layer two in ZkLink
 const TOKEN_DECIMALS_OF_LAYER2: u8 = 18;
