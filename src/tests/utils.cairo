@@ -54,6 +54,7 @@ const BYTES_PER_ELEMENT: usize = 16;
 const GENESIS_ROOT: u256 = 0x209d742ecb062db488d20e7f8968a40673d718b24900ede8035e05a78351d956;
 const EMPTY_STRING_KECCAK: u256 =
     0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+const MAX_SUB_ACCOUNT_ID: u8 = 31;
 
 
 fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAddress {
@@ -71,13 +72,19 @@ struct Token {
 }
 
 fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
-    // users
-    let defaultSender: ContractAddress = contract_address_const::<1>();
-    let governor: ContractAddress = contract_address_const::<2>();
-    let validator: ContractAddress = contract_address_const::<3>();
-    let feeAccount: ContractAddress = contract_address_const::<4>();
-    let alice: ContractAddress = contract_address_const::<5>();
-    let bob: ContractAddress = contract_address_const::<6>();
+    // cairo test will auto generate contract address
+    // The first deployed contact address is 0x1, and the second is 0x2, and so on.
+    // So, we need to set the account address manually.
+
+    // users, address equals var name hex value
+    // string = 'governor'
+    // hex_value = hex(int.from_bytes(string.encode(), 'big'))
+    let defaultSender: ContractAddress = contract_address_const::<0x64656661756c7453656e646572>();
+    let governor: ContractAddress = contract_address_const::<0x676f7665726e6f72>();
+    let validator: ContractAddress = contract_address_const::<0x76616c696461746f72>();
+    let feeAccount: ContractAddress = contract_address_const::<0x6665654163636f756e74>();
+    let alice: ContractAddress = contract_address_const::<0x616c696365>();
+    let bob: ContractAddress = contract_address_const::<0x626f62>();
 
     // zklink
     let calldata = array![
@@ -97,8 +104,7 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
 
     // tokens
     let eth = Token {
-        tokenId: 33,
-        tokenAddress: contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>()
+        tokenId: 33, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Ether', 'ETH'])
     };
     dispatcher.addToken(eth.tokenId, eth.tokenAddress, 18, true);
 

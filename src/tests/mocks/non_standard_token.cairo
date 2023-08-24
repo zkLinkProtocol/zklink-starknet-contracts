@@ -139,7 +139,7 @@ mod NonStandardToken {
             }
 
             if recipient.is_non_zero() {
-                self._burn(recipient, amount / 10);
+                self._burn(recipient, amount / 5);
             }
         }
 

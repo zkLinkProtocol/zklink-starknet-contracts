@@ -7,6 +7,10 @@ trait IStandardDecimalsToken<TContractState> {
     fn mintTo(ref self: TContractState, to: ContractAddress, amount: u256);
     fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
+    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
+    fn transfer_from(
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
 }
 
 #[starknet::contract]
@@ -74,6 +78,24 @@ mod StandardDecimalsToken {
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
             self._balances.read(account)
         }
+
+        fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+            let sender = get_caller_address();
+            self._transfer(sender, recipient, amount);
+            true
+        }
+
+        fn transfer_from(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) -> bool {
+            let caller = get_caller_address();
+            self._spend_allowance(sender, caller, amount);
+            self._transfer(sender, recipient, amount);
+            true
+        }
     }
 
     #[generate_trait]
@@ -98,6 +120,33 @@ mod StandardDecimalsToken {
             assert(!spender.is_zero(), 'ERC20: approve to 0');
             self._allowances.write((owner, spender), amount);
             self.emit(Approval { owner, spender, value: amount });
+        }
+
+        fn _burn(ref self: ContractState, account: ContractAddress, amount: u256) {
+            assert(!account.is_zero(), 'ERC20: burn from 0');
+            self._total_supply.write(self._total_supply.read() - amount);
+            self._balances.write(account, self._balances.read(account) - amount);
+            self.emit(Transfer { from: account, to: Zeroable::zero(), value: amount });
+        }
+
+        fn _transfer(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            assert(!sender.is_zero(), 'ERC20: transfer from 0');
+            assert(!recipient.is_zero(), 'ERC20: transfer to 0');
+            self._balances.write(sender, self._balances.read(sender) - amount);
+            self._balances.write(recipient, self._balances.read(recipient) + amount);
+            self.emit(Transfer { from: sender, to: recipient, value: amount });
+        }
+
+        fn _spend_allowance(
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        ) {
+            let current_allowance = self._allowances.read((owner, spender));
+            self._approve(owner, spender, current_allowance - amount);
         }
     }
 }

@@ -34,15 +34,20 @@ trait IZklinkMock<TContractState> {
         _decimals: u8,
         _standard: bool
     );
+    fn setTokenPaused(self: @TContractState, _tokenId: u16, _paused: bool);
+    fn getPriorityHash(self: @TContractState, _index: u64) -> u256;
 }
 
 #[starknet::contract]
 mod ZklinkMock {
+    use debug::PrintTrait;
     use starknet::ContractAddress;
     use starknet::get_caller_address;
     use starknet::testing::set_caller_address;
     use zklink::contracts::zklink::Zklink;
-    use zklink::contracts::zklink::Zklink::exodusModeContractStateTrait;
+    use zklink::contracts::zklink::Zklink::{
+        exodusModeContractStateTrait, priorityRequestsContractStateTrait
+    };
     use zklink::utils::data_structures::DataStructures::{
         CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo
     };
@@ -133,9 +138,22 @@ mod ZklinkMock {
             _decimals: u8,
             _standard: bool
         ) {
+            // only governor can add token
             set_caller_address(self._governor.read());
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::Zklink::addToken(ref state, _tokenId, _tokenAddress, _decimals, _standard);
+        }
+
+        fn setTokenPaused(self: @ContractState, _tokenId: u16, _paused: bool) {
+            // only governor can set token paused
+            set_caller_address(self._governor.read());
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::setTokenPaused(ref state, _tokenId, _paused);
+        }
+
+        fn getPriorityHash(self: @ContractState, _index: u64) -> u256 {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            state.priorityRequests.read(_index).hashedPubData
         }
     }
 }
