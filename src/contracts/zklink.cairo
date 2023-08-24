@@ -940,7 +940,7 @@ mod Zklink {
             _lastCommittedBlockData: StoredBlockInfo,
             _newBlocksData: Array<CommitBlockInfo>
         ) {
-            let mut _newBlocksExtraData: Array<CompressedBlockExtraInfo> = ArrayTrait::new();
+            let mut _newBlocksExtraData = createNewBlocksExtraData(_newBlocksData.len());
             self._commitBlocks(_lastCommittedBlockData, _newBlocksData, false, _newBlocksExtraData);
         }
 
@@ -2293,5 +2293,18 @@ mod Zklink {
     fn extendAddress(_address: ContractAddress) -> u256 {
         let address: felt252 = _address.into();
         address.into()
+    }
+
+    fn createNewBlocksExtraData(_len: usize) -> Array<CompressedBlockExtraInfo> {
+        let mut newBlocksExtraData: Array<CompressedBlockExtraInfo> = ArrayTrait::new();
+        let mut i = 0;
+        loop {
+            if i == _len {
+                break ();
+            }
+            newBlocksExtraData.append(Default::default());
+            i += 1;
+        };
+        newBlocksExtraData
     }
 }

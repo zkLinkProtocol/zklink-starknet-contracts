@@ -1,6 +1,6 @@
 mod DataStructures {
     use zeroable::Zeroable;
-    use traits::{Into, TryInto};
+    use traits::{Into, TryInto, Default};
     use option::OptionTrait;
     use clone::Clone;
     use starknet::contract_address::{ContractAddress, ContractAddressZeroable, };
@@ -85,6 +85,16 @@ mod DataStructures {
         publicDataHash: u256, // pubdata hash of all chains
         offsetCommitmentHash: u256, // all chains pubdata offset commitment hash
         onchainOperationPubdataHashs: Array<u256> // onchain operation pubdata hash of the all other chains
+    }
+
+    impl CompressedBlockExtraInfoDefault of Default<CompressedBlockExtraInfo> {
+        fn default() -> CompressedBlockExtraInfo {
+            CompressedBlockExtraInfo {
+                publicDataHash: Default::default(),
+                offsetCommitmentHash: Default::default(),
+                onchainOperationPubdataHashs: Default::default()
+            }
+        }
     }
 
     // Data needed to execute committed and verified block
