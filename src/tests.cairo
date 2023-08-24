@@ -4,5 +4,6 @@ mod test_math;
 mod test_utils;
 mod test_operations;
 mod test_block_commit;
+mod test_priority;
 mod mocks;
 mod utils;
