@@ -397,3 +397,148 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
     );
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('0', 'ENTRYPOINT_FAILED'))]
+fn test_zklink_fullexit_exodus() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let eth: Token = *tokens[0];
+    let accountId = 13;
+    let subAccountId: u8 = 0;
+    // exodus
+    set_contract_address(defaultSender);
+    zklink_dispatcher.setExodus(true);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, eth.tokenId, false);
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('a0', 'ENTRYPOINT_FAILED'))]
+fn test_zklink_fullexit_accountid_too_large() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let eth: Token = *tokens[0];
+    let accountId = utils::MAX_ACCOUNT_ID + 1;
+    let subAccountId: u8 = 0;
+
+    set_contract_address(defaultSender);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, eth.tokenId, false);
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('a1', 'ENTRYPOINT_FAILED'))]
+fn test_zklink_fullexit_subaccountid_too_large() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let eth: Token = *tokens[0];
+    let accountId = 13;
+    let subAccountId: u8 = utils::MAX_SUB_ACCOUNT_ID + 1;
+
+    set_contract_address(defaultSender);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, eth.tokenId, false);
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('a2', 'ENTRYPOINT_FAILED'))]
+fn test_zklink_fullexit_token_unregisted() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let eth: Token = *tokens[0];
+    let accountId = 13;
+    let subAccountId: u8 = 0;
+
+    set_contract_address(defaultSender);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, 10000, false);
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('a3', 'ENTRYPOINT_FAILED'))]
+fn test_zklink_fullexit_token_unsupported_mapping() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let eth: Token = *tokens[0];
+    let accountId = 13;
+    let subAccountId: u8 = 0;
+
+    set_contract_address(defaultSender);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, eth.tokenId, true);
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_zklink_fullexit_success() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let eth: Token = *tokens[0];
+    let accountId = 13;
+    let subAccountId: u8 = 0;
+
+    set_contract_address(defaultSender);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, eth.tokenId, false);
+
+    let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
+    // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
+    // example = [5, 1, 13, 0, 0x64656661756c7453656e646572, 33, 33, 0]
+    //
+    // size 59
+    // data = [6651332275798830227802555977002123264, 110386672137580, 154623465419847618179872172595872792576, 0]
+    let pubData: Bytes = BytesTrait::new(
+        59,
+        array![
+            6651332275798830227802555977002123264,
+            110386672137580,
+            154623465419847618179872172595872792576,
+            0
+        ]
+    );
+    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_zklink_fullexit_mapping_success() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let token4: Token = *tokens[3];
+    let accountId = 13;
+    let subAccountId: u8 = 0;
+
+    set_contract_address(defaultSender);
+    zklink_dispatcher.requestFullExit(accountId, subAccountId, token4.tokenId, true);
+
+    let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
+    // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
+    // example = [5, 1, 13, 0, 0x64656661756c7453656e646572, 17, 1, 0]
+    //
+    // size 59
+    // data = [6651332275798830227802555977002123264, 110386672137580, 154623465419847618178719215906893856768, 0]
+    let pubData: Bytes = BytesTrait::new(
+        59,
+        array![
+            6651332275798830227802555977002123264,
+            110386672137580,
+            154623465419847618178719215906893856768,
+            0
+        ]
+    );
+    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+}

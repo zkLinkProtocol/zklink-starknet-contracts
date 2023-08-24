@@ -27,6 +27,9 @@ trait IZklinkMock<TContractState> {
         _subAccountId: u8,
         _mapping: bool
     );
+    fn requestFullExit(
+        self: @TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
+    );
     fn addToken(
         self: @TContractState,
         _tokenId: u16,
@@ -128,6 +131,16 @@ mod ZklinkMock {
             set_caller_address(get_caller_address());
             Zklink::Zklink::depositERC20(
                 ref state, _token, _amount, _zkLinkAddress, _subAccountId, _mapping
+            );
+        }
+
+        fn requestFullExit(
+            self: @ContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
+        ) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            set_caller_address(get_caller_address());
+            Zklink::Zklink::requestFullExit(
+                ref state, _accountId, _subAccountId, _tokenId, _mapping
             );
         }
 
