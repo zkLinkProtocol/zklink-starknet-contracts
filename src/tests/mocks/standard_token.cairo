@@ -49,7 +49,7 @@ mod StandardToken {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, name: felt252, symbol: felt252, ) {
+    fn constructor(ref self: ContractState, name: felt252, symbol: felt252,) {
         self.initializer(name, symbol);
     }
 

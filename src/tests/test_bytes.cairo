@@ -24,7 +24,7 @@ fn test_bytes_zero() {
 
 #[test]
 #[available_gas(200000000)]
-#[should_panic(expected: ('update out of bound', ))]
+#[should_panic(expected: ('update out of bound',))]
 fn test_bytes_update_panic() {
     let mut bytes = BytesTrait::new_empty();
     bytes.update(0, 0x01);
@@ -110,7 +110,7 @@ fn test_bytes_read_u128_packed() {
 
 #[test]
 #[available_gas(20000000)]
-#[should_panic(expected: ('out of bound', ))]
+#[should_panic(expected: ('out of bound',))]
 fn test_bytes_read_u128_packed_out_of_bound() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
@@ -124,7 +124,7 @@ fn test_bytes_read_u128_packed_out_of_bound() {
 
 #[test]
 #[available_gas(20000000)]
-#[should_panic(expected: ('too large', ))]
+#[should_panic(expected: ('too large',))]
 fn test_bytes_read_u128_packed_too_large() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
@@ -162,7 +162,7 @@ fn test_bytes_read_u128_array_packed() {
 
 #[test]
 #[available_gas(20000000)]
-#[should_panic(expected: ('out of bound', ))]
+#[should_panic(expected: ('out of bound',))]
 fn test_bytes_read_u128_array_packed_out_of_bound() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
@@ -176,7 +176,7 @@ fn test_bytes_read_u128_array_packed_out_of_bound() {
 
 #[test]
 #[available_gas(20000000)]
-#[should_panic(expected: ('too large', ))]
+#[should_panic(expected: ('too large',))]
 fn test_bytes_read_u128_array_packed_too_large() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
@@ -205,7 +205,7 @@ fn test_bytes_read_felt252_packed() {
 
 #[test]
 #[available_gas(20000000)]
-#[should_panic(expected: ('out of bound', ))]
+#[should_panic(expected: ('out of bound',))]
 fn test_bytes_read_felt252_packed_out_of_bound() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);
@@ -219,7 +219,7 @@ fn test_bytes_read_felt252_packed_out_of_bound() {
 
 #[test]
 #[available_gas(20000000)]
-#[should_panic(expected: ('too large', ))]
+#[should_panic(expected: ('too large',))]
 fn test_bytes_read_felt252_packed_too_large() {
     let mut array = ArrayTrait::<u128>::new();
     array.append(0x01020304050607080910111213141516);

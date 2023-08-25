@@ -397,11 +397,8 @@ fn test_zklink_collectOnchainOps_duplicate_pubdata_offset() {
     depositData0.concat(@depositData1);
 
     let onchainOperations: Array<OnchainOperationData> = array![
-        OnchainOperationData {
-            ethWitness: BytesTrait::new_empty(), publicDataOffset: 0
-            }, OnchainOperationData {
-            ethWitness: BytesTrait::new_empty(), publicDataOffset: 0
-        }
+        OnchainOperationData { ethWitness: BytesTrait::new_empty(), publicDataOffset: 0 },
+        OnchainOperationData { ethWitness: BytesTrait::new_empty(), publicDataOffset: 0 }
     ];
 
     let mut block = CommitBlockInfo {

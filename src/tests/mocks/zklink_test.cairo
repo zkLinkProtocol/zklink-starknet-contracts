@@ -49,7 +49,7 @@ mod ZklinkMock {
     use starknet::testing::set_caller_address;
     use zklink::contracts::zklink::Zklink;
     use zklink::contracts::zklink::Zklink::{
-        exodusModeContractStateTrait, priorityRequestsContractStateTrait
+        exodusModeContractMemberStateTrait, priorityRequestsContractMemberStateTrait
     };
     use zklink::utils::data_structures::DataStructures::{
         CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo
@@ -59,7 +59,7 @@ mod ZklinkMock {
 
     #[storage]
     struct Storage {
-        _governor: ContractAddress, 
+        _governor: ContractAddress,
     }
 
     #[constructor]
