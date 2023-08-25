@@ -101,23 +101,6 @@ trait IZklink<TContractState> {
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn networkGovernor(self: @TContractState) -> ContractAddress;
-
-    fn StoredBlockInfoTest(
-        self: @TContractState, _blocksData: Array<StoredBlockInfo>, i: usize
-    ) -> u64;
-    fn CommitBlockInfoTest(
-        self: @TContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize
-    ) -> usize;
-    fn CompressedBlockExtraInfoTest(
-        self: @TContractState, _blocksExtraData: Array<CompressedBlockExtraInfo>, i: usize, j: usize
-    ) -> u256;
-    fn ExecuteBlockInfoTest(
-        self: @TContractState, _blocksData: Array<ExecuteBlockInfo>, i: usize, j: usize, _opType: u8
-    ) -> u8;
-    fn u256Test(self: @TContractState, _u256: u256) -> (u128, u128);
-    fn u256sTest(self: @TContractState, _u256s: Array<u256>, i: usize) -> (u128, u128);
-    fn u8sTest1(self: @TContractState, _u8s: Array<u8>) -> usize;
-    fn u8sTest2(self: @TContractState, _u8s: Array<u8>) -> Array<u8>;
 }
 
 #[starknet::contract]
@@ -134,7 +117,6 @@ mod Zklink {
         ContractAddress, contract_address_const, Felt252TryIntoContractAddress,
         get_contract_address, get_caller_address, get_block_info, get_block_timestamp
     };
-    // TODO: corelib import error
     use core::starknet::info::get_block_number;
 
     use super::IZklinkDispatcher;
@@ -605,11 +587,9 @@ mod Zklink {
             let acceptorBalanceBefore: u256 = IERC20Dispatcher {
                 contract_address: tokenAddress
             }.balance_of(_acceptor);
-            let success: bool = IERC20Dispatcher {
+            let _ = IERC20Dispatcher {
                 contract_address: tokenAddress
             }.transfer_from(_acceptor, _receiver, _amountTransfer.into());
-            // TODO: need check?
-            assert(success, 'H7');
             let receiverBalanceAfter: u256 = IERC20Dispatcher {
                 contract_address: tokenAddress
             }.balance_of(_receiver);
@@ -720,7 +700,7 @@ mod Zklink {
                 .priorityRequests
                 .read(self.firstPriorityRequestId.read())
                 .expirationBlock;
-            let trigger: bool = ((blockNumber >= expirationBlock) & (expirationBlock != 0));
+            let trigger: bool = ((blockNumber >= expirationBlock) && (expirationBlock != 0));
 
             if trigger {
                 self.exodusMode.write(true);
@@ -770,8 +750,20 @@ mod Zklink {
                 'y1'
             );
             // exit proof MUST be correct
-            // TODO: impl fake verifier proof contract
-            let proofCorrect: bool = true;
+            let proofCorrect: bool = IVerifierDispatcher {
+                contract_address: self.verifier.read()
+            }
+                .verifyExitProof(
+                    _storedBlockInfo.stateHash,
+                    CHAIN_ID,
+                    _accountId,
+                    _subAccountId,
+                    _owner,
+                    _withdrawTokenId,
+                    _deductTokenId,
+                    _amount,
+                    _proof
+                );
             assert(proofCorrect, 'y2');
 
             // Effects
@@ -826,6 +818,7 @@ mod Zklink {
                     currentDepositIdx += 1;
 
                     let op = DepositReadOperation::readFromPubdata(depositPubdata);
+                    // amount of Deposit has already improve decimals
                     self.increaseBalanceToWithdraw(op.owner, op.tokenId, op.amount);
                 }
 
@@ -1170,7 +1163,6 @@ mod Zklink {
         // Parameters:
         //  _newGovernor Address of the new governor
         fn changeGovernor(ref self: ContractState, _newGovernor: ContractAddress) {
-            self.start();
             self.onlyGovernor();
 
             assert(_newGovernor != Zeroable::zero(), 'H');
@@ -1178,8 +1170,6 @@ mod Zklink {
                 self.networkGovernor.write(_newGovernor);
                 self.emit(Event::NewGovernor(NewGovernor { governor: _newGovernor }));
             }
-
-            self.end();
         }
 
         // Add token to the list of networks tokens
@@ -1398,82 +1388,6 @@ mod Zklink {
         fn networkGovernor(self: @ContractState) -> ContractAddress {
             self.networkGovernor.read()
         }
-
-        // =============Test Interface=============
-        // TODO: delete after test
-        fn StoredBlockInfoTest(
-            self: @ContractState, _blocksData: Array<StoredBlockInfo>, i: usize
-        ) -> u64 {
-            let blockData: @StoredBlockInfo = _blocksData[i];
-            *blockData.timestamp
-        }
-
-        fn CommitBlockInfoTest(
-            self: @ContractState, _blocksData: Array<CommitBlockInfo>, i: usize, j: usize
-        ) -> usize {
-            let blockData: @CommitBlockInfo = _blocksData[i];
-            let onchainOperation: @OnchainOperationData = blockData.onchainOperations[j];
-            *onchainOperation.publicDataOffset
-        }
-
-        fn CompressedBlockExtraInfoTest(
-            self: @ContractState,
-            _blocksExtraData: Array<CompressedBlockExtraInfo>,
-            i: usize,
-            j: usize
-        ) -> u256 {
-            let blockExtraData: @CompressedBlockExtraInfo = _blocksExtraData[i];
-            *blockExtraData.onchainOperationPubdataHashs[j]
-        }
-
-        fn ExecuteBlockInfoTest(
-            self: @ContractState,
-            _blocksData: Array<ExecuteBlockInfo>,
-            i: usize,
-            j: usize,
-            _opType: u8
-        ) -> u8 {
-            let blockData: @ExecuteBlockInfo = _blocksData[i];
-            let bytes: @Bytes = blockData.pendingOnchainOpsPubdata[j];
-            let opType: OpType = _opType.try_into().unwrap();
-
-            if opType == OpType::Deposit(()) {
-                let op = DepositReadOperation::readFromPubdata(bytes);
-                return op.chainId;
-            } else if opType == OpType::FullExit(()) {
-                let op = FullExitReadOperation::readFromPubdata(bytes);
-                return op.chainId;
-            } else if opType == OpType::Withdraw(()) {
-                let op = WithdrawReadOperation::readFromPubdata(bytes);
-                return op.chainId;
-            } else if opType == OpType::ForcedExit(()) {
-                let op = ForcedExitReadOperation::readFromPubdata(bytes);
-                return op.chainId;
-            } else if opType == OpType::ChangePubKey(()) {
-                let op = ChangePubKeyReadOperation::readFromPubdata(bytes);
-                return op.chainId;
-            } else {
-                return 0;
-            }
-        }
-
-        fn u256Test(self: @ContractState, _u256: u256) -> (u128, u128) {
-            (_u256.low, _u256.high)
-        }
-
-        fn u256sTest(self: @ContractState, _u256s: Array<u256>, i: usize) -> (u128, u128) {
-            let _u256s = _u256s.span();
-            let _u256: u256 = *_u256s[i];
-            (_u256.low, _u256.high)
-        }
-
-        fn u8sTest1(self: @ContractState, _u8s: Array<u8>) -> usize {
-            _u8s.len()
-        }
-
-        fn u8sTest2(self: @ContractState, _u8s: Array<u8>) -> Array<u8> {
-            _u8s
-        }
     }
 
     #[generate_trait]
@@ -1498,11 +1412,6 @@ mod Zklink {
 
         fn end(ref self: ContractState) {
             self.entered.write(false);
-        }
-
-        // Set logic contract must be called through proxy
-        #[inline(always)]
-        fn onlyDelegateCall(self: @ContractState) { // TODO
         }
 
         // Check if msg sender is a governor
@@ -2133,7 +2042,7 @@ mod Zklink {
             let tokenAddress = rt.tokenAddress;
 
             // feeRate MUST be valid and MUST not be 100%
-            assert(_withdrawFeeRate <= MAX_ACCEPT_FEE_RATE, 'H4');
+            assert(_withdrawFeeRate < MAX_ACCEPT_FEE_RATE, 'H4');
             let amountReceive: u128 = _amount
                 * ((MAX_ACCEPT_FEE_RATE - _withdrawFeeRate) / MAX_ACCEPT_FEE_RATE).into();
 
