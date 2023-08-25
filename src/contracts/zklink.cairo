@@ -2014,6 +2014,7 @@ mod Zklink {
             _subAccountIdOfNonce: u8,
             _nonce: u32
         ) -> (u128, ContractAddress) {
+            self.active();
             // acceptor and receiver MUST be set and MUST not be the same
             assert(_acceptor != Zeroable::zero(), 'H0');
             assert(_receiver != Zeroable::zero(), 'H1');
