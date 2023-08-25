@@ -463,7 +463,7 @@ mod Zklink {
         _syncHash: u256
     ) {
         assert(_verifierAddress.is_non_zero(), 'i0');
-        assert(_networkGovernor.is_non_zero(), 'i1');
+        assert(_networkGovernor.is_non_zero(), 'i2');
 
         self.verifier.write(_verifierAddress);
         self.networkGovernor.write(_networkGovernor);
@@ -1084,8 +1084,8 @@ mod Zklink {
                     'c'
                 );
 
-                // TODO: delete storedBlockHashes[blocksCommitted];
                 // delete storedBlockHashes[blocksCommitted];
+                self.storedBlockHashes.write(blocksCommitted, 0);
 
                 blocksCommitted -= 1;
                 revertedPriorityRequests += storedBlockInfo.priorityOperations;
@@ -2203,9 +2203,15 @@ mod Zklink {
         // use index of onchainOperationPubdataHashs as chain id
         // index start from [0, MIN_CHAIN_ID - 1] left unused
         let mut onchainOpPubdataHashs: Array<u256> = ArrayTrait::new();
-        // index 0 is unused
-        onchainOpPubdataHashs.append(0);
-        let mut i = MIN_CHAIN_ID;
+        let mut i = 0;
+        loop {
+            if i == MIN_CHAIN_ID {
+                break ();
+            }
+            onchainOpPubdataHashs.append(0);
+            i += 1;
+        };
+        // here, i start from MIN_CHAIN_ID
         loop {
             if i > MAX_CHAIN_ID {
                 break ();
