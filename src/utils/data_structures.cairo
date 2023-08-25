@@ -3,7 +3,7 @@ mod DataStructures {
     use traits::{Into, TryInto, Default};
     use option::OptionTrait;
     use clone::Clone;
-    use starknet::contract_address::{ContractAddress, ContractAddressZeroable, };
+    use starknet::contract_address::{ContractAddress, ContractAddressZeroable,};
     use starknet::{
         Store, StorageBaseAddress, SyscallResult, storage_read_syscall, storage_write_syscall,
         storage_address_from_base_and_offset
