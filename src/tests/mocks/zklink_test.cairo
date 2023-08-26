@@ -7,19 +7,6 @@ use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
 trait IZklinkMock<TContractState> {
-    fn testCollectOnchainOps(
-        self: @TContractState, _newBlockData: CommitBlockInfo
-    ) -> (u256, u64, Bytes, Array<u256>);
-    fn testAddPriorityRequest(self: @TContractState, _opType: OpType, _opData: Bytes);
-    fn testCommitOneBlock(
-        self: @TContractState,
-        _previousBlock: StoredBlockInfo,
-        _newBlock: CommitBlockInfo,
-        _compressed: bool,
-        _newBlockExtra: CompressedBlockExtraInfo
-    ) -> StoredBlockInfo;
-    fn setExodus(self: @TContractState, _exodusMode: bool);
-    fn setAcceptor(self: @TContractState, _accountId: u32, _hash: u256, _acceptor: ContractAddress);
     fn depositERC20(
         self: @TContractState,
         _token: ContractAddress,
@@ -44,6 +31,26 @@ trait IZklinkMock<TContractState> {
     fn requestFullExit(
         self: @TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
     );
+    fn performExodus(
+        self: @TContractState,
+        _storedBlockInfo: StoredBlockInfo,
+        _owner: u256,
+        _accountId: u32,
+        _subAccountId: u8,
+        _withdrawTokenId: u16,
+        _deductTokenId: u16,
+        _amount: u128,
+        _proof: Array<u256>
+    );
+    fn cancelOutstandingDepositsForExodusMode(
+        self: @TContractState, _n: u64, _depositsPubdata: Array<Bytes>
+    );
+    fn brokerAllowance(
+        self: @TContractState, _tokenId: u16, _acceptor: ContractAddress, _broker: ContractAddress
+    ) -> u128;
+    fn brokerApprove(
+        self: @TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
+    ) -> bool;
     fn addToken(
         self: @TContractState,
         _tokenId: u16,
@@ -52,14 +59,21 @@ trait IZklinkMock<TContractState> {
         _standard: bool
     );
     fn setTokenPaused(self: @TContractState, _tokenId: u16, _paused: bool);
+    fn setExodus(self: @TContractState, _exodusMode: bool);
+    fn setAcceptor(self: @TContractState, _accountId: u32, _hash: u256, _acceptor: ContractAddress);
     fn getPriorityHash(self: @TContractState, _index: u64) -> u256;
     fn getAcceptor(self: @TContractState, _accountId: u32, _hash: u256) -> ContractAddress;
-    fn brokerAllowance(
-        self: @TContractState, _tokenId: u16, _acceptor: ContractAddress, _broker: ContractAddress
-    ) -> u128;
-    fn brokerApprove(
-        self: @TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-    ) -> bool;
+    fn testCollectOnchainOps(
+        self: @TContractState, _newBlockData: CommitBlockInfo
+    ) -> (u256, u64, Bytes, Array<u256>);
+    fn testAddPriorityRequest(self: @TContractState, _opType: OpType, _opData: Bytes);
+    fn testCommitOneBlock(
+        self: @TContractState,
+        _previousBlock: StoredBlockInfo,
+        _newBlock: CommitBlockInfo,
+        _compressed: bool,
+        _newBlockExtra: CompressedBlockExtraInfo
+    ) -> StoredBlockInfo;
 }
 
 #[starknet::contract]
@@ -111,43 +125,6 @@ mod ZklinkMock {
 
     #[external(v0)]
     impl ZklinkMockImpl of super::IZklinkMock<ContractState> {
-        fn testCollectOnchainOps(
-            self: @ContractState, _newBlockData: CommitBlockInfo
-        ) -> (u256, u64, Bytes, Array<u256>) {
-            let state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
-        }
-
-        fn testAddPriorityRequest(self: @ContractState, _opType: OpType, _opData: Bytes) {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::InternalFunctions::addPriorityRequest(ref state, _opType, _opData);
-        }
-
-        fn testCommitOneBlock(
-            self: @ContractState,
-            _previousBlock: StoredBlockInfo,
-            _newBlock: CommitBlockInfo,
-            _compressed: bool,
-            _newBlockExtra: CompressedBlockExtraInfo
-        ) -> StoredBlockInfo {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::InternalFunctions::commitOneBlock(
-                ref state, @_previousBlock, @_newBlock, _compressed, @_newBlockExtra
-            )
-        }
-
-        fn setExodus(self: @ContractState, _exodusMode: bool) {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            state.exodusMode.write(_exodusMode);
-        }
-
-        fn setAcceptor(
-            self: @ContractState, _accountId: u32, _hash: u256, _acceptor: ContractAddress
-        ) {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            state.accepts.write((_accountId, _hash), _acceptor);
-        }
-
         fn depositERC20(
             self: @ContractState,
             _token: ContractAddress,
@@ -203,6 +180,55 @@ mod ZklinkMock {
             );
         }
 
+        fn performExodus(
+            self: @ContractState,
+            _storedBlockInfo: StoredBlockInfo,
+            _owner: u256,
+            _accountId: u32,
+            _subAccountId: u8,
+            _withdrawTokenId: u16,
+            _deductTokenId: u16,
+            _amount: u128,
+            _proof: Array<u256>
+        ) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::performExodus(
+                ref state,
+                _storedBlockInfo,
+                _owner,
+                _accountId,
+                _subAccountId,
+                _withdrawTokenId,
+                _deductTokenId,
+                _amount,
+                _proof
+            );
+        }
+        fn cancelOutstandingDepositsForExodusMode(
+            self: @ContractState, _n: u64, _depositsPubdata: Array<Bytes>
+        ) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::cancelOutstandingDepositsForExodusMode(ref state, _n, _depositsPubdata);
+        }
+
+        fn brokerAllowance(
+            self: @ContractState,
+            _tokenId: u16,
+            _acceptor: ContractAddress,
+            _broker: ContractAddress
+        ) -> u128 {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::brokerAllowance(@state, _tokenId, _acceptor, _broker)
+        }
+
+        fn brokerApprove(
+            self: @ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
+        ) -> bool {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            set_caller_address(get_caller_address());
+            Zklink::Zklink::brokerApprove(ref state, _tokenId, _broker, _amount)
+        }
+
         fn addToken(
             self: @ContractState,
             _tokenId: u16,
@@ -223,6 +249,18 @@ mod ZklinkMock {
             Zklink::Zklink::setTokenPaused(ref state, _tokenId, _paused);
         }
 
+        fn setExodus(self: @ContractState, _exodusMode: bool) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            state.exodusMode.write(_exodusMode);
+        }
+
+        fn setAcceptor(
+            self: @ContractState, _accountId: u32, _hash: u256, _acceptor: ContractAddress
+        ) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            state.accepts.write((_accountId, _hash), _acceptor);
+        }
+
         fn getPriorityHash(self: @ContractState, _index: u64) -> u256 {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             state.priorityRequests.read(_index).hashedPubData
@@ -233,22 +271,29 @@ mod ZklinkMock {
             state.accepts.read((_accountId, _hash))
         }
 
-        fn brokerAllowance(
-            self: @ContractState,
-            _tokenId: u16,
-            _acceptor: ContractAddress,
-            _broker: ContractAddress
-        ) -> u128 {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::Zklink::brokerAllowance(@state, _tokenId, _acceptor, _broker)
+        fn testCollectOnchainOps(
+            self: @ContractState, _newBlockData: CommitBlockInfo
+        ) -> (u256, u64, Bytes, Array<u256>) {
+            let state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
         }
 
-        fn brokerApprove(
-            self: @ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-        ) -> bool {
+        fn testAddPriorityRequest(self: @ContractState, _opType: OpType, _opData: Bytes) {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            set_caller_address(get_caller_address());
-            Zklink::Zklink::brokerApprove(ref state, _tokenId, _broker, _amount)
+            Zklink::InternalFunctions::addPriorityRequest(ref state, _opType, _opData);
+        }
+
+        fn testCommitOneBlock(
+            self: @ContractState,
+            _previousBlock: StoredBlockInfo,
+            _newBlock: CommitBlockInfo,
+            _compressed: bool,
+            _newBlockExtra: CompressedBlockExtraInfo
+        ) -> StoredBlockInfo {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::InternalFunctions::commitOneBlock(
+                ref state, @_previousBlock, @_newBlock, _compressed, @_newBlockExtra
+            )
         }
     }
 }

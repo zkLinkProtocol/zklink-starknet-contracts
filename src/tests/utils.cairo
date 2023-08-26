@@ -17,14 +17,9 @@ use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
-use zklink::tests::mocks::standard_token::IStandardTokenDispatcher;
-use zklink::tests::mocks::standard_token::IStandardTokenDispatcherTrait;
 use zklink::tests::mocks::non_standard_token::NonStandardToken;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcher;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
-use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
-use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
+use zklink::tests::mocks::verifier_test::VerifierMock;
 
 const OP_NOOP: u8 = 0;
 const OP_DEPOSIT: u8 = 1;
@@ -108,9 +103,11 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     let alice: ContractAddress = contract_address_const::<0x616c696365>();
     let bob: ContractAddress = contract_address_const::<0x626f62>();
 
+    // verifier
+    let verifier: ContractAddress = deploy(VerifierMock::TEST_CLASS_HASH, array![]);
     // zklink
     let calldata = array![
-        7, // verifier
+        verifier.into(), // verifier
         2, // governor
         0, // blockNumber
         0, // timestamp
@@ -157,7 +154,7 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     drop_event(zklink);
 
     let address: Array<ContractAddress> = array![
-        defaultSender, governor, validator, feeAccount, alice, bob, zklink
+        defaultSender, governor, validator, feeAccount, alice, bob, zklink, verifier
     ];
 
     let tokens: Array<Token> = array![eth, token2, token3, token4, token5];
