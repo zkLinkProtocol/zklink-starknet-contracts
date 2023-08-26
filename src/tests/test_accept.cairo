@@ -34,7 +34,7 @@ fn assert_event_BrokerApprove(
     _amount: u128
 ) {
     assert_eq(
-        @starknet::testing::pop_log(zklink).unwrap(),
+        @pop_log(zklink).unwrap(),
         @Zklink::Event::BrokerApprove(
             Zklink::BrokerApprove {
                 tokenId: _tokenId, owner: _owner, spender: _spender, amount: _amount
@@ -59,7 +59,7 @@ fn assert_event_Accept(
     _amountReceive: u128
 ) {
     assert_eq(
-        @starknet::testing::pop_log(zklink).unwrap(),
+        @pop_log(zklink).unwrap(),
         @Zklink::Event::Accept(
             Zklink::Accept {
                 acceptor: _acceptor,
