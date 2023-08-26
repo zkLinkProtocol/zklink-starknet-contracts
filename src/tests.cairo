@@ -7,5 +7,6 @@ mod test_block_commit;
 mod test_priority;
 mod test_accept;
 mod test_exodus;
+mod test_pending_withdraw;
 mod mocks;
 mod utils;

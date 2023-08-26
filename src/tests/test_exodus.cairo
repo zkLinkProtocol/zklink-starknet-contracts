@@ -6,8 +6,7 @@ use clone::Clone;
 use debug::PrintTrait;
 use starknet::{ContractAddress, contract_address_const};
 use starknet::Felt252TryIntoContractAddress;
-use starknet::testing::{set_contract_address, set_block_number, pop_log};
-use test::test_utils::assert_eq;
+use starknet::testing::{set_contract_address, set_block_number};
 
 use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
@@ -42,25 +41,6 @@ fn getStoredBlockTemplate() -> StoredBlockInfo {
     }
 }
 
-fn assert_event_ExodusMode(zklink: ContractAddress) {
-    assert_eq(
-        @pop_log(zklink).unwrap(),
-        @Zklink::Event::ExodusMode(Zklink::ExodusMode {}),
-        'ExodusMode Emit'
-    )
-}
-
-fn assert_event_WithdrawalPending(
-    zklink: ContractAddress, _tokenId: u16, _recepient: u256, _amount: u128
-) {
-    assert_eq(
-        @pop_log(zklink).unwrap(),
-        @Zklink::Event::WithdrawalPending(
-            Zklink::WithdrawalPending { tokenId: _tokenId, recepient: _recepient, amount: _amount }
-        ),
-        'WithdrawalPending Emit'
-    )
-}
 
 #[test]
 #[available_gas(20000000000)]
@@ -141,7 +121,7 @@ fn test_zklink_activateExodusMode_twice() {
     utils::drop_event(zklink);
 
     zklink_dispatcher.activateExodusMode();
-    assert_event_ExodusMode(zklink);
+    utils::assert_event_ExodusMode(zklink);
 
     // active agian should failed
     zklink_dispatcher.activateExodusMode();
@@ -290,7 +270,7 @@ fn test_zklink_performExodus_twice() {
         .performExodus(
             block6, owner, accountId, subAccountId, tokenId, tokenId, amount, proof.clone()
         );
-    assert_event_WithdrawalPending(zklink, tokenId, owner, amount);
+    utils::assert_event_WithdrawalPending(zklink, tokenId, owner, amount);
 
     let balance = zklink_dispatcher.getPendingBalance(owner, tokenId);
     assert(amount == balance, 'getPendingBalance');
@@ -355,7 +335,7 @@ fn test_zklink_performExodus_diff_subaccountId_success() {
 
     zklink_dispatcher
         .performExodus(block6, owner, accountId, subAccountId1, tokenId, tokenId, amount1, proof);
-    assert_event_WithdrawalPending(zklink, tokenId, owner, amount1);
+    utils::assert_event_WithdrawalPending(zklink, tokenId, owner, amount1);
 
     let balance = zklink_dispatcher.getPendingBalance(owner, tokenId);
     assert(balance == amount1 + amount, 'getPendingBalance');
