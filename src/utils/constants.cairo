@@ -40,15 +40,15 @@ const FORCED_EXIT_BYTES: usize = 69;
 const CHANGE_PUBKEY_BYTES: usize = 69;
 
 // Expiration delta for priority request to be satisfied (in ETH blocks)
-// PRIORITY_EXPIRATION = PRIORITY_EXPIRATION_PERIOD / BLOCK_PERIOD
+// PRIORITY_EXPIRATION(default 80640) = PRIORITY_EXPIRATION_PERIOD / BLOCK_PERIOD, 
 // TODO: replace before deploy
-const PRIORITY_EXPIRATION: u64 = 80640;
+const PRIORITY_EXPIRATION: u64 = 0;
 
 // Notice period before activation preparation status of upgrade mode (in seconds)
 // NOTE: we must reserve for users enough time to send full exit operation, wait maximum time for processing this operation and withdraw funds from it.
-// UPGRADE_NOTICE_PERIOD = MASS_FULL_EXIT_PERIOD(432000, 5 days) + PRIORITY_EXPIRATION_PERIOD + TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT(172800, 2 days)
+// UPGRADE_NOTICE_PERIOD(default 1814400) = MASS_FULL_EXIT_PERIOD(432000, 5 days) + PRIORITY_EXPIRATION_PERIOD + TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT(172800, 2 days)
 // TODO: replace before deploy
-const UPGRADE_NOTICE_PERIOD: u64 = 1814400;
+const UPGRADE_NOTICE_PERIOD: u64 = 0;
 
 // Max commitment produced in zk proof where highest 3 bits is 0
 const MAX_PROOF_COMMITMENT: u256 =

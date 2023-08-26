@@ -6,5 +6,6 @@ mod test_operations;
 mod test_block_commit;
 mod test_priority;
 mod test_accept;
+mod test_exodus;
 mod mocks;
 mod utils;
