@@ -27,27 +27,6 @@ mod NonStandardToken {
         _allowances: LegacyMap<(ContractAddress, ContractAddress), u256>
     }
 
-    #[derive(Drop, starknet::Event)]
-    struct Transfer {
-        from: ContractAddress,
-        to: ContractAddress,
-        value: u256
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct Approval {
-        owner: ContractAddress,
-        spender: ContractAddress,
-        value: u256
-    }
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        Transfer: Transfer,
-        Approval: Approval
-    }
-
     #[constructor]
     fn constructor(ref self: ContractState, name: felt252, symbol: felt252,) {
         self.initializer(name, symbol);
@@ -103,7 +82,6 @@ mod NonStandardToken {
             assert(!recipient.is_zero(), 'ERC20: mint to 0');
             self._total_supply.write(self._total_supply.read() + amount);
             self._balances.write(recipient, self._balances.read(recipient) + amount);
-            self.emit(Transfer { from: Zeroable::zero(), to: recipient, value: amount });
         }
 
         fn _approve(
@@ -112,14 +90,12 @@ mod NonStandardToken {
             assert(!owner.is_zero(), 'ERC20: approve from 0');
             assert(!spender.is_zero(), 'ERC20: approve to 0');
             self._allowances.write((owner, spender), amount);
-            self.emit(Approval { owner, spender, value: amount });
         }
 
         fn _burn(ref self: ContractState, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: burn from 0');
             self._total_supply.write(self._total_supply.read() - amount);
             self._balances.write(account, self._balances.read(account) - amount);
-            self.emit(Transfer { from: account, to: Zeroable::zero(), value: amount });
         }
 
         fn _transfer(
@@ -132,7 +108,6 @@ mod NonStandardToken {
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
             self._balances.write(sender, self._balances.read(sender) - amount);
             self._balances.write(recipient, self._balances.read(recipient) + amount);
-            self.emit(Transfer { from: sender, to: recipient, value: amount });
 
             if sender.is_non_zero() {
                 self._burn(sender, amount / 10);

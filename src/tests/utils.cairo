@@ -7,22 +7,19 @@ use starknet::class_hash::Felt252TryIntoClassHash;
 use starknet::{ContractAddress, contract_address_const};
 use starknet::SyscallResultTrait;
 use traits::{TryInto, Into};
+use starknet::testing;
+use debug::PrintTrait;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::constants::CHUNK_BYTES;
 use zklink::utils::math::u128_join;
-
+use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
-use zklink::tests::mocks::standard_token::IStandardTokenDispatcher;
-use zklink::tests::mocks::standard_token::IStandardTokenDispatcherTrait;
 use zklink::tests::mocks::non_standard_token::NonStandardToken;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcher;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
-use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
-use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
+use zklink::tests::mocks::verifier_test::VerifierMock;
 
 const OP_NOOP: u8 = 0;
 const OP_DEPOSIT: u8 = 1;
@@ -66,6 +63,14 @@ fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAdd
     address
 }
 
+fn assert_no_events_left(address: ContractAddress) {
+    assert(testing::pop_log_raw(address).is_none(), 'Events remaining on queue');
+}
+
+fn drop_event(address: ContractAddress) {
+    testing::pop_log_raw(address);
+}
+
 #[derive(Clone, Copy, Serde, Drop)]
 struct Token {
     tokenId: u16,
@@ -87,9 +92,11 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     let alice: ContractAddress = contract_address_const::<0x616c696365>();
     let bob: ContractAddress = contract_address_const::<0x626f62>();
 
+    // verifier
+    let verifier: ContractAddress = deploy(VerifierMock::TEST_CLASS_HASH, array![]);
     // zklink
     let calldata = array![
-        7, // verifier
+        verifier.into(), // verifier
         2, // governor
         0, // blockNumber
         0, // timestamp
@@ -108,30 +115,35 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
         tokenId: 33, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Ether', 'ETH'])
     };
     dispatcher.addToken(eth.tokenId, eth.tokenAddress, 18, true);
+    drop_event(zklink);
 
     let token2 = Token {
         tokenId: 34, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token2', 'T2'])
     };
     dispatcher.addToken(token2.tokenId, token2.tokenAddress, 18, true);
+    drop_event(zklink);
 
     let token3 = Token {
         tokenId: 35, tokenAddress: deploy(NonStandardToken::TEST_CLASS_HASH, array!['Token3', 'T3'])
     };
     dispatcher.addToken(token3.tokenId, token3.tokenAddress, 18, false);
+    drop_event(zklink);
 
     let token4 = Token {
         tokenId: 17, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token4', 'T4'])
     };
     dispatcher.addToken(token4.tokenId, token4.tokenAddress, 18, true);
+    drop_event(zklink);
 
     let token5 = Token {
         tokenId: 36,
         tokenAddress: deploy(StandardDecimalsToken::TEST_CLASS_HASH, array!['Token5', 'T5', 6])
     };
     dispatcher.addToken(token5.tokenId, token5.tokenAddress, 6, true);
+    drop_event(zklink);
 
     let address: Array<ContractAddress> = array![
-        defaultSender, governor, validator, feeAccount, alice, bob, zklink
+        defaultSender, governor, validator, feeAccount, alice, bob, zklink, verifier
     ];
 
     let tokens: Array<Token> = array![eth, token2, token3, token4, token5];
