@@ -50,14 +50,14 @@ fn assert_event_ExodusMode(zklink: ContractAddress) {
     )
 }
 
-fn assert_event_WithdrawalPending(zklink: ContractAddress, _tokenId: u16, _recepient: u256, _amount: u128) {
+fn assert_event_WithdrawalPending(
+    zklink: ContractAddress, _tokenId: u16, _recepient: u256, _amount: u128
+) {
     assert_eq(
         @pop_log(zklink).unwrap(),
-        @Zklink::Event::WithdrawalPending(Zklink::WithdrawalPending {
-            tokenId: _tokenId,
-            recepient: _recepient,
-            amount: _amount
-        }),
+        @Zklink::Event::WithdrawalPending(
+            Zklink::WithdrawalPending { tokenId: _tokenId, recepient: _recepient, amount: _amount }
+        ),
         'WithdrawalPending Emit'
     )
 }
@@ -189,16 +189,7 @@ fn test_zklink_performExodus_not_last_block() {
     let proof = array![3, 0, 9, 5];
 
     zklink_dispatcher
-        .performExodus(
-            block5,
-            owner,
-            accountId,
-            subAccountId,
-            tokenId,
-            tokenId,
-            amount,
-            proof
-        );
+        .performExodus(block5, owner, accountId, subAccountId, tokenId, tokenId, amount, proof);
 }
 
 #[test]
@@ -248,16 +239,7 @@ fn test_zklink_performExodus_verify_failed() {
     verifier_dispatcher.setVerifyResult(false);
 
     zklink_dispatcher
-        .performExodus(
-            block6,
-            owner,
-            accountId,
-            subAccountId,
-            tokenId,
-            tokenId,
-            amount,
-            proof
-        );
+        .performExodus(block6, owner, accountId, subAccountId, tokenId, tokenId, amount, proof);
 }
 
 #[test]
@@ -306,14 +288,7 @@ fn test_zklink_performExodus_twice() {
 
     zklink_dispatcher
         .performExodus(
-            block6,
-            owner,
-            accountId,
-            subAccountId,
-            tokenId,
-            tokenId,
-            amount,
-            proof.clone()
+            block6, owner, accountId, subAccountId, tokenId, tokenId, amount, proof.clone()
         );
     assert_event_WithdrawalPending(zklink, tokenId, owner, amount);
 
@@ -322,16 +297,7 @@ fn test_zklink_performExodus_twice() {
 
     // duplicate perform should be failed
     zklink_dispatcher
-        .performExodus(
-            block6,
-            owner,
-            accountId,
-            subAccountId,
-            tokenId,
-            tokenId,
-            amount,
-            proof
-        );
+        .performExodus(block6, owner, accountId, subAccountId, tokenId, tokenId, amount, proof);
 }
 
 #[test]
@@ -379,14 +345,7 @@ fn test_zklink_performExodus_diff_subaccountId_success() {
 
     zklink_dispatcher
         .performExodus(
-            block6,
-            owner,
-            accountId,
-            subAccountId,
-            tokenId,
-            tokenId,
-            amount,
-            proof.clone()
+            block6, owner, accountId, subAccountId, tokenId, tokenId, amount, proof.clone()
         );
     utils::drop_event(zklink);
 
@@ -395,16 +354,7 @@ fn test_zklink_performExodus_diff_subaccountId_success() {
     let amount1 = 500000000000000000; // 0.5 Ether
 
     zklink_dispatcher
-        .performExodus(
-            block6,
-            owner,
-            accountId,
-            subAccountId1,
-            tokenId,
-            tokenId,
-            amount1,
-            proof
-        );
+        .performExodus(block6, owner, accountId, subAccountId1, tokenId, tokenId, amount1, proof);
     assert_event_WithdrawalPending(zklink, tokenId, owner, amount1);
 
     let balance = zklink_dispatcher.getPendingBalance(owner, tokenId);
@@ -466,12 +416,12 @@ fn test_zklink_cancelOutstandingDepositsForExodusMode_success() {
 
     set_contract_address(defaultSender);
     token2_dispatcher.mint(1000000000000000000000); // 1000 Ether
-    token2_dispatcher.approve(zklink, 1000000000000000000000);  // 1000 Ether
-    let amount0 = 4000000000000000000;  // 4 Ether
+    token2_dispatcher.approve(zklink, 1000000000000000000000); // 1000 Ether
+    let amount0 = 4000000000000000000; // 4 Ether
     let amount1 = 10000000000000000000; // 10 Ether
     zklink_dispatcher
         .depositERC20(token2.tokenAddress, amount0, utils::extendAddress(defaultSender), 0, false);
-    
+
     set_contract_address(alice);
     zklink_dispatcher.requestFullExit(14, 2, token3.tokenId, false);
 
@@ -488,8 +438,12 @@ fn test_zklink_cancelOutstandingDepositsForExodusMode_success() {
     // size 59
     // data = [1334420292643450702982333137294458880, 4398046511104000000000000000000, 25701, 136087289999905557079838814080235208704]
     let pubdata0: Bytes = BytesTrait::new(
-        59, array![
-            1334420292643450702982333137294458880, 4398046511104000000000000000000, 25701, 136087289999905557079838814080235208704
+        59,
+        array![
+            1334420292643450702982333137294458880,
+            4398046511104000000000000000000,
+            25701,
+            136087289999905557079838814080235208704
         ]
     );
 
@@ -499,13 +453,18 @@ fn test_zklink_cancelOutstandingDepositsForExodusMode_success() {
     // size 59
     // data = [1334420292643455425348816006939672576, 10995116277760000000000000000000, 0, 460069391222763568496640]
     let pubdata1: Bytes = BytesTrait::new(
-        59, array![
-            1334420292643455425348816006939672576, 10995116277760000000000000000000, 0, 460069391222763568496640
+        59,
+        array![
+            1334420292643455425348816006939672576,
+            10995116277760000000000000000000,
+            0,
+            460069391222763568496640
         ]
     );
 
     zklink_dispatcher.cancelOutstandingDepositsForExodusMode(3, array![pubdata0, pubdata1]);
-    let balance0 = zklink_dispatcher.getPendingBalance(utils::extendAddress(defaultSender), token2.tokenId);
+    let balance0 = zklink_dispatcher
+        .getPendingBalance(utils::extendAddress(defaultSender), token2.tokenId);
     let balance1 = zklink_dispatcher.getPendingBalance(utils::extendAddress(alice), token2.tokenId);
 
     assert(balance0 == amount0, 'getPendingBalance0');
