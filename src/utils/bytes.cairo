@@ -35,7 +35,7 @@ const BYTES_PER_ELEMENT: usize = 16;
 // Bytes is a dynamic array of u128, where each element contains 16 bytes.
 //  - size: the number of bytes in the Bytes
 //  - data: the data of the Bytes
-#[derive(Drop, Clone, Serde)]
+#[derive(Drop, Clone, PartialEq, Serde)]
 struct Bytes {
     size: usize,
     data: Array<u128>

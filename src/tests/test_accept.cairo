@@ -7,6 +7,7 @@ use debug::PrintTrait;
 use starknet::{ContractAddress, contract_address_const};
 use starknet::Felt252TryIntoContractAddress;
 use starknet::testing::{set_caller_address, set_contract_address, pop_log};
+use test::test_utils::assert_eq;
 
 use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
@@ -32,11 +33,15 @@ fn assert_event_BrokerApprove(
     _spender: ContractAddress,
     _amount: u128
 ) {
-    let event = utils::pop_log::<Zklink::BrokerApprove>(zklink).unwrap();
-    assert(event.tokenId == _tokenId, 'tokenId');
-    assert(event.owner == _owner, 'owner');
-    assert(event.spender == _spender, 'spender');
-    assert(event.amount == _amount, 'amount');
+    assert_eq(
+        @starknet::testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::BrokerApprove(
+            Zklink::BrokerApprove {
+                tokenId: _tokenId, owner: _owner, spender: _spender, amount: _amount
+            }
+        ),
+        'BrokerApprove Emit'
+    );
 }
 
 fn assert_event_Accept(
@@ -53,18 +58,25 @@ fn assert_event_Accept(
     _amountSent: u128,
     _amountReceive: u128
 ) {
-    let event = utils::pop_log::<Zklink::Accept>(zklink).unwrap();
-    assert(event.acceptor == _acceptor, 'acceptor');
-    assert(event.accountId == _accountId, 'accountId');
-    assert(event.receiver == _receiver, 'receiver');
-    assert(event.tokenId == _tokenId, 'tokenId');
-    assert(event.amount == _amount, 'amount');
-    assert(event.withdrawFeeRate == _withdrawFeeRate, 'withdrawFeeRate');
-    assert(event.accountIdOfNonce == _accountIdOfNonce, 'accountIdOfNonce');
-    assert(event.subAccountIdOfNonce == _subAccountIdOfNonce, 'subAccountIdOfNonce');
-    assert(event.nonce == _nonce, 'nonce');
-    assert(event.amountSent == _amountSent, 'amountSent');
-    assert(event.amountReceive == _amountReceive, 'amountReceive');
+    assert_eq(
+        @starknet::testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::Accept(
+            Zklink::Accept {
+                acceptor: _acceptor,
+                accountId: _accountId,
+                receiver: _receiver,
+                tokenId: _tokenId,
+                amount: _amount,
+                withdrawFeeRate: _withdrawFeeRate,
+                accountIdOfNonce: _accountIdOfNonce,
+                subAccountIdOfNonce: _subAccountIdOfNonce,
+                nonce: _nonce,
+                amountSent: _amountSent,
+                amountReceive: _amountReceive
+            }
+        ),
+        'Accept Emit'
+    )
 }
 
 #[test]
