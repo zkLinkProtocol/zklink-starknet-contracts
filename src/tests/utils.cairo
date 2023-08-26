@@ -7,10 +7,12 @@ use starknet::class_hash::Felt252TryIntoClassHash;
 use starknet::{ContractAddress, contract_address_const};
 use starknet::SyscallResultTrait;
 use traits::{TryInto, Into};
+use starknet::testing;
+use debug::PrintTrait;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::constants::CHUNK_BYTES;
 use zklink::utils::math::u128_join;
-
+use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
@@ -66,6 +68,25 @@ fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAdd
     address
 }
 
+/// Pop the earliest unpopped logged event for the contract as the requested type
+/// and checks there's no more data left on the event, preventing unaccounted params.
+/// Indexed event members are currently not supported, so they are ignored.
+fn pop_log<T, impl TDrop: Drop<T>, impl TEvent: starknet::Event<T>>(
+    address: ContractAddress
+) -> Option<T> {
+    let (mut keys, mut data) = testing::pop_log_raw(address)?;
+    let ret = starknet::Event::deserialize(ref keys, ref data);
+    ret
+}
+
+fn assert_no_events_left(address: ContractAddress) {
+    assert(testing::pop_log_raw(address).is_none(), 'Events remaining on queue');
+}
+
+fn drop_event(address: ContractAddress) {
+    testing::pop_log_raw(address);
+}
+
 #[derive(Clone, Copy, Serde, Drop)]
 struct Token {
     tokenId: u16,
@@ -108,27 +129,32 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
         tokenId: 33, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Ether', 'ETH'])
     };
     dispatcher.addToken(eth.tokenId, eth.tokenAddress, 18, true);
+    drop_event(zklink);
 
     let token2 = Token {
         tokenId: 34, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token2', 'T2'])
     };
     dispatcher.addToken(token2.tokenId, token2.tokenAddress, 18, true);
+    drop_event(zklink);
 
     let token3 = Token {
         tokenId: 35, tokenAddress: deploy(NonStandardToken::TEST_CLASS_HASH, array!['Token3', 'T3'])
     };
     dispatcher.addToken(token3.tokenId, token3.tokenAddress, 18, false);
+    drop_event(zklink);
 
     let token4 = Token {
         tokenId: 17, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token4', 'T4'])
     };
     dispatcher.addToken(token4.tokenId, token4.tokenAddress, 18, true);
+    drop_event(zklink);
 
     let token5 = Token {
         tokenId: 36,
         tokenAddress: deploy(StandardDecimalsToken::TEST_CLASS_HASH, array!['Token5', 'T5', 6])
     };
     dispatcher.addToken(token5.tokenId, token5.tokenAddress, 6, true);
+    drop_event(zklink);
 
     let address: Array<ContractAddress> = array![
         defaultSender, governor, validator, feeAccount, alice, bob, zklink

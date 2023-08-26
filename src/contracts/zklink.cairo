@@ -332,11 +332,12 @@ mod Zklink {
     // Event emitted when acceptor accept a fast withdraw
     #[derive(Drop, starknet::Event)]
     struct Accept {
-        #[key]
+        // TODO
+        // #[key]
         acceptor: ContractAddress,
-        #[key]
+        // #[key]
         accountId: u32,
-        #[key]
+        // #[key]
         receiver: ContractAddress,
         tokenId: u16,
         amount: u128,
@@ -351,11 +352,13 @@ mod Zklink {
     // Event emitted when set broker allowance
     #[derive(Drop, starknet::Event)]
     struct BrokerApprove {
-        #[key]
+        // TODO: add key
+        // https://github.com/starkware-libs/cairo/issues/3961
+        // #[key]
         tokenId: u16,
-        #[key]
+        // #[key]
         owner: ContractAddress,
-        #[key]
+        // #[key]
         spender: ContractAddress,
         amount: u128
     }
@@ -364,9 +367,10 @@ mod Zklink {
     // Log token decimals on this chain to let L2 know(token decimals maybe different on different chains)
     #[derive(Drop, starknet::Event)]
     struct NewToken {
-        #[key]
+        // TODO
+        // #[key]
         tokenId: u16,
-        #[key]
+        // #[key]
         token: ContractAddress,
         decimals: u8
     }
@@ -1193,12 +1197,7 @@ mod Zklink {
             rt.standard = _standard;
             self.tokens.write(_tokenId, rt);
             self.tokenIds.write(_tokenAddress, _tokenId);
-            self
-                .emit(
-                    Event::NewToken(
-                        NewToken { tokenId: _tokenId, token: _tokenAddress, decimals: _decimals }
-                    )
-                );
+            self.emit(NewToken { tokenId: _tokenId, token: _tokenAddress, decimals: _decimals });
         }
 
         // Add tokens to the list of networks tokens
