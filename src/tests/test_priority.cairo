@@ -14,6 +14,12 @@ use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcher;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcherTrait;
+use zklink::tests::mocks::non_standard_token::NonStandardToken;
+use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcher;
+use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
+use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
+use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
+use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
 use zklink::tests::utils;
 use zklink::tests::utils::Token;
 use zklink::utils::bytes::{Bytes, BytesTrait};
@@ -258,7 +264,7 @@ fn test_zklink_deposit_nonstandard_erc20_success() {
     let zklink = *addrs[6];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let token3: Token = *tokens[2];
-    let token3_dispatcher = IStandardTokenDispatcher { contract_address: token3.tokenAddress };
+    let token3_dispatcher = INonStandardTokenDispatcher { contract_address: token3.tokenAddress };
     let to: ContractAddress =
         contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
     let subAccountId: u8 = 0;
@@ -358,7 +364,9 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
     let zklink = *addrs[6];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let token5: Token = *tokens[4];
-    let token5_dispatcher = IStandardTokenDispatcher { contract_address: token5.tokenAddress };
+    let token5_dispatcher = IStandardDecimalsTokenDispatcher {
+        contract_address: token5.tokenAddress
+    };
     let to: ContractAddress =
         contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
     let subAccountId: u8 = 0;
