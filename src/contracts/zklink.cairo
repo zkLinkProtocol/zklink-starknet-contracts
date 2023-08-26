@@ -2029,7 +2029,8 @@ mod Zklink {
             // feeRate MUST be valid and MUST not be 100%
             assert(_withdrawFeeRate < MAX_ACCEPT_FEE_RATE, 'H4');
             let amountReceive: u128 = _amount
-                * ((MAX_ACCEPT_FEE_RATE - _withdrawFeeRate) / MAX_ACCEPT_FEE_RATE).into();
+                * (MAX_ACCEPT_FEE_RATE - _withdrawFeeRate).into()
+                / MAX_ACCEPT_FEE_RATE.into();
 
             // accept tx may be later than block exec tx(with user withdraw op)
             let hash = getFastWithdrawHash(
