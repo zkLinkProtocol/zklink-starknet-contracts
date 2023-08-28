@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 use zklink::utils::data_structures::DataStructures::{
     CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo
 };
-use zklink::utils::operations::Operations::{OpType};
+use zklink::utils::operations::Operations::{OpType, Withdraw};
 use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
@@ -89,6 +89,7 @@ trait IZklinkMock<TContractState> {
         _compressed: bool,
         _newBlockExtra: CompressedBlockExtraInfo
     ) -> StoredBlockInfo;
+    fn testExecuteWithdraw(self: @TContractState, _op: Withdraw);
 }
 
 #[starknet::contract]
@@ -107,7 +108,7 @@ mod ZklinkMock {
     use zklink::utils::data_structures::DataStructures::{
         CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo
     };
-    use zklink::utils::operations::Operations::{OpType};
+    use zklink::utils::operations::Operations::{OpType, Withdraw};
     use zklink::utils::bytes::Bytes;
 
     #[storage]
@@ -353,6 +354,22 @@ mod ZklinkMock {
             Zklink::InternalFunctions::commitOneBlock(
                 ref state, @_previousBlock, @_newBlock, _compressed, @_newBlockExtra
             )
+        }
+
+        fn testExecuteWithdraw(self: @ContractState, _op: Withdraw) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::InternalFunctions::_executeWithdraw(
+                ref state,
+                _op.accountId,
+                _op.accountId,
+                _op.subAccountId,
+                _op.nonce,
+                _op.owner,
+                _op.tokenId,
+                _op.amount,
+                _op.fastWithdrawFeeRate,
+                _op.fastWithdraw
+            );
         }
     }
 }
