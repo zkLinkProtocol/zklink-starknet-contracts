@@ -1,13 +1,40 @@
 use core::option::OptionTrait;
-use core::traits::TryInto;
-use core::traits::Into;
-use core::traits::DivRem;
+use core::traits::{TryInto, Into, DivRem};
 use zklink::utils::math::{
-    u128_fast_pow2, u128_join, u128_split, u128_sub_value, u32_min, u64_min, u128_min, fast_power10
+    u128_fast_pow2, u128_join, u128_split, u128_sub_value, uint_min, fast_power10, u256_fast_pow2
 };
 
 #[test]
 #[available_gas(20000000000)]
+fn test_min() {
+    let left: u8 = 1;
+    let right: u8 = 2;
+    assert(uint_min(left, right) == left, 'u8 min');
+
+    let left: u16 = 1;
+    let right: u16 = 0;
+    assert(uint_min(left, right) == right, 'u16 min');
+
+    let left: u32 = 1;
+    let right: u32 = 1;
+    assert(uint_min(left, right) == left, 'u32 min');
+
+    let left: u64 = 1;
+    let right: u64 = 2;
+    assert(uint_min(left, right) == left, 'u64 min');
+
+    let left: u128 = 1;
+    let right: u128 = 2;
+    assert(uint_min(left, right) == left, 'u128 min');
+
+    let left: u256 = 1;
+    let right: u256 = 2;
+    assert(uint_min(left, right) == left, 'u256 min');
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('invalid exp',))]
 fn test_u128_fast_pow2() {
     let mut i = 0;
     let max_exp = 127;
@@ -15,13 +42,33 @@ fn test_u128_fast_pow2() {
         if i > max_exp {
             break;
         }
-        assert(common_pow(2, i) == u128_fast_pow2(i).into(), 'invalid result');
+        assert(u128_fast_pow2(i).into() == common_pow(2, i), 'invalid result');
         i = i + 1;
-    }
+    };
+
+    assert(u128_fast_pow2(i).into() == common_pow(2, i), 'panic');
 }
 
 #[test]
 #[available_gas(20000000000)]
+#[should_panic(expected: ('invalid exp',))]
+fn test_u256_fast_pow2() {
+    let mut i = 0;
+    let max_exp = 255;
+    loop {
+        if i > max_exp {
+            break;
+        }
+        assert(u256_fast_pow2(i) == common_pow(2, i), 'invalid result');
+        i = i + 1;
+    };
+
+    assert(u256_fast_pow2(i) == common_pow(2, i), 'panic');
+}
+
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('invalid exp',))]
 fn test_fast_power10() {
     let mut i = 0;
     let max_exp = 18;
@@ -29,9 +76,11 @@ fn test_fast_power10() {
         if i > max_exp {
             break;
         }
-        assert(common_pow(10, i) == fast_power10(i).into(), 'invalid result');
+        assert(fast_power10(i).into() == common_pow(10, i), 'invalid result');
         i = i + 1;
-    }
+    };
+
+    assert(fast_power10(i).into() == common_pow(10, i), 'panic');
 }
 
 // return base^exp

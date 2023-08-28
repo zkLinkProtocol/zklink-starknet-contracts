@@ -137,7 +137,7 @@ mod Zklink {
         RegisteredToken, BridgeInfo, StoredBlockInfo, CommitBlockInfo, CompressedBlockExtraInfo,
         ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
     };
-    use zklink::utils::math::{fast_power10, u256_pow2, u32_min, u64_min, u128_min,};
+    use zklink::utils::math::{fast_power10, u256_fast_pow2, uint_min};
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash, update_u256_array_at};
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
@@ -788,7 +788,7 @@ mod Zklink {
             self.start();
             self.notActive();
             // Checks
-            let toProcess: u64 = u64_min(self.totalOpenPriorityRequests.read(), _n);
+            let toProcess: u64 = uint_min(self.totalOpenPriorityRequests.read(), _n);
             assert(toProcess > 0, 'A0');
 
             // Effects
@@ -897,7 +897,7 @@ mod Zklink {
             let owner: u256 = extendAddress(_owner);
             let balance: u128 = self.pendingBalances.read((owner, _tokenId));
             let withdrawBalance = recoveryDecimals(balance, rt.decimals);
-            let mut amount = u128_min(_amount, withdrawBalance);
+            let mut amount = uint_min(_amount, withdrawBalance);
             assert(amount > 0, 'b1');
 
             // Interactions
@@ -1045,7 +1045,7 @@ mod Zklink {
             self.onlyValidator();
 
             let mut blocksCommitted: u64 = self.totalBlocksCommitted.read();
-            let blocksToRevert: u32 = u32_min(
+            let blocksToRevert: u32 = uint_min(
                 _blocksToRevert.len(),
                 (blocksCommitted - self.totalBlocksExecuted.read()).try_into().unwrap()
             );
@@ -2106,7 +2106,7 @@ mod Zklink {
             if i > MAX_CHAIN_ID {
                 break ();
             }
-            let chainIndex: u256 = u256_pow2(i.into() - 1);
+            let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
                 onchainOpPubdataHashs.append(EMPTY_STRING_KECCAK);
             } else {
@@ -2121,7 +2121,7 @@ mod Zklink {
         assert(_chainId >= MIN_CHAIN_ID && _chainId <= MAX_CHAIN_ID, 'i1');
         // revert if invalid chain id exist
         // for example, when `ALL_CHAINS` = 13(1 << 0 | 1 << 2 | 1 << 3), it means 2(1 << 2 - 1) is a invalid chainId
-        let chainIndex: u256 = u256_pow2(_chainId.into() - 1);
+        let chainIndex: u256 = u256_fast_pow2(_chainId.into() - 1);
         assert((chainIndex & ALL_CHAINS) == chainIndex, 'i2');
     }
 
@@ -2176,7 +2176,7 @@ mod Zklink {
             if i > MAX_CHAIN_ID {
                 break ();
             }
-            let chainIndex: u256 = u256_pow2(i.into() - 1);
+            let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
             if (chainIndex & ALL_CHAINS) == chainIndex {
                 let onchainOperationPubdataHash = *_onchainOpPubdataHashs[i.into()];
                 syncHash = concatTwoHash(syncHash, onchainOperationPubdataHash);
