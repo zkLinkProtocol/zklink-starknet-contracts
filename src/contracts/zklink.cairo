@@ -1,6 +1,7 @@
 use starknet::ContractAddress;
 use zklink::utils::data_structures::DataStructures::{
-    StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo
+    StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo,
+    RegisteredToken, BridgeInfo
 };
 use zklink::utils::bytes::Bytes;
 
@@ -100,7 +101,30 @@ trait IZklink<TContractState> {
     fn getPendingBalance(self: @TContractState, _address: u256, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
+    fn verifier(self: @TContractState) -> ContractAddress;
+    fn totalBlocksExecuted(self: @TContractState) -> u64;
+    fn firstPriorityRequestId(self: @TContractState) -> u64;
     fn networkGovernor(self: @TContractState) -> ContractAddress;
+    fn totalBlocksCommitted(self: @TContractState) -> u64;
+    fn totalOpenPriorityRequests(self: @TContractState) -> u64;
+    fn totalBlocksProven(self: @TContractState) -> u64;
+    fn totalCommittedPriorityRequests(self: @TContractState) -> u64;
+    fn totalBlocksSynchronized(self: @TContractState) -> u64;
+    fn exodusMode(self: @TContractState) -> bool;
+    fn performedExodus(
+        self: @TContractState,
+        _accountId: u32,
+        _subAccountId: u8,
+        _withdrawTokenId: u16,
+        _deductTokenId: u16
+    ) -> bool;
+    fn authFacts(self: @TContractState, _owner: ContractAddress, _nonce: u32) -> u256;
+    fn accepts(self: @TContractState, _accountId: u32, _hash: u256) -> ContractAddress;
+    fn validators(self: @TContractState, _validator: ContractAddress) -> bool;
+    fn tokens(self: @TContractState, _tokenId: u16) -> RegisteredToken;
+    fn tokenIds(self: @TContractState, _tokenAddress: ContractAddress) -> u16;
+    fn bridges(self: @TContractState, _index: usize) -> BridgeInfo;
+    fn bridgeIndex(self: @TContractState, _bridge: ContractAddress) -> usize;
 }
 
 #[starknet::contract]
@@ -1367,9 +1391,82 @@ mod Zklink {
             self.bridges.read(index).enableBridgeFrom
         }
 
+        // get verifier contract address
+        fn verifier(self: @ContractState) -> ContractAddress {
+            self.verifier.read()
+        }
+        
+        fn totalBlocksExecuted(self: @ContractState) -> u64 {
+            self.totalBlocksExecuted.read()
+        }
+
+        fn firstPriorityRequestId(self: @ContractState) -> u64 {
+            self.firstPriorityRequestId.read()
+        }
+
         // Return the network governor
         fn networkGovernor(self: @ContractState) -> ContractAddress {
             self.networkGovernor.read()
+        }
+
+        fn totalBlocksCommitted(self: @ContractState) -> u64 {
+            self.totalBlocksCommitted.read()
+        }
+
+        fn totalOpenPriorityRequests(self: @ContractState) -> u64 {
+            self.totalOpenPriorityRequests.read()
+        }
+
+        fn totalBlocksProven(self: @ContractState) -> u64 {
+            self.totalBlocksProven.read()
+        }
+
+        fn totalCommittedPriorityRequests(self: @ContractState) -> u64 {
+            self.totalCommittedPriorityRequests.read()
+        }
+
+        fn totalBlocksSynchronized(self: @ContractState) -> u64 {
+            self.totalBlocksSynchronized.read()
+        }
+        fn exodusMode(self: @ContractState) -> bool {
+            self.exodusMode.read()
+        }
+
+        fn performedExodus(
+            self: @ContractState,
+            _accountId: u32,
+            _subAccountId: u8,
+            _withdrawTokenId: u16,
+            _deductTokenId: u16
+        ) -> bool {
+            self.performedExodus.read((_accountId, _subAccountId, _withdrawTokenId, _deductTokenId))
+        }
+
+        fn authFacts(self: @ContractState, _owner: ContractAddress, _nonce: u32) -> u256 {
+            self.authFacts.read((_owner, _nonce))
+        }
+
+        fn accepts(self: @ContractState, _accountId: u32, _hash: u256) -> ContractAddress {
+            self.accepts.read((_accountId, _hash))
+        }
+
+        fn validators(self: @ContractState, _validator: ContractAddress) -> bool {
+            self.validators.read(_validator)
+        }
+
+        fn tokens(self: @ContractState, _tokenId: u16) -> RegisteredToken {
+            self.tokens.read(_tokenId)
+        }
+        fn tokenIds(self: @ContractState, _tokenAddress: ContractAddress) -> u16 {
+            self.tokenIds.read(_tokenAddress)
+        }
+
+        fn bridges(self: @ContractState, _index: usize) -> BridgeInfo {
+            self.bridges.read(_index)
+        }
+
+        fn bridgeIndex(self: @ContractState, _bridge: ContractAddress) -> usize {
+            self.bridgeIndex.read(_bridge)
         }
     }
 
