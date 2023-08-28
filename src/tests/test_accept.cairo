@@ -6,8 +6,7 @@ use clone::Clone;
 use debug::PrintTrait;
 use starknet::{ContractAddress, contract_address_const};
 use starknet::Felt252TryIntoContractAddress;
-use starknet::testing::{set_caller_address, set_contract_address, pop_log};
-use test::test_utils::assert_eq;
+use starknet::testing::{set_caller_address, set_contract_address};
 
 use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
@@ -26,58 +25,6 @@ use zklink::tests::utils;
 use zklink::tests::utils::Token;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 
-fn assert_event_BrokerApprove(
-    zklink: ContractAddress,
-    _tokenId: u16,
-    _owner: ContractAddress,
-    _spender: ContractAddress,
-    _amount: u128
-) {
-    assert_eq(
-        @pop_log(zklink).unwrap(),
-        @Zklink::Event::BrokerApprove(
-            Zklink::BrokerApprove {
-                tokenId: _tokenId, owner: _owner, spender: _spender, amount: _amount
-            }
-        ),
-        'BrokerApprove Emit'
-    );
-}
-
-fn assert_event_Accept(
-    zklink: ContractAddress,
-    _acceptor: ContractAddress,
-    _accountId: u32,
-    _receiver: ContractAddress,
-    _tokenId: u16,
-    _amount: u128,
-    _withdrawFeeRate: u16,
-    _accountIdOfNonce: u32,
-    _subAccountIdOfNonce: u8,
-    _nonce: u32,
-    _amountSent: u128,
-    _amountReceive: u128
-) {
-    assert_eq(
-        @pop_log(zklink).unwrap(),
-        @Zklink::Event::Accept(
-            Zklink::Accept {
-                acceptor: _acceptor,
-                accountId: _accountId,
-                receiver: _receiver,
-                tokenId: _tokenId,
-                amount: _amount,
-                withdrawFeeRate: _withdrawFeeRate,
-                accountIdOfNonce: _accountIdOfNonce,
-                subAccountIdOfNonce: _subAccountIdOfNonce,
-                nonce: _nonce,
-                amountSent: _amountSent,
-                amountReceive: _amountReceive
-            }
-        ),
-        'Accept Emit'
-    )
-}
 
 #[test]
 #[available_gas(20000000000)]
@@ -91,7 +38,7 @@ fn test_zklink_broker_approve_success() {
 
     set_contract_address(alice);
     zklink_dispatcher.brokerApprove(token2.tokenId, bob, 100);
-    assert_event_BrokerApprove(zklink, token2.tokenId, alice, bob, 100);
+    utils::assert_event_BrokerApprove(zklink, token2.tokenId, alice, bob, 100);
 }
 
 #[test]
@@ -266,7 +213,7 @@ fn test_zklink_accept_standard_erc20_success() {
             nonce,
             amountReceive
         );
-    assert_event_Accept(
+    utils::assert_event_Accept(
         zklink,
         bob,
         fwAId,
@@ -385,7 +332,7 @@ fn test_zklink_accept_sender_not_acceptor() {
             nonce,
             amountReceive
         );
-    assert_event_Accept(
+    utils::assert_event_Accept(
         zklink,
         bob,
         fwAId,

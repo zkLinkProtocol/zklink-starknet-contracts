@@ -8,6 +8,7 @@ use starknet::{ContractAddress, contract_address_const};
 use starknet::SyscallResultTrait;
 use traits::{TryInto, Into};
 use starknet::testing;
+use test::test_utils::assert_eq;
 use debug::PrintTrait;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::constants::CHUNK_BYTES;
@@ -69,6 +70,87 @@ fn assert_no_events_left(address: ContractAddress) {
 
 fn drop_event(address: ContractAddress) {
     testing::pop_log_raw(address);
+}
+
+fn assert_event_BrokerApprove(
+    zklink: ContractAddress,
+    _tokenId: u16,
+    _owner: ContractAddress,
+    _spender: ContractAddress,
+    _amount: u128
+) {
+    assert_eq(
+        @testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::BrokerApprove(
+            Zklink::BrokerApprove {
+                tokenId: _tokenId, owner: _owner, spender: _spender, amount: _amount
+            }
+        ),
+        'BrokerApprove Emit'
+    );
+}
+
+fn assert_event_Accept(
+    zklink: ContractAddress,
+    _acceptor: ContractAddress,
+    _accountId: u32,
+    _receiver: ContractAddress,
+    _tokenId: u16,
+    _amount: u128,
+    _withdrawFeeRate: u16,
+    _accountIdOfNonce: u32,
+    _subAccountIdOfNonce: u8,
+    _nonce: u32,
+    _amountSent: u128,
+    _amountReceive: u128
+) {
+    assert_eq(
+        @testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::Accept(
+            Zklink::Accept {
+                acceptor: _acceptor,
+                accountId: _accountId,
+                receiver: _receiver,
+                tokenId: _tokenId,
+                amount: _amount,
+                withdrawFeeRate: _withdrawFeeRate,
+                accountIdOfNonce: _accountIdOfNonce,
+                subAccountIdOfNonce: _subAccountIdOfNonce,
+                nonce: _nonce,
+                amountSent: _amountSent,
+                amountReceive: _amountReceive
+            }
+        ),
+        'Accept Emit'
+    )
+}
+
+fn assert_event_ExodusMode(zklink: ContractAddress) {
+    assert_eq(
+        @testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::ExodusMode(Zklink::ExodusMode {}),
+        'ExodusMode Emit'
+    )
+}
+
+fn assert_event_WithdrawalPending(
+    zklink: ContractAddress, _tokenId: u16, _recepient: u256, _amount: u128
+) {
+    assert_eq(
+        @testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::WithdrawalPending(
+            Zklink::WithdrawalPending { tokenId: _tokenId, recepient: _recepient, amount: _amount }
+        ),
+        'WithdrawalPending Emit'
+    )
+}
+
+fn assert_event_Withdrawal(zklink: ContractAddress, _tokenId: u16, _amount: u128) {
+    assert_eq(
+        @testing::pop_log(zklink).unwrap(),
+        @Zklink::Event::Withdrawal(Zklink::Withdrawal { tokenId: _tokenId, amount: _amount }),
+        'Withdrawal Emit'
+    )
 }
 
 #[derive(Clone, Copy, Serde, Drop)]
