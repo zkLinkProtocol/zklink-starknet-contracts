@@ -1395,7 +1395,7 @@ mod Zklink {
         fn verifier(self: @ContractState) -> ContractAddress {
             self.verifier.read()
         }
-        
+
         fn totalBlocksExecuted(self: @ContractState) -> u64 {
             self.totalBlocksExecuted.read()
         }
