@@ -12,10 +12,6 @@ trait IUpgradeGateKeeper<TContractState> {
 
 #[starknet::contract]
 mod UpgradeGateKeeper {
-    use core::array::ArrayTrait;
-    use core::clone::Clone;
-    use core::box::BoxTrait;
-    use core::option::OptionTrait;
     use starknet::{ContractAddress, ClassHash, get_caller_address, get_block_timestamp};
     use zeroable::Zeroable;
     use openzeppelin::upgrades::interface::IUpgradeableDispatcher;
