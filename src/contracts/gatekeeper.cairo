@@ -96,6 +96,7 @@ mod UpgradeGateKeeper {
         self.mainContract.write(_mainContract);
         self.versionId.write(0);
         self.master.write(get_caller_address());
+        self.upgradeStatus.write(UpgradeStatus::Idle(()));
     }
 
     #[external(v0)]
@@ -111,6 +112,7 @@ mod UpgradeGateKeeper {
             ); // otp11 - new masters address can't be zero address
             self.setMaster(_newMaster);
         }
+
         // Adds a new upgradeable contract to the list of contracts managed by the gatekeeper
         // _address: addr Address of upgradeable contract to add
         fn addUpgradeable(ref self: ContractState, _address: ContractAddress) {
@@ -136,11 +138,11 @@ mod UpgradeGateKeeper {
         fn startUpgrade(ref self: ContractState, _newTargets: Array<ClassHash>) {
             self.requireMaster(get_caller_address());
             assert(
-                self.upgradeStatus.read() == UpgradeStatus::Idle(()), 'sup11'
-            ); // sup11 - unable to activate active upgrade mode
+                self.upgradeStatus.read() == UpgradeStatus::Idle(()), 'spu11'
+            ); // spu11 - unable to activate active upgrade mode
             assert(
-                _newTargets.len() == self.managedContractsLength.read(), 'sup12'
-            ); // sup12 - number of new targets must be equal to the number of managed contracts
+                _newTargets.len() == self.managedContractsLength.read(), 'spu12'
+            ); // spu12 - number of new targets must be equal to the number of managed contracts
 
             let zklink_dispatcher = IZklinkDispatcher {
                 contract_address: self.mainContract.read()

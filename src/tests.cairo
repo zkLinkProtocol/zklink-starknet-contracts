@@ -10,5 +10,6 @@ mod test_exodus;
 mod test_pending_withdraw;
 mod test_fast_withdraw;
 mod test_ownable;
+mod test_gatekeeper;
 mod mocks;
 mod utils;
