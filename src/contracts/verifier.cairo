@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{ContractAddress, ClassHash};
 
 #[starknet::interface]
 trait IVerifier<TContractState> {
@@ -10,7 +10,6 @@ trait IVerifier<TContractState> {
         _individualVksInputs: Array<u256>,
         _subProofsLimbs: Array<u256>
     ) -> bool;
-
     fn verifyExitProof(
         ref self: TContractState,
         _rootHash: u256,
@@ -23,13 +22,15 @@ trait IVerifier<TContractState> {
         _amount: u128,
         _proof: Array<u256>
     ) -> bool;
+    fn getMaster(self: @TContractState) -> ContractAddress;
+    fn transferMastership(ref self: TContractState, _newMaster: ContractAddress);
+    fn upgrade(ref self: TContractState, impl_hash: ClassHash);
 }
 
 #[starknet::contract]
 mod Verifier {
     use starknet::{ContractAddress, ClassHash, get_caller_address};
     use openzeppelin::upgrades::interface::IUpgradeable;
-    use zklink::contracts::ownable::IOwnable;
 
     #[storage]
     struct Storage {
@@ -40,30 +41,6 @@ mod Verifier {
     #[constructor]
     fn constructor(ref self: ContractState) {
         self.master.write(get_caller_address());
-    }
-
-    #[external(v0)]
-    impl UpgradeableImpl of IUpgradeable<ContractState> {
-        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
-            self.requireMaster(get_caller_address());
-            assert(!impl_hash.is_zero(), 'upg11');
-            starknet::replace_class_syscall(impl_hash).unwrap();
-        }
-    }
-
-    #[external(v0)]
-    impl OwnableImpl of IOwnable<ContractState> {
-        fn getMaster(self: @ContractState) -> ContractAddress {
-            self.master.read()
-        }
-
-        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {
-            self.requireMaster(get_caller_address());
-            assert(
-                _newMaster != Zeroable::zero(), '1d'
-            ); // otp11 - new masters address can't be zero address
-            self.setMaster(_newMaster);
-        }
     }
 
     #[external(v0)]
@@ -92,6 +69,24 @@ mod Verifier {
             _proof: Array<u256>
         ) -> bool {
             false
+        }
+
+        fn getMaster(self: @ContractState) -> ContractAddress {
+            self.master.read()
+        }
+
+        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {
+            self.requireMaster(get_caller_address());
+            assert(
+                _newMaster != Zeroable::zero(), '1d'
+            ); // otp11 - new masters address can't be zero address
+            self.setMaster(_newMaster);
+        }
+
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            self.requireMaster(get_caller_address());
+            assert(!impl_hash.is_zero(), 'upg11');
+            starknet::replace_class_syscall(impl_hash).unwrap();
         }
     }
 

@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{ContractAddress, ClassHash};
 use zklink::utils::data_structures::DataStructures::{
     StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo,
     RegisteredToken, BridgeInfo
@@ -127,6 +127,9 @@ trait IZklink<TContractState> {
     fn bridgeIndex(self: @TContractState, _bridge: ContractAddress) -> usize;
     fn getNoticePeriod(self: @TContractState) -> u256;
     fn isReadyForUpgrade(self: @TContractState) -> bool;
+    fn getMaster(self: @TContractState) -> ContractAddress;
+    fn transferMastership(ref self: TContractState, _newMaster: ContractAddress);
+    fn upgrade(ref self: TContractState, impl_hash: ClassHash);
 }
 
 #[starknet::contract]
@@ -147,7 +150,6 @@ mod Zklink {
 
     use super::IZklinkDispatcher;
     use super::IZklinkDispatcherTrait;
-    use zklink::contracts::ownable::IOwnable;
     use zklink::contracts::verifier::IVerifierDispatcher;
     use zklink::contracts::verifier::IVerifierDispatcherTrait;
     use openzeppelin::token::erc20::interface::IERC20Dispatcher;
@@ -497,30 +499,6 @@ mod Zklink {
         self.totalBlocksProven.write(_blockNumber);
         self.totalBlocksSynchronized.write(_blockNumber);
         self.totalBlocksExecuted.write(_blockNumber);
-    }
-
-    #[external(v0)]
-    impl UpgradeableImpl of IUpgradeable<ContractState> {
-        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
-            self.requireMaster(get_caller_address());
-            assert(!impl_hash.is_zero(), 'upg11');
-            starknet::replace_class_syscall(impl_hash).unwrap();
-        }
-    }
-
-    #[external(v0)]
-    impl OwnableImpl of IOwnable<ContractState> {
-        fn getMaster(self: @ContractState) -> ContractAddress {
-            self.master.read()
-        }
-
-        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {
-            self.requireMaster(get_caller_address());
-            assert(
-                _newMaster != Zeroable::zero(), '1d'
-            ); // otp11 - new masters address can't be zero address
-            self.setMaster(_newMaster);
-        }
     }
 
     #[external(v0)]
@@ -1510,6 +1488,24 @@ mod Zklink {
         // Returns: bool flag indicating that contract is ready for upgrade
         fn isReadyForUpgrade(self: @ContractState) -> bool {
             !self.exodusMode.read()
+        }
+
+        fn getMaster(self: @ContractState) -> ContractAddress {
+            self.master.read()
+        }
+
+        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {
+            self.requireMaster(get_caller_address());
+            assert(
+                _newMaster != Zeroable::zero(), '1d'
+            ); // otp11 - new masters address can't be zero address
+            self.setMaster(_newMaster);
+        }
+
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            self.requireMaster(get_caller_address());
+            assert(!impl_hash.is_zero(), 'upg11');
+            starknet::replace_class_syscall(impl_hash).unwrap();
         }
     }
 

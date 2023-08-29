@@ -2,6 +2,8 @@ use starknet::{ContractAddress, ClassHash};
 
 #[starknet::interface]
 trait IUpgradeGateKeeper<TContractState> {
+    fn getMaster(self: @TContractState) -> ContractAddress;
+    fn transferMastership(ref self: TContractState, _newMaster: ContractAddress);
     fn addUpgradeable(ref self: TContractState, _address: ContractAddress);
     fn startUpgrade(ref self: TContractState, _newTargets: Array<ClassHash>);
     fn finishUpgrade(ref self: TContractState) -> bool;
@@ -21,7 +23,6 @@ mod UpgradeGateKeeper {
     use zklink::utils::data_structures::DataStructures::UpgradeStatus;
     use zklink::contracts::zklink::IZklinkDispatcher;
     use zklink::contracts::zklink::IZklinkDispatcherTrait;
-    use zklink::contracts::ownable::IOwnable;
 
     #[storage]
     struct Storage {
@@ -98,7 +99,7 @@ mod UpgradeGateKeeper {
     }
 
     #[external(v0)]
-    impl OwnableImpl of IOwnable<ContractState> {
+    impl UpgradeGateKeeperImpl of super::IUpgradeGateKeeper<ContractState> {
         fn getMaster(self: @ContractState) -> ContractAddress {
             self.master.read()
         }
@@ -110,10 +111,6 @@ mod UpgradeGateKeeper {
             ); // otp11 - new masters address can't be zero address
             self.setMaster(_newMaster);
         }
-    }
-
-    #[external(v0)]
-    impl UpgradeGateKeeperImpl of super::IUpgradeGateKeeper<ContractState> {
         // Adds a new upgradeable contract to the list of contracts managed by the gatekeeper
         // _address: addr Address of upgradeable contract to add
         fn addUpgradeable(ref self: ContractState, _address: ContractAddress) {
