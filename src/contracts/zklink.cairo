@@ -125,6 +125,8 @@ trait IZklink<TContractState> {
     fn tokenIds(self: @TContractState, _tokenAddress: ContractAddress) -> u16;
     fn bridges(self: @TContractState, _index: usize) -> BridgeInfo;
     fn bridgeIndex(self: @TContractState, _bridge: ContractAddress) -> usize;
+    fn getNoticePeriod(self: @TContractState) -> u256;
+    fn isReadyForUpgrade(self: @TContractState) -> bool;
 }
 
 #[starknet::contract]
@@ -166,11 +168,11 @@ mod Zklink {
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES,
-        FULL_EXIT_BYTES, PRIORITY_EXPIRATION, MAX_DEPOSIT_AMOUNT, MAX_PROOF_COMMITMENT, INPUT_MASK,
-        AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
-        ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE, TOKEN_DECIMALS_OF_LAYER2,
-        GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS, USD_TOKEN_ID,
-        MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
+        FULL_EXIT_BYTES, PRIORITY_EXPIRATION, UPGRADE_NOTICE_PERIOD, MAX_DEPOSIT_AMOUNT,
+        MAX_PROOF_COMMITMENT, INPUT_MASK, AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID,
+        MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX, ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
+        TOKEN_DECIMALS_OF_LAYER2, GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
+        USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
     };
 
     /// Storage
@@ -1467,6 +1469,17 @@ mod Zklink {
 
         fn bridgeIndex(self: @ContractState, _bridge: ContractAddress) -> usize {
             self.bridgeIndex.read(_bridge)
+        }
+
+        // Notice period before activation preparation status of upgrade mode
+        fn getNoticePeriod(self: @ContractState) -> u256 {
+            return UPGRADE_NOTICE_PERIOD.into();
+        }
+
+        // Checks that contract is ready for upgrade
+        // Returns: bool flag indicating that contract is ready for upgrade
+        fn isReadyForUpgrade(self: @ContractState) -> bool {
+            !self.exodusMode.read()
         }
     }
 
