@@ -145,10 +145,10 @@ mod Zklink {
 
     use super::IZklinkDispatcher;
     use super::IZklinkDispatcherTrait;
-    use zklink::libraries::IVerifier::IVerifierDispatcher;
-    use zklink::libraries::IVerifier::IVerifierDispatcherTrait;
-    use zklink::libraries::IERC20::IERC20Dispatcher;
-    use zklink::libraries::IERC20::IERC20DispatcherTrait;
+    use zklink::contracts::verifier::IVerifierDispatcher;
+    use zklink::contracts::verifier::IVerifierDispatcherTrait;
+    use openzeppelin::token::erc20::interface::IERC20Dispatcher;
+    use openzeppelin::token::erc20::interface::IERC20DispatcherTrait;
 
     use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
     use zklink::utils::operations::Operations::{

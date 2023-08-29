@@ -5,7 +5,7 @@ trait IVerifierMock<TContractState> {
 
 #[starknet::contract]
 mod VerifierMock {
-    use zklink::libraries::IVerifier::IVerifier;
+    use zklink::contracts::verifier::IVerifier;
 
     #[storage]
     struct Storage {
