@@ -140,17 +140,19 @@ mod Zklink {
     use box::BoxTrait;
     use clone::Clone;
     use starknet::{
-        ContractAddress, contract_address_const, Felt252TryIntoContractAddress,
+        ContractAddress, ClassHash, contract_address_const, Felt252TryIntoContractAddress,
         get_contract_address, get_caller_address, get_block_info, get_block_timestamp
     };
     use core::starknet::info::get_block_number;
 
     use super::IZklinkDispatcher;
     use super::IZklinkDispatcherTrait;
+    use zklink::contracts::ownable::IOwnable;
     use zklink::contracts::verifier::IVerifierDispatcher;
     use zklink::contracts::verifier::IVerifierDispatcherTrait;
     use openzeppelin::token::erc20::interface::IERC20Dispatcher;
     use openzeppelin::token::erc20::interface::IERC20DispatcherTrait;
+    use openzeppelin::upgrades::interface::IUpgradeable;
 
     use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
     use zklink::utils::operations::Operations::{
@@ -178,6 +180,9 @@ mod Zklink {
     /// Storage
     #[storage]
     struct Storage {
+        // public
+        // master address, which can call upgrade functions
+        master: ContractAddress,
         // internal
         // ReentrancyGuard flag
         entered: bool,
@@ -473,6 +478,7 @@ mod Zklink {
         assert(_verifierAddress.is_non_zero(), 'i0');
         assert(_networkGovernor.is_non_zero(), 'i2');
 
+        self.master.write(get_caller_address());
         self.verifier.write(_verifierAddress);
         self.networkGovernor.write(_networkGovernor);
 
@@ -491,6 +497,30 @@ mod Zklink {
         self.totalBlocksProven.write(_blockNumber);
         self.totalBlocksSynchronized.write(_blockNumber);
         self.totalBlocksExecuted.write(_blockNumber);
+    }
+
+    #[external(v0)]
+    impl UpgradeableImpl of IUpgradeable<ContractState> {
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            self.requireMaster(get_caller_address());
+            assert(!impl_hash.is_zero(), 'upg11');
+            starknet::replace_class_syscall(impl_hash).unwrap();
+        }
+    }
+
+    #[external(v0)]
+    impl OwnableImpl of IOwnable<ContractState> {
+        fn getMaster(self: @ContractState) -> ContractAddress {
+            self.master.read()
+        }
+
+        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {
+            self.requireMaster(get_caller_address());
+            assert(
+                _newMaster != Zeroable::zero(), '1d'
+            ); // otp11 - new masters address can't be zero address
+            self.setMaster(_newMaster);
+        }
     }
 
     #[external(v0)]
@@ -1480,6 +1510,17 @@ mod Zklink {
         // Returns: bool flag indicating that contract is ready for upgrade
         fn isReadyForUpgrade(self: @ContractState) -> bool {
             !self.exodusMode.read()
+        }
+    }
+
+    #[generate_trait]
+    impl InternalOwnableImpl of InternalOwnableTrait {
+        fn setMaster(ref self: ContractState, _newMaster: ContractAddress) {
+            self.master.write(_newMaster);
+        }
+
+        fn requireMaster(self: @ContractState, _address: ContractAddress) {
+            assert(self.master.read() == _address, '1c'); // oro11 - only by master
         }
     }
 
