@@ -1471,8 +1471,7 @@ mod Zklink {
     }
 
     #[generate_trait]
-    impl InternalFunctions of InternalFunctionsTrait {
-        // =================modifier functions=================
+    impl ModifierImpl of ModifierTrait {
         // Checks that current state not is exodus mode
         #[inline(always)]
         fn active(self: @ContractState) {
@@ -1505,8 +1504,10 @@ mod Zklink {
         fn onlyValidator(self: @ContractState) {
             assert(self.validators.read(get_caller_address()), '4');
         }
+    }
 
-        // =================Internal functions=================
+    #[generate_trait]
+    impl InternalFunctions of InternalFunctionsTrait {
         // Deposit ERC20 token internal function
         // Parameters:
         //  _token Token address
