@@ -178,6 +178,7 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     let verifier: ContractAddress = deploy(VerifierMock::TEST_CLASS_HASH, array![]);
     // zklink
     let calldata = array![
+        defaultSender.into(), // master
         verifier.into(), // verifier
         2, // governor
         0, // blockNumber

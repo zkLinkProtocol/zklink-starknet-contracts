@@ -88,10 +88,12 @@ mod UpgradeGateKeeper {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, _mainContract: ContractAddress) {
+    fn constructor(
+        ref self: ContractState, _master: ContractAddress, _mainContract: ContractAddress
+    ) {
         self.mainContract.write(_mainContract);
         self.versionId.write(0);
-        self.master.write(get_caller_address());
+        self.master.write(_master);
         self.upgradeStatus.write(UpgradeStatus::Idle(()));
     }
 

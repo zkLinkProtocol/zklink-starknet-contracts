@@ -32,6 +32,7 @@ mod ZklinkUpgradeV2 {
     #[constructor]
     fn constructor(
         ref self: ContractState,
+        _master: ContractAddress,
         _verifierAddress: ContractAddress,
         _networkGovernor: ContractAddress,
         _blockNumber: u64,
@@ -44,6 +45,7 @@ mod ZklinkUpgradeV2 {
         let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
         Zklink::constructor(
             ref state,
+            _master,
             _verifierAddress,
             _networkGovernor,
             _blockNumber,

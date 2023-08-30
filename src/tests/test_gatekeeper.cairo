@@ -22,6 +22,7 @@ fn deploy_zklink() -> (ContractAddress, ContractAddress, ContractAddress) {
     set_contract_address(deployer);
 
     let calldata = array![
+        deployer.into(), // master
         0x123, // verifier
         2, // governor
         0, // blockNumber
@@ -37,7 +38,7 @@ fn deploy_zklink() -> (ContractAddress, ContractAddress, ContractAddress) {
     let v1: ContractAddress = utils::deploy(ZklinkUpgradeV1::TEST_CLASS_HASH, calldata.clone());
     let v2: ContractAddress = utils::deploy(ZklinkUpgradeV2::TEST_CLASS_HASH, calldata);
     let gatekeeper: ContractAddress = utils::deploy(
-        UpgradeGateKeeper::TEST_CLASS_HASH, array![v1.into()]
+        UpgradeGateKeeper::TEST_CLASS_HASH, array![deployer.into(), v1.into()]
     );
     (v1, v2, gatekeeper)
 }
