@@ -5,6 +5,7 @@ trait IVerifierMock<TContractState> {
 
 #[starknet::contract]
 mod VerifierMock {
+    use starknet::{ContractAddress, ClassHash};
     use zklink::contracts::verifier::IVerifier;
 
     #[storage]
@@ -51,5 +52,13 @@ mod VerifierMock {
         ) -> bool {
             self.verifyResult.read()
         }
+
+        fn getMaster(self: @ContractState) -> ContractAddress {
+            starknet::get_caller_address()
+        }
+
+        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {}
+
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {}
     }
 }

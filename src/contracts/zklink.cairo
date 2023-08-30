@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{ContractAddress, ClassHash};
 use zklink::utils::data_structures::DataStructures::{
     StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo,
     RegisteredToken, BridgeInfo
@@ -125,6 +125,11 @@ trait IZklink<TContractState> {
     fn tokenIds(self: @TContractState, _tokenAddress: ContractAddress) -> u16;
     fn bridges(self: @TContractState, _index: usize) -> BridgeInfo;
     fn bridgeIndex(self: @TContractState, _bridge: ContractAddress) -> usize;
+    fn getNoticePeriod(self: @TContractState) -> u256;
+    fn isReadyForUpgrade(self: @TContractState) -> bool;
+    fn getMaster(self: @TContractState) -> ContractAddress;
+    fn transferMastership(ref self: TContractState, _newMaster: ContractAddress);
+    fn upgrade(ref self: TContractState, impl_hash: ClassHash);
 }
 
 #[starknet::contract]
@@ -138,7 +143,7 @@ mod Zklink {
     use box::BoxTrait;
     use clone::Clone;
     use starknet::{
-        ContractAddress, contract_address_const, Felt252TryIntoContractAddress,
+        ContractAddress, ClassHash, contract_address_const, Felt252TryIntoContractAddress,
         get_contract_address, get_caller_address, get_block_info, get_block_timestamp
     };
     use core::starknet::info::get_block_number;
@@ -149,6 +154,7 @@ mod Zklink {
     use zklink::contracts::verifier::IVerifierDispatcherTrait;
     use openzeppelin::token::erc20::interface::IERC20Dispatcher;
     use openzeppelin::token::erc20::interface::IERC20DispatcherTrait;
+    use openzeppelin::upgrades::interface::IUpgradeable;
 
     use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
     use zklink::utils::operations::Operations::{
@@ -166,16 +172,19 @@ mod Zklink {
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES,
-        FULL_EXIT_BYTES, PRIORITY_EXPIRATION, MAX_DEPOSIT_AMOUNT, MAX_PROOF_COMMITMENT, INPUT_MASK,
-        AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
-        ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE, TOKEN_DECIMALS_OF_LAYER2,
-        GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS, USD_TOKEN_ID,
-        MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
+        FULL_EXIT_BYTES, PRIORITY_EXPIRATION, UPGRADE_NOTICE_PERIOD, MAX_DEPOSIT_AMOUNT,
+        MAX_PROOF_COMMITMENT, INPUT_MASK, AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID,
+        MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX, ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
+        TOKEN_DECIMALS_OF_LAYER2, GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
+        USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
     };
 
     /// Storage
     #[storage]
     struct Storage {
+        // public
+        // master address, which can call upgrade functions
+        master: ContractAddress,
         // internal
         // ReentrancyGuard flag
         entered: bool,
@@ -471,6 +480,7 @@ mod Zklink {
         assert(_verifierAddress.is_non_zero(), 'i0');
         assert(_networkGovernor.is_non_zero(), 'i2');
 
+        self.master.write(get_caller_address());
         self.verifier.write(_verifierAddress);
         self.networkGovernor.write(_networkGovernor);
 
@@ -1468,11 +1478,50 @@ mod Zklink {
         fn bridgeIndex(self: @ContractState, _bridge: ContractAddress) -> usize {
             self.bridgeIndex.read(_bridge)
         }
+
+        // Notice period before activation preparation status of upgrade mode
+        fn getNoticePeriod(self: @ContractState) -> u256 {
+            return UPGRADE_NOTICE_PERIOD.into();
+        }
+
+        // Checks that contract is ready for upgrade
+        // Returns: bool flag indicating that contract is ready for upgrade
+        fn isReadyForUpgrade(self: @ContractState) -> bool {
+            !self.exodusMode.read()
+        }
+
+        fn getMaster(self: @ContractState) -> ContractAddress {
+            self.master.read()
+        }
+
+        fn transferMastership(ref self: ContractState, _newMaster: ContractAddress) {
+            self.requireMaster(get_caller_address());
+            assert(
+                _newMaster != Zeroable::zero(), '1d'
+            ); // otp11 - new masters address can't be zero address
+            self.setMaster(_newMaster);
+        }
+
+        fn upgrade(ref self: ContractState, impl_hash: ClassHash) {
+            self.requireMaster(get_caller_address());
+            assert(!impl_hash.is_zero(), 'upg11');
+            starknet::replace_class_syscall(impl_hash).unwrap();
+        }
     }
 
     #[generate_trait]
-    impl InternalFunctions of InternalFunctionsTrait {
-        // =================modifier functions=================
+    impl InternalOwnableImpl of InternalOwnableTrait {
+        fn setMaster(ref self: ContractState, _newMaster: ContractAddress) {
+            self.master.write(_newMaster);
+        }
+
+        fn requireMaster(self: @ContractState, _address: ContractAddress) {
+            assert(self.master.read() == _address, '1c'); // oro11 - only by master
+        }
+    }
+
+    #[generate_trait]
+    impl ModifierImpl of ModifierTrait {
         // Checks that current state not is exodus mode
         #[inline(always)]
         fn active(self: @ContractState) {
@@ -1505,8 +1554,10 @@ mod Zklink {
         fn onlyValidator(self: @ContractState) {
             assert(self.validators.read(get_caller_address()), '4');
         }
+    }
 
-        // =================Internal functions=================
+    #[generate_trait]
+    impl InternalFunctions of InternalFunctionsTrait {
         // Deposit ERC20 token internal function
         // Parameters:
         //  _token Token address

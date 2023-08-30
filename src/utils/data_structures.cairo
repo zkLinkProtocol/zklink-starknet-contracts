@@ -122,4 +122,11 @@ mod DataStructures {
         vkIndexes: Array<u8>,
         subproofsLimbs: Array<u256>
     }
+
+    #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]
+    // Upgrade mode statuses
+    enum UpgradeStatus {
+        Idle: (),
+        NoticePeriod: ()
+    }
 }
