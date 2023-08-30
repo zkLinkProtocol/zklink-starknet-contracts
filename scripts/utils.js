@@ -32,24 +32,27 @@ export async function connectStarknet() {
 
     const deployer = new Account(provider, deployerConfig.address, deployerConfig.privateKey);
     console.log('✅ Deployer account connected, address =', deployer.address);
-    return { provider, deployer, netConfig};
+    const governor = new Account(provider, netConfig.network.accounts.governor.address, netConfig.network.accounts.governor.privateKey);
+    console.log('✅ Governor account connected, address =', governor.address);
+    return { provider, deployer, governor, netConfig};
 }
 
-export function buildGateKeeperConstructorArgs(abi, mainContract) {
+export function buildGateKeeperConstructorArgs(abi, master, mainContract) {
     const contractCallData = new CallData(abi);
-    const constructorArgs = contractCallData.compile("constructor", [mainContract])
+    const constructorArgs = contractCallData.compile("constructor", [master, mainContract])
     return constructorArgs;
 }
 
-export function buildVerifierConstructorArgs(abi) {
+export function buildVerifierConstructorArgs(abi, master) {
     const contractCallData = new CallData(abi);
-    const constructorArgs = contractCallData.compile("constructor", [])
+    const constructorArgs = contractCallData.compile("constructor", [master])
     return constructorArgs;
 }
 
-export function buildZklinkConstructorArgs(abi, verifierAddress, networkGovernor, blockNumber, timestamp, stateHash, commitment, syncHash) {
+export function buildZklinkConstructorArgs(abi, master, verifierAddress, networkGovernor, blockNumber, timestamp, stateHash, commitment, syncHash) {
     const contractCallData = new CallData(abi);
     const constructorArgs = contractCallData.compile("constructor", [
+        master,
         verifierAddress,
         networkGovernor,
         blockNumber,

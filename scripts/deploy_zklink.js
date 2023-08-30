@@ -31,7 +31,7 @@ program
 
 async function declare_zklink() {
     const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
-    let { provider, deployer, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet();
 
     deployLog[logName.DEPLOY_LOG_DEPLOYER] = deployer.address;
     fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
@@ -44,6 +44,7 @@ async function declare_zklink() {
 
         try {
             const gatekeeperDeclareResponse = await deployer.declare({ contract: gatekeeperContractSierra, casm: gatekeeperContractCasm });
+            await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
             gatekeeperContractClassHash = gatekeeperDeclareResponse.class_hash;
             console.log('✅ Gatekeeper Contract declared with classHash = ', gatekeeperContractClassHash);
         } catch (error) {
@@ -73,6 +74,7 @@ async function declare_zklink() {
 
         try {
             const verifierDeclareResponse = await deployer.declare({ contract: verifierContractSierra, casm: verifierContractCasm });
+            await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
             verifierContractClassHash = verifierDeclareResponse.class_hash;
             console.log('✅ Verifier Contract declared with classHash = ', verifierContractClassHash);
         } catch (error) {
@@ -102,6 +104,7 @@ async function declare_zklink() {
 
         try {
             const zklinkDeclareResponse = await deployer.declare({ contract: zklinkContractSierra, casm: zklinkContractCasm });
+            await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
             zklinkContractClassHash = zklinkDeclareResponse.class_hash;
             console.log('✅ Zklink Contract declared with classHash = ', zklinkContractClassHash);
         } catch (error) {
@@ -126,7 +129,7 @@ async function declare_zklink() {
 
 async function deploy_zklink(options) {
     const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
-    let { provider, deployer, netConfig } = await connectStarknet();
+    let { provider, deployer, governor, netConfig } = await connectStarknet();
 
     if (options.governor === undefined) {
         options.governor = netConfig.network.accounts.governor.address;
@@ -151,7 +154,7 @@ async function deploy_zklink(options) {
 
     // deploy verifier contract
     if (!(logName.DEPLOY_LOG_VERIFIER in deployLog) || options.force) {
-        const verifierConstructorArgs = buildVerifierConstructorArgs(verifierContractSierra.abi);
+        const verifierConstructorArgs = buildVerifierConstructorArgs(verifierContractSierra.abi, deployer.address);
         const deployResponse = await deployer.deployContract({ classHash: deployLog[logName.DEPLOY_LOG_VERIFIER_CLASS_HASH], constructorCalldata: verifierConstructorArgs });
         await provider.waitForTransaction(deployResponse.transaction_hash);
 
@@ -166,6 +169,7 @@ async function deploy_zklink(options) {
     if (!(logName.DEPLOY_LOG_ZKLINK in deployLog) || options.force) {
         const zklinkConstructorArgs = buildZklinkConstructorArgs(
             zklinkContractSierra.abi,
+            deployer.address,
             deployLog[logName.DEPLOY_LOG_VERIFIER],
             options.governor,
             options.blockNumber,
@@ -187,7 +191,7 @@ async function deploy_zklink(options) {
 
     // deploy gatekeeper contract
     if (!(logName.DEPLOY_LOG_GATEKEEPER in deployLog) || options.force) {
-        const gatekeeperConstructorArgs = buildGateKeeperConstructorArgs(gatekeeperContractSierra.abi, deployLog[logName.DEPLOY_LOG_ZKLINK]);
+        const gatekeeperConstructorArgs = buildGateKeeperConstructorArgs(gatekeeperContractSierra.abi, deployer.address, deployLog[logName.DEPLOY_LOG_ZKLINK]);
 
         const deployResponse = await deployer.deployContract({ classHash: deployLog[logName.DEPLOY_LOG_GATEKEEPER_CLASS_HASH], constructorCalldata: gatekeeperConstructorArgs, salt: "0" });
         await provider.waitForTransaction(deployResponse.transaction_hash);
@@ -211,8 +215,20 @@ async function deploy_zklink(options) {
         const tx = await verifier.transferMastership(call.calldata);
         await provider.waitForTransaction(tx.transaction_hash);
 
-        console.log('✅ Verifier Contract master transferred to getkeeper at tx:', tx.transaction_hash);
+        console.log('✅ Verifier Contract master transferred to gatekeeper at tx:', tx.transaction_hash);
         deployLog[logName.DEPLOY_LOG_VERIFIER_TRANSFER_MASTER_TX_HASH] = tx.transaction_hash;
+        fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
+    }
+
+    // gatekeeper add verifier upgradeable
+    if (!(logName.DEPLOY_LOG_VERIFIER_ADDUPGRADEABLE_TX_HASH in deployLog) || options.force) {
+        gatekeeper.connect(deployer);
+        const call = gatekeeper.populate("addUpgradeable", [deployLog[logName.DEPLOY_LOG_VERIFIER]]);
+        const tx = await gatekeeper.addUpgradeable(call.calldata);
+        await provider.waitForTransaction(tx.transaction_hash);
+
+        console.log('✅ Gatekeeper Contract add verifier upgradeable at tx:', tx.transaction_hash);
+        deployLog[logName.DEPLOY_LOG_VERIFIER_ADDUPGRADEABLE_TX_HASH] = tx.transaction_hash;
         fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
     }
 
@@ -222,8 +238,19 @@ async function deploy_zklink(options) {
         const call = zklink.populate("transferMastership", [gatekeeper.address]);
         const tx = await zklink.transferMastership(call.calldata);
         await provider.waitForTransaction(tx.transaction_hash);
-        console.log('✅ zklink Contract master transferred to getkeeper at tx:', tx.transaction_hash);
+        console.log('✅ zklink Contract master transferred to gatekeeper at tx:', tx.transaction_hash);
         deployLog[logName.DEPLOY_LOG_ZKLINK_TRANSFER_MASTER_TX_HASH] = tx.transaction_hash;
+        fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
+    }
+
+    // gatekeeper add zklink upgradeable
+    if (!(logName.DEPLOY_LOG_ZKLINK_ADDUPGRADEABLE_TX_HASH in deployLog) || options.force) {
+        gatekeeper.connect(deployer);
+        const call = gatekeeper.populate("addUpgradeable", [deployLog[logName.DEPLOY_LOG_ZKLINK]]);
+        const tx = await gatekeeper.addUpgradeable(call.calldata);
+        await provider.waitForTransaction(tx.transaction_hash);
+        console.log('✅ Gatekeeper Contract add zklink upgradeable at tx:', tx.transaction_hash);
+        deployLog[logName.DEPLOY_LOG_ZKLINK_ADDUPGRADEABLE_TX_HASH] = tx.transaction_hash;
         fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
     }
 
@@ -240,8 +267,9 @@ async function deploy_zklink(options) {
 
     // zklink set validator
     if (!(logName.DEPLOY_LOG_ZKLINK_SET_VALIDATOR_TX_HASH in deployLog) || options.force) {
-        zklink.connect(options.governor);
-        const tx = await zklink.setValidator(options.validator, true);
+        zklink.connect(governor);
+        const call = zklink.populate("setValidator", [options.validator, true]);
+        const tx = await zklink.setValidator(call.calldata);
         await provider.waitForTransaction(tx.transaction_hash);
         console.log('✅ zklink Contract set validator at tx:', tx.transaction_hash);
         deployLog[logName.DEPLOY_LOG_ZKLINK_SET_VALIDATOR_TX_HASH] = tx.transaction_hash;
