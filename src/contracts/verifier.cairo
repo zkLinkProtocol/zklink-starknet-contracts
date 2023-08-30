@@ -39,8 +39,8 @@ mod Verifier {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState) {
-        self.master.write(get_caller_address());
+    fn constructor(ref self: ContractState, _master: ContractAddress) {
+        self.master.write(_master);
     }
 
     #[external(v0)]

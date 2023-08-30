@@ -469,6 +469,7 @@ mod Zklink {
     #[constructor]
     fn constructor(
         ref self: ContractState,
+        _master: ContractAddress,
         _verifierAddress: ContractAddress,
         _networkGovernor: ContractAddress,
         _blockNumber: u64,
@@ -480,7 +481,7 @@ mod Zklink {
         assert(_verifierAddress.is_non_zero(), 'i0');
         assert(_networkGovernor.is_non_zero(), 'i2');
 
-        self.master.write(get_caller_address());
+        self.master.write(_master);
         self.verifier.write(_verifierAddress);
         self.networkGovernor.write(_networkGovernor);
 

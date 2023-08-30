@@ -14,9 +14,12 @@ fn deploy_zklink() -> (ContractAddress, ContractAddress) {
         contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
     set_contract_address(deployer);
 
-    let verifier: ContractAddress = utils::deploy(Verifier::TEST_CLASS_HASH, array![]);
+    let verifier: ContractAddress = utils::deploy(
+        Verifier::TEST_CLASS_HASH, array![deployer.into()]
+    );
 
     let calldata = array![
+        deployer.into(), // master
         verifier.into(), // verifier
         2, // governor
         0, // blockNumber
