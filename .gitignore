@@ -1,4 +1,5 @@
 target/
 node_modules/
 etc/*.json
-!etc/example.json
+!etc/EXAMPLE.json
+log/

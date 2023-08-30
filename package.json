@@ -11,9 +11,11 @@
   ],
   "type": "module",
   "dependencies": {
-    "starknet": "^5.11.1"
+    "commander": "^11.0.0",
+    "starknet": "^5.19.5"
   },
   "scripts": {
-    "deploy": "node scripts/deploy_zklink.js"
+    "declare": "node scripts/deploy_zklink.js declareZklink",
+    "deploy": "node scripts/deploy_zklink.js deployZklink"
   }
 }
