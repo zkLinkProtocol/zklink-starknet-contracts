@@ -1,4 +1,16 @@
 // zkLink configuration constants
+// Do not change those value as below, otherwise unit test will fail.
+// And this value will be automatically modified by the automated
+// deployment script based on the configuration file in the ./etc directory before deployment
+// - BLOCK_PERIOD
+// - PRIORITY_EXPIRATION
+// - UPGRADE_NOTICE_PERIOD
+// - CHAIN_ID
+// - MIN_CHAIN_ID
+// - MAX_CHAIN_ID
+// - ALL_CHAINS
+// - CHAIN_INDEX
+// - ENABLE_COMMIT_COMPRESSED_BLOCK
 
 const EMPTY_STRING_KECCAK: u256 =
     0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
@@ -24,7 +36,6 @@ const MAX_SUB_ACCOUNT_ID: u8 = 31;
 
 // Expected average period of block creation, default 15s
 // In starknet, block_number and block_timestamp type is u64
-// TODO: replace before deploy
 const BLOCK_PERIOD: u64 = 15;
 
 // Operation chunks:
@@ -41,13 +52,11 @@ const CHANGE_PUBKEY_BYTES: usize = 69;
 
 // Expiration delta for priority request to be satisfied (in ETH blocks)
 // PRIORITY_EXPIRATION(default 80640) = PRIORITY_EXPIRATION_PERIOD / BLOCK_PERIOD, 
-// TODO: replace before deploy
 const PRIORITY_EXPIRATION: u64 = 0;
 
 // Notice period before activation preparation status of upgrade mode (in seconds)
 // NOTE: we must reserve for users enough time to send full exit operation, wait maximum time for processing this operation and withdraw funds from it.
 // UPGRADE_NOTICE_PERIOD(default 1814400) = MASS_FULL_EXIT_PERIOD(432000, 5 days) + PRIORITY_EXPIRATION_PERIOD + TIME_TO_WITHDRAW_FUNDS_FROM_FULL_EXIT(172800, 2 days)
-// TODO: replace before deploy
 const UPGRADE_NOTICE_PERIOD: u64 = 0;
 
 // Max commitment produced in zk proof where highest 3 bits is 0
@@ -65,27 +74,21 @@ const AUTH_FACT_RESET_TIMELOCK: u64 = 86400;
 const MAX_DEPOSIT_AMOUNT: u128 = 20282409603651670423947251286015;
 
 // Chain id defined by ZkLink
-// TODO: check before deploy
 const CHAIN_ID: u8 = 1;
 
 // Min chain id defined by ZkLink
-// TODO: check before deploy
 const MIN_CHAIN_ID: u8 = 1;
 
 // Max chain id defined by ZkLink
-// TODO: check before deploy
 const MAX_CHAIN_ID: u8 = 4;
 
 // All chain index, for example [1, 2, 3, 4] => 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 = 15
-// TODO: check before deploy
 const ALL_CHAINS: u256 = 15;
 
 // Chain index, CHAIN_ID is non-zero value
-// TODO: check before deploy
 const CHAIN_INDEX: u256 = 1;
 
 // Enable commit a compressed block
-// TODO: check before deploy
 // Now, in cairo only literal constants are currently supported.
 // It should be 1 if true, be 0 if false.
 const ENABLE_COMMIT_COMPRESSED_BLOCK: felt252 = 1;

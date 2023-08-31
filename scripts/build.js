@@ -44,6 +44,8 @@ function writeZklinkConstants(configs) {
         result = result.replace(/(const MAX_CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.maxChainId}$3`);
         // ALL_CHAAINS
         result = result.replace(/(const ALL_CHAINS: u256 = )(\d+)(;)/, `$1${configs.allChains}$3`);
+        // CHAIN_INDEX
+        result = result.replace(/(const CHAIN_INDEX: u256 = )(\d+)(;)/, `$1${configs.chainIndex}$3`);
         // ENABLE_COMMIT_COMPRESSED_BLOCK
         result = result.replace(/(const ENABLE_COMMIT_COMPRESSED_BLOCK: felt252 = )(\d+)(;)/, `$1${configs.enableCommitCompressedBlock}$3`);
 
@@ -70,6 +72,7 @@ async function build() {
     const minChainId = netConfig.macro.MIN_CHAIN_ID;
     const maxChainId = netConfig.macro.MAX_CHAIN_ID;
     const allChains = netConfig.macro.ALL_CHAINS;
+    const chainIndex = (1 << chainId) - 1;
 
     const configs = {
         blockPeriod,
@@ -79,7 +82,8 @@ async function build() {
         enableCommitCompressedBlock,
         minChainId,
         maxChainId,
-        allChains
+        allChains,
+        chainIndex
     }
 
     console.log("🔥 Reading and replace zklink constants...");
