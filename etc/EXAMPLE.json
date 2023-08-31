@@ -1,7 +1,7 @@
 {
     "network": {
-        "name": "testnet",
-        "url": "https://alpha4.starknet.io",
+        "name": "devnet",
+        "url": "http://127.0.0.1",
         "accounts": {
             "deployer": {
                 "address": "",

@@ -21,7 +21,7 @@ function buildProvider(networkConfig) {
 
 export async function connectStarknet() {
     // read config json file
-    const netName = process.env.NET === undefined ? "devnet" : process.env.NET;
+    const netName = process.env.NET === undefined ? "EXAMPLE" : process.env.NET;
     let netConfig = await fs.promises.readFile(`./etc/${netName}.json`, "utf-8");
     netConfig = JSON.parse(netConfig);
 

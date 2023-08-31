@@ -17,6 +17,7 @@
   "scripts": {
     "declareZklink": "node scripts/deploy_zklink.js declareZklink",
     "deployZklink": "node scripts/deploy_zklink.js deployZklink",
-    "deployFaucetToken": "node scripts/deploy_faucet.js deployFaucetToken"
+    "deployFaucetToken": "node scripts/deploy_faucet.js deployFaucetToken",
+    "addToken": "node scripts/interact.js addToken"
   }
 }
