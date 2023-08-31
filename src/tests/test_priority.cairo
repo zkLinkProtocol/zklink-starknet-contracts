@@ -20,6 +20,9 @@ use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
+use zklink::tests::mocks::camel_standard_token::CamelStandardToken;
+use zklink::tests::mocks::camel_standard_token::ICamelStandardTokenDispatcher;
+use zklink::tests::mocks::camel_standard_token::ICamelStandardTokenDispatcherTrait;
 use zklink::tests::utils;
 use zklink::tests::utils::Token;
 use zklink::utils::bytes::{Bytes, BytesTrait};
@@ -248,6 +251,54 @@ fn test_zklink_deposit_standard_erc20_success() {
         59,
         array![
             1334420292643450702982333137294458880,
+            32985348833280,
+            2112475483491437590759,
+            179721859689502125521965815952033447936
+        ]
+    );
+    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_zklink_deposit_camel_standard_erc20_success() {
+    let (addrs, tokens) = utils::prepare_test_deploy();
+    let defaultSender = *addrs[0];
+    let zklink = *addrs[6];
+    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
+    let token6: Token = *tokens[5];
+    let token6_dispatcher = ICamelStandardTokenDispatcher { contract_address: token6.tokenAddress };
+    let to: ContractAddress =
+        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let subAccountId: u8 = 0;
+    let amount: u128 = 30;
+
+    set_contract_address(defaultSender);
+    token6_dispatcher.mint(10000);
+    let senderBalance = token6_dispatcher.balanceOf(defaultSender);
+    let contractBalance = token6_dispatcher.balanceOf(zklink);
+    token6_dispatcher.approve(zklink, 100);
+    zklink_dispatcher
+        .depositERC20(token6.tokenAddress, amount, utils::extendAddress(to), subAccountId, false);
+    assert(
+        token6_dispatcher.balanceOf(zklink) == contractBalance + amount.into(),
+        'invalid contract balance'
+    );
+    assert(
+        token6_dispatcher.balanceOf(defaultSender) == senderBalance - amount.into(),
+        'invalid sender balance'
+    );
+
+    let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
+    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
+    // example = [1, 1, 0, 0, 37, 37, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
+    //
+    // size 59
+    // data = [1334420292643450703198509217943126016, 32985348833280, 2112475483491437590759, 179721859689502125521965815952033447936]
+    let pubData: Bytes = BytesTrait::new(
+        59,
+        array![
+            1334420292643450703198509217943126016,
             32985348833280,
             2112475483491437590759,
             179721859689502125521965815952033447936

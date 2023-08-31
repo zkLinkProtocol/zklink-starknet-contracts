@@ -19,6 +19,7 @@ use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
 use zklink::tests::mocks::non_standard_token::NonStandardToken;
+use zklink::tests::mocks::camel_standard_token::CamelStandardToken;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
 use zklink::tests::mocks::verifier_test::VerifierMock;
 
@@ -225,11 +226,18 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     dispatcher.addToken(token5.tokenId, token5.tokenAddress, 6, true);
     drop_event(zklink);
 
+    let token6 = Token {
+        tokenId: 37,
+        tokenAddress: deploy(CamelStandardToken::TEST_CLASS_HASH, array!['Token6', 'T6'])
+    };
+    dispatcher.addToken(token6.tokenId, token6.tokenAddress, 18, true);
+    drop_event(zklink);
+
     let address: Array<ContractAddress> = array![
         defaultSender, governor, validator, feeAccount, alice, bob, zklink, verifier
     ];
 
-    let tokens: Array<Token> = array![eth, token2, token3, token4, token5];
+    let tokens: Array<Token> = array![eth, token2, token3, token4, token5, token6];
 
     (address, tokens)
 }

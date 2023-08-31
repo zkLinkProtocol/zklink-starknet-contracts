@@ -152,8 +152,8 @@ mod Zklink {
     use super::IZklinkDispatcherTrait;
     use zklink::contracts::verifier::IVerifierDispatcher;
     use zklink::contracts::verifier::IVerifierDispatcherTrait;
-    use openzeppelin::token::erc20::interface::IERC20Dispatcher;
-    use openzeppelin::token::erc20::interface::IERC20DispatcherTrait;
+    use openzeppelin::token::erc20::dual20::DualERC20;
+    use openzeppelin::token::erc20::dual20::DualERC20Trait;
     use openzeppelin::upgrades::interface::IUpgradeable;
 
     use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
@@ -550,13 +550,13 @@ mod Zklink {
 
             // most tokens are standard, fewer query token balance can save gas
             if _isStandard {
-                IERC20Dispatcher { contract_address: _token }.transfer(_to, _amount.into());
+                DualERC20 { contract_address: _token }.transfer(_to, _amount.into());
                 return _amount;
             } else {
-                let balanceBefore = IERC20Dispatcher { contract_address: _token }
+                let balanceBefore = DualERC20 { contract_address: _token }
                     .balance_of(contract_address);
-                IERC20Dispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                let balanceAfter = IERC20Dispatcher { contract_address: _token }
+                DualERC20 { contract_address: _token }.transfer(_to, _amount.into());
+                let balanceAfter = DualERC20 { contract_address: _token }
                     .balance_of(contract_address);
                 let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
                 assert(
@@ -612,15 +612,15 @@ mod Zklink {
                 );
 
             // Interactions
-            let receiverBalanceBefore: u256 = IERC20Dispatcher { contract_address: tokenAddress }
+            let receiverBalanceBefore: u256 = DualERC20 { contract_address: tokenAddress }
                 .balance_of(_receiver);
-            let acceptorBalanceBefore: u256 = IERC20Dispatcher { contract_address: tokenAddress }
+            let acceptorBalanceBefore: u256 = DualERC20 { contract_address: tokenAddress }
                 .balance_of(_acceptor);
-            let _ = IERC20Dispatcher { contract_address: tokenAddress }
+            let _ = DualERC20 { contract_address: tokenAddress }
                 .transfer_from(_acceptor, _receiver, _amountTransfer.into());
-            let receiverBalanceAfter: u256 = IERC20Dispatcher { contract_address: tokenAddress }
+            let receiverBalanceAfter: u256 = DualERC20 { contract_address: tokenAddress }
                 .balance_of(_receiver);
-            let acceptorBalanceAfter: u256 = IERC20Dispatcher { contract_address: tokenAddress }
+            let acceptorBalanceAfter: u256 = DualERC20 { contract_address: tokenAddress }
                 .balance_of(_acceptor);
             let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore)
                 .try_into()
@@ -1593,19 +1593,17 @@ mod Zklink {
             let this = get_contract_address();
             let mut _amount = _amount;
             if rt.standard {
-                IERC20Dispatcher { contract_address: _tokenAddress }
+                DualERC20 { contract_address: _tokenAddress }
                     .transfer_from(sender, this, _amount.into());
             } else {
                 // support non-standard tokens
-                let balanceBefore = IERC20Dispatcher { contract_address: _tokenAddress }
-                    .balance_of(this);
+                let balanceBefore = DualERC20 { contract_address: _tokenAddress }.balance_of(this);
                 // NOTE, the balance of this contract will be increased
                 // if the token is not a pure erc20 token, it could do anything within the transferFrom
                 // we MUST NOT use `token.balanceOf(address(this))` in any control structures
-                IERC20Dispatcher { contract_address: _tokenAddress }
+                DualERC20 { contract_address: _tokenAddress }
                     .transfer_from(sender, this, _amount.into());
-                let balanceAfter = IERC20Dispatcher { contract_address: _tokenAddress }
-                    .balance_of(this);
+                let balanceAfter = DualERC20 { contract_address: _tokenAddress }.balance_of(this);
                 _amount = (balanceAfter - balanceBefore).try_into().unwrap();
             }
 
