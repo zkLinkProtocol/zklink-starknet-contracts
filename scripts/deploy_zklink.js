@@ -1,7 +1,7 @@
 import { Contract, json, cairo } from "starknet";
 import fs from "fs";
 import { program } from "commander";
-import { logName, contractPath } from "./deploy_log_name.js"
+import { logName, contractPath } from "./constants.js"
 import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklinkConstructorArgs, buildGateKeeperConstructorArgs, getClassHashFromError } from "./utils.js";
 
 
@@ -9,7 +9,7 @@ program
     .command("declareZklink")
     .description("Declare zklink and verifier contract")
     .action(async () => {
-        declare_zklink();
+        await declare_zklink();
     });
 
 program
@@ -26,7 +26,7 @@ program
     .option('--skip-verify', 'Skip verification', false)
     .option('--force', 'Force redeploy', false)
     .action(async (options) => {
-        deploy_zklink(options);
+        await deploy_zklink(options);
     });
 
 async function declare_zklink() {

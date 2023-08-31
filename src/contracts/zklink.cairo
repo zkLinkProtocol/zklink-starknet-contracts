@@ -504,8 +504,6 @@ mod Zklink {
 
     #[external(v0)]
     impl Zklink of super::IZklink<ContractState> {
-        // TODO: upgrade interface
-
         // Deposit ERC20 token to Layer 2 - transfer ERC20 tokens from user into contract, validate it, register deposit
         // it MUST be ok to call other external functions within from this function
         // when the token(eg. erc777) is not a pure erc20 token

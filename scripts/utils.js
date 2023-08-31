@@ -1,5 +1,7 @@
 import fs from "fs";
 import { Provider, CallData, Account, constants } from "starknet";
+import { exec } from "child_process";
+import { stdout } from "process";
 
 
 function buildProvider(networkConfig) {
@@ -21,7 +23,7 @@ function buildProvider(networkConfig) {
 
 export async function connectStarknet() {
     // read config json file
-    const netName = process.env.NET === undefined ? "devnet" : process.env.NET;
+    const netName = process.env.NET === undefined ? "EXAMPLE" : process.env.NET;
     let netConfig = await fs.promises.readFile(`./etc/${netName}.json`, "utf-8");
     netConfig = JSON.parse(netConfig);
 
@@ -35,6 +37,12 @@ export async function connectStarknet() {
     const governor = new Account(provider, netConfig.network.accounts.governor.address, netConfig.network.accounts.governor.privateKey);
     console.log('✅ Governor account connected, address =', governor.address);
     return { provider, deployer, governor, netConfig};
+}
+
+export function buildFaucetTokenConstructorArgs(abi, name, symbol, decimals, fromTransferFeeRatio, toTransferFeeRatio) {
+    const contractCallData = new CallData(abi);
+    const constructorArgs = contractCallData.compile("constructor", [name, symbol, decimals, fromTransferFeeRatio, toTransferFeeRatio])
+    return constructorArgs;
 }
 
 export function buildGateKeeperConstructorArgs(abi, master, mainContract) {
@@ -90,4 +98,19 @@ export function getClassHashFromError(error) {
     } else {
         return undefined;
     }
+}
+
+export function executeCommand(command) {
+    return new Promise((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing command: ${error.message}`);
+            console.error(`Command error: ${stderr}`);
+            console.error(`Command output: ${stdout}`);
+            resolve('');
+        } else {
+            resolve(stdout);
+        }
+        });
+    });
 }
