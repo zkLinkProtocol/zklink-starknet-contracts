@@ -1,5 +1,7 @@
 import fs from "fs";
 import { Provider, CallData, Account, constants } from "starknet";
+import { exec } from "child_process";
+import { stdout } from "process";
 
 
 function buildProvider(networkConfig) {
@@ -96,4 +98,19 @@ export function getClassHashFromError(error) {
     } else {
         return undefined;
     }
+}
+
+export function executeCommand(command) {
+    return new Promise((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing command: ${error.message}`);
+            console.error(`Command error: ${stderr}`);
+            console.error(`Command output: ${stdout}`);
+            resolve('');
+        } else {
+            resolve(stdout);
+        }
+        });
+    });
 }
