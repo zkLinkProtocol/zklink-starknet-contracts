@@ -27,6 +27,8 @@ const VERIFIER_SIERRA_PATH = "./target/release/zklink_Verifier.sierra.json";
 const VERIFIER_CASM_PATH = "./target/release/zklink_Verifier.casm.json";
 const ZKLINK_SIERRA_PATH = "./target/release/zklink_Zklink.sierra.json";
 const ZKLINK_CASM_PATH = "./target/release/zklink_Zklink.casm.json";
+const FAUCET_TOKEN_SIERRA_PATH = "./target/release/zklink_FaucetToken.sierra.json";
+const FAUCET_TOKEN_CASM_PATH = "./target/release/zklink_FaucetToken.casm.json";
 
 export var contractPath = {
     GATEKEEPER_SIERRA_PATH,
@@ -34,7 +36,9 @@ export var contractPath = {
     VERIFIER_SIERRA_PATH,
     VERIFIER_CASM_PATH,
     ZKLINK_SIERRA_PATH,
-    ZKLINK_CASM_PATH
+    ZKLINK_CASM_PATH,
+    FAUCET_TOKEN_SIERRA_PATH,
+    FAUCET_TOKEN_CASM_PATH
 }
 
 export var logName = {

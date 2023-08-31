@@ -15,7 +15,8 @@
     "starknet": "^5.19.5"
   },
   "scripts": {
-    "declare": "node scripts/deploy_zklink.js declareZklink",
-    "deploy": "node scripts/deploy_zklink.js deployZklink"
+    "declareZklink": "node scripts/deploy_zklink.js declareZklink",
+    "deployZklink": "node scripts/deploy_zklink.js deployZklink",
+    "deployFaucetToken": "node scripts/deploy_faucet.js deployFaucetToken"
   }
 }

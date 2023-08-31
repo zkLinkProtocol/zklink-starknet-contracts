@@ -37,6 +37,12 @@ export async function connectStarknet() {
     return { provider, deployer, governor, netConfig};
 }
 
+export function buildFaucetTokenConstructorArgs(abi, name, symbol, decimals, fromTransferFeeRatio, toTransferFeeRatio) {
+    const contractCallData = new CallData(abi);
+    const constructorArgs = contractCallData.compile("constructor", [name, symbol, decimals, fromTransferFeeRatio, toTransferFeeRatio])
+    return constructorArgs;
+}
+
 export function buildGateKeeperConstructorArgs(abi, master, mainContract) {
     const contractCallData = new CallData(abi);
     const constructorArgs = contractCallData.compile("constructor", [master, mainContract])
