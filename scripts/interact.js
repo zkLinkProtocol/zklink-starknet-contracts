@@ -16,6 +16,14 @@ program
         await add_token(options);
     });
 
+program
+    .command("addBridge")
+    .description("Add bridge to zkLink")
+    .requiredOption('--bridge <bridge>', 'The bridge address (default get from deploy log)')
+    .action(async (options) => {
+        await add_bridge(options);
+    });
+
 program.parse();
 
 async function add_token(options) {
@@ -44,4 +52,20 @@ async function add_token(options) {
     const tx = await zklink.addToken(call.calldata);
     await provider.waitForTransaction(tx.transaction_hash);
     console.log('✅ zklink add new ERC20 token success, tx:', tx.transaction_hash);
+}
+
+async function add_bridge(options) {
+    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
+
+    const bridgeAddress = options.bridge;
+    const zklinkAddress = deployLog[logName.DEPLOY_LOG_ZKLINK];
+    const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
+    const zklink = new Contract(zklinkContractSierra.abi, zklinkAddress, provider);
+
+    zklink.connect(governor);
+    const call = zklink.populate("addBridge", [bridgeAddress]);
+    const tx = await zklink.addBridge(call.calldata);
+    await provider.waitForTransaction(tx.transaction_hash);
+    console.log('✅ zklink add bridge success, tx:', tx.transaction_hash);
 }
