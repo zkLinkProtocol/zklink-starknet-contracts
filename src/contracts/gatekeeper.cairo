@@ -1,4 +1,5 @@
 use starknet::{ContractAddress, ClassHash};
+use zklink::utils::data_structures::DataStructures::UpgradeStatus;
 
 #[starknet::interface]
 trait IUpgradeGateKeeper<TContractState> {
@@ -8,6 +9,14 @@ trait IUpgradeGateKeeper<TContractState> {
     fn startUpgrade(ref self: TContractState, _newTargets: Array<ClassHash>);
     fn finishUpgrade(ref self: TContractState) -> bool;
     fn cancelUpgrade(ref self: TContractState);
+    fn upgradeStatus(self: @TContractState) -> UpgradeStatus;
+    fn mainContract(self: @TContractState) -> ContractAddress;
+    fn managedContracts(self: @TContractState, _index: usize) -> ContractAddress;
+    fn managedContractsLength(self: @TContractState) -> usize;
+    fn noticePeriodFinishTimestamp(self: @TContractState) -> u256;
+    fn nextTargets(self: @TContractState, _index: usize) -> ClassHash;
+    fn nextTargetsLength(self: @TContractState) -> usize;
+    fn versionId(self: @TContractState) -> u256;
 }
 
 #[starknet::contract]
@@ -28,7 +37,7 @@ mod UpgradeGateKeeper {
         mainContract: ContractAddress,
         // public, Array of addresses of upgradeable contracts managed by the gatekeeper
         managedContracts: LegacyMap::<usize, ContractAddress>,
-        // internal, managedContracts length
+        // public, managedContracts length
         managedContractsLength: usize,
         // public, upgrade status
         upgradeStatus: UpgradeStatus,
@@ -38,7 +47,7 @@ mod UpgradeGateKeeper {
         // public, Addresses of the next versions of the contracts to be upgraded (if element of this array is equal to zero address it means that appropriate upgradeable contract wouldn't be upgraded this time)
         // Will be empty in case of not active upgrade mode
         nextTargets: LegacyMap::<usize, ClassHash>,
-        // internal, nextTargets length
+        // public, nextTargets length
         nextTargetsLength: usize,
         // public, Version id of contracts
         versionId: u256
@@ -257,6 +266,38 @@ mod UpgradeGateKeeper {
             self.nextTargetsLength.write(0);
 
             self.emit(Event::UpgradeCancel(UpgradeCancel { versionId: self.versionId.read() }))
+        }
+
+        fn upgradeStatus(self: @ContractState) -> UpgradeStatus {
+            self.upgradeStatus.read()
+        }
+
+        fn mainContract(self: @ContractState) -> ContractAddress {
+            self.mainContract.read()
+        }
+
+        fn managedContracts(self: @ContractState, _index: usize) -> ContractAddress {
+            self.managedContracts.read(_index)
+        }
+
+        fn managedContractsLength(self: @ContractState) -> usize {
+            self.managedContractsLength.read()
+        }
+
+        fn noticePeriodFinishTimestamp(self: @ContractState) -> u256 {
+            self.noticePeriodFinishTimestamp.read()
+        }
+
+        fn nextTargets(self: @ContractState, _index: usize) -> ClassHash {
+            self.nextTargets.read(_index)
+        }
+
+        fn nextTargetsLength(self: @ContractState) -> usize {
+            self.nextTargetsLength.read()
+        }
+
+        fn versionId(self: @ContractState) -> u256 {
+            self.versionId.read()
         }
     }
 
