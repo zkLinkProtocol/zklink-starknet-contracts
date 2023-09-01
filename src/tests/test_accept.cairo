@@ -247,7 +247,7 @@ fn test_zklink_accept_standard_erc20_success() {
     let address = zklink_dispatcher.getAcceptor(fwAId, hash);
     assert(address == bob, 'acceptor');
 
-    let balance = token2_dispatcher.balance_of(alice);
+    let balance = token2_dispatcher.balanceOf(alice);
     assert(balance == amountReceive.into(), 'balance');
 }
 

@@ -104,7 +104,7 @@ async function declare_zklink() {
 
         try {
             const zklinkDeclareResponse = await deployer.declare({ contract: zklinkContractSierra, casm: zklinkContractCasm });
-            await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
+            await provider.waitForTransaction(zklinkDeclareResponse.transaction_hash);
             zklinkContractClassHash = zklinkDeclareResponse.class_hash;
             console.log('✅ Zklink Contract declared with classHash = ', zklinkContractClassHash);
         } catch (error) {

@@ -128,13 +128,13 @@ fn test_zklink_withdrawPendingBalance_standard_erc20_success() {
     assert(balance == depositAmount, 'balance1');
 
     // action2
-    let b0 = token2_dispatcher.balance_of(alice);
+    let b0 = token2_dispatcher.balanceOf(alice);
     let amount0: u128 = 500000000000000000; // 0.5 Ether
     zklink_dispatcher.withdrawPendingBalance(alice, token2.tokenId, amount0);
 
     // check2
     utils::assert_event_Withdrawal(zklink, token2.tokenId, amount0);
-    let balance = token2_dispatcher.balance_of(alice);
+    let balance = token2_dispatcher.balanceOf(alice);
     assert(balance == b0 + amount0.into(), 'balance2');
     let balance = zklink_dispatcher.getPendingBalance(utils::extendAddress(alice), token2.tokenId);
     assert(balance == depositAmount - amount0, 'balance3');
@@ -146,7 +146,7 @@ fn test_zklink_withdrawPendingBalance_standard_erc20_success() {
 
     // check3
     utils::assert_event_Withdrawal(zklink, token2.tokenId, leftAmount);
-    let balance = token2_dispatcher.balance_of(alice);
+    let balance = token2_dispatcher.balanceOf(alice);
     assert(balance == b0 + depositAmount.into(), 'balance4');
     let balance = zklink_dispatcher.getPendingBalance(utils::extendAddress(alice), token2.tokenId);
     assert(balance == 0, 'balance5');
@@ -198,7 +198,7 @@ fn test_zklink_withdrawPendingBalance_nonstandard_erc20_success() {
     assert(balance == reallyDepositAmount, 'balance1');
 
     // action2
-    let b0 = token3_dispatcher.balance_of(alice);
+    let b0 = token3_dispatcher.balanceOf(alice);
     let amount0: u128 = 500000000000000000; // 0.5 Ether
     let reallyAmount0: u128 = 550000000000000000; // 0.55 Ether, 0.5 * 1.1
     let reallyReceive0: u128 = 400000000000000000; // 0.4 Ether, 0.5 * 0.8
@@ -206,7 +206,7 @@ fn test_zklink_withdrawPendingBalance_nonstandard_erc20_success() {
 
     // check2
     utils::assert_event_Withdrawal(zklink, token3.tokenId, reallyAmount0);
-    let balance = token3_dispatcher.balance_of(alice);
+    let balance = token3_dispatcher.balanceOf(alice);
     assert(balance == b0 + reallyReceive0.into(), 'balance2');
     let balance = zklink_dispatcher.getPendingBalance(utils::extendAddress(alice), token3.tokenId);
     assert(balance == reallyDepositAmount - reallyAmount0, 'balance3');

@@ -227,17 +227,17 @@ fn test_zklink_deposit_standard_erc20_success() {
 
     set_contract_address(defaultSender);
     token2_dispatcher.mint(10000);
-    let senderBalance = token2_dispatcher.balance_of(defaultSender);
-    let contractBalance = token2_dispatcher.balance_of(zklink);
+    let senderBalance = token2_dispatcher.balanceOf(defaultSender);
+    let contractBalance = token2_dispatcher.balanceOf(zklink);
     token2_dispatcher.approve(zklink, 100);
     zklink_dispatcher
         .depositERC20(token2.tokenAddress, amount, utils::extendAddress(to), subAccountId, false);
     assert(
-        token2_dispatcher.balance_of(zklink) == contractBalance + amount.into(),
+        token2_dispatcher.balanceOf(zklink) == contractBalance + amount.into(),
         'invalid contract balance'
     );
     assert(
-        token2_dispatcher.balance_of(defaultSender) == senderBalance - amount.into(),
+        token2_dispatcher.balanceOf(defaultSender) == senderBalance - amount.into(),
         'invalid sender balance'
     );
 
@@ -325,18 +325,18 @@ fn test_zklink_deposit_nonstandard_erc20_success() {
 
     set_contract_address(defaultSender);
     token3_dispatcher.mint(10000);
-    let senderBalance = token3_dispatcher.balance_of(defaultSender);
-    let contractBalance = token3_dispatcher.balance_of(zklink);
+    let senderBalance = token3_dispatcher.balanceOf(defaultSender);
+    let contractBalance = token3_dispatcher.balanceOf(zklink);
     token3_dispatcher.approve(zklink, 100);
     zklink_dispatcher
         .depositERC20(token3.tokenAddress, amount, utils::extendAddress(to), subAccountId, false);
     assert(
-        token3_dispatcher.balance_of(zklink) == contractBalance
+        token3_dispatcher.balanceOf(zklink) == contractBalance
             + (amount.into() - receiverFee.into()),
         'invalid contract balance'
     );
     assert(
-        token3_dispatcher.balance_of(defaultSender) == senderBalance
+        token3_dispatcher.balanceOf(defaultSender) == senderBalance
             - (amount.into() + senderFee.into()),
         'invalid sender balance'
     );
@@ -375,17 +375,17 @@ fn test_zklink_deposit_erc20_mapping_success() {
 
     set_contract_address(defaultSender);
     token4_dispatcher.mint(10000);
-    let senderBalance = token4_dispatcher.balance_of(defaultSender);
-    let contractBalance = token4_dispatcher.balance_of(zklink);
+    let senderBalance = token4_dispatcher.balanceOf(defaultSender);
+    let contractBalance = token4_dispatcher.balanceOf(zklink);
     token4_dispatcher.approve(zklink, 100);
     zklink_dispatcher
         .depositERC20(token4.tokenAddress, amount, utils::extendAddress(to), subAccountId, true);
     assert(
-        token4_dispatcher.balance_of(zklink) == contractBalance + amount.into(),
+        token4_dispatcher.balanceOf(zklink) == contractBalance + amount.into(),
         'invalid contract balance'
     );
     assert(
-        token4_dispatcher.balance_of(defaultSender) == senderBalance - amount.into(),
+        token4_dispatcher.balanceOf(defaultSender) == senderBalance - amount.into(),
         'invalid sender balance'
     );
 
@@ -425,17 +425,17 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
 
     set_contract_address(defaultSender);
     token5_dispatcher.mint(10000000000); // 10000 * 10^6
-    let senderBalance = token5_dispatcher.balance_of(defaultSender);
-    let contractBalance = token5_dispatcher.balance_of(zklink);
+    let senderBalance = token5_dispatcher.balanceOf(defaultSender);
+    let contractBalance = token5_dispatcher.balanceOf(zklink);
     token5_dispatcher.approve(zklink, 100000000); // 100 * 10^6
     zklink_dispatcher
         .depositERC20(token5.tokenAddress, amount, utils::extendAddress(to), subAccountId, false);
     assert(
-        token5_dispatcher.balance_of(zklink) == contractBalance + amount.into(),
+        token5_dispatcher.balanceOf(zklink) == contractBalance + amount.into(),
         'invalid contract balance'
     );
     assert(
-        token5_dispatcher.balance_of(defaultSender) == senderBalance - amount.into(),
+        token5_dispatcher.balanceOf(defaultSender) == senderBalance - amount.into(),
         'invalid sender balance'
     );
 
