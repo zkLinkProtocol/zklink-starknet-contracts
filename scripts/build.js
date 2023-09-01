@@ -72,7 +72,7 @@ async function build() {
     const minChainId = netConfig.macro.MIN_CHAIN_ID;
     const maxChainId = netConfig.macro.MAX_CHAIN_ID;
     const allChains = netConfig.macro.ALL_CHAINS;
-    const chainIndex = (1 << chainId) - 1;
+    const chainIndex = 1 << (chainId - 1);
 
     const configs = {
         blockPeriod,
