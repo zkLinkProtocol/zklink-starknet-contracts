@@ -64,10 +64,10 @@ fn test_zklink_normal_withdraw_erc20_success() {
 
     token2_dispatcher.mintTo(zklink, amount.into());
 
-    let b0 = token2_dispatcher.balance_of(owner);
+    let b0 = token2_dispatcher.balanceOf(owner);
     zklink_dispatcher.testExecuteWithdraw(op);
     zklink_dispatcher.withdrawPendingBalance(owner, tokenId, amount);
-    let b1 = token2_dispatcher.balance_of(owner);
+    let b1 = token2_dispatcher.balanceOf(owner);
     assert(b1 - b0 == amount.into(), 'balance');
 }
 
@@ -116,10 +116,10 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
 
     token2_dispatcher.mintTo(zklink, amount.into());
 
-    let b0 = token2_dispatcher.balance_of(owner);
+    let b0 = token2_dispatcher.balanceOf(owner);
     zklink_dispatcher.testExecuteWithdraw(op);
     zklink_dispatcher.withdrawPendingBalance(owner, tokenId, amount);
-    let b1 = token2_dispatcher.balance_of(owner);
+    let b1 = token2_dispatcher.balanceOf(owner);
     assert(b1 - b0 == amount.into(), 'balance');
 
     // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
@@ -168,10 +168,10 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     let fastWithdraw: u8 = 1;
     let MAX_WITHDRAW_FEE_RATE: u16 = 10000;
 
-    let bobBalance0 = token5_dispatcher.balance_of(bob);
+    let bobBalance0 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance0 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(bob), tokenId);
-    let aliceBalance0 = token5_dispatcher.balance_of(alice);
+    let aliceBalance0 = token5_dispatcher.balanceOf(alice);
     let alicePendingBalance0 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(alice), tokenId);
 
@@ -208,10 +208,10 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     };
     zklink_dispatcher.testExecuteWithdraw(op);
 
-    let aliceBalance1 = token5_dispatcher.balance_of(alice);
+    let aliceBalance1 = token5_dispatcher.balanceOf(alice);
     let alicePendingBalance1 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(alice), tokenId);
-    let bobBalance1 = token5_dispatcher.balance_of(bob);
+    let bobBalance1 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance1 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(bob), tokenId);
 
