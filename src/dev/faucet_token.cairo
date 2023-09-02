@@ -5,15 +5,15 @@ trait IFaucetToken<TContractState> {
     fn name(self: @TContractState) -> felt252;
     fn symbol(self: @TContractState) -> felt252;
     fn decimals(self: @TContractState) -> u8;
-    fn total_supply(self: @TContractState) -> u256;
-    fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
+    fn totalSupply(self: @TContractState) -> u256;
+    fn balanceOf(self: @TContractState, account: ContractAddress) -> u256;
     fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(
+    fn transferFrom(
         ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool;
     fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
-    fn mint_to(ref self: TContractState, to: ContractAddress, amount: u256) -> bool;
+    fn mintTo(ref self: TContractState, to: ContractAddress, amount: u256) -> bool;
 }
 
 #[starknet::contract]
@@ -88,11 +88,11 @@ mod FaucetToken {
             self._decimals.read()
         }
 
-        fn total_supply(self: @ContractState) -> u256 {
+        fn totalSupply(self: @ContractState) -> u256 {
             self._total_supply.read()
         }
 
-        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
+        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
             self._balances.read(account)
         }
 
@@ -108,7 +108,7 @@ mod FaucetToken {
             true
         }
 
-        fn transfer_from(
+        fn transferFrom(
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -126,7 +126,7 @@ mod FaucetToken {
             true
         }
 
-        fn mint_to(ref self: ContractState, to: ContractAddress, amount: u256) -> bool {
+        fn mintTo(ref self: ContractState, to: ContractAddress, amount: u256) -> bool {
             self._mint(to, amount);
             true
         }
