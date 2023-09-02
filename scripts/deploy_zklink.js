@@ -180,10 +180,11 @@ async function deploy_zklink(options) {
         );
 
         const deployResponse = await deployer.deployContract({ classHash: deployLog[logName.DEPLOY_LOG_ZKLINK_CLASS_HASH], constructorCalldata: zklinkConstructorArgs });
-        await provider.waitForTransaction(deployResponse.transaction_hash);
-
+        const tx = await provider.waitForTransaction(deployResponse.transaction_hash);
         console.log('✅ zklink Contract deployed at =', deployResponse.contract_address);
         deployLog[logName.DEPLOY_LOG_ZKLINK] = deployResponse.contract_address;
+        deployLog[logName.DEPLOY_LOG_ZKLINK_TX_HASH] = deployResponse.transaction_hash;
+        deployLog[logName.DEPLOY_LOG_ZKLINK_BLOCK_NUMBER] = tx.block_number;
         fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
     } else {
         console.log('✅ zklink Contract already deployed at =', deployLog[logName.DEPLOY_LOG_ZKLINK]);
