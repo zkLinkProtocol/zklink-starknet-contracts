@@ -36,7 +36,7 @@ const MAX_SUB_ACCOUNT_ID: u8 = 31;
 
 // Expected average period of block creation, default 15s
 // In starknet, block_number and block_timestamp type is u64
-const BLOCK_PERIOD: u64 = 15;
+const BLOCK_PERIOD: u64 = 1;
 
 // Operation chunks:
 // DEPOSIT_BYTES = 3 * CHUNK_BYTES
@@ -80,10 +80,10 @@ const CHAIN_ID: u8 = 1;
 const MIN_CHAIN_ID: u8 = 1;
 
 // Max chain id defined by ZkLink
-const MAX_CHAIN_ID: u8 = 4;
+const MAX_CHAIN_ID: u8 = 2;
 
 // All chain index, for example [1, 2, 3, 4] => 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 = 15
-const ALL_CHAINS: u256 = 15;
+const ALL_CHAINS: u256 = 3;
 
 // Chain index, CHAIN_ID is non-zero value
 const CHAIN_INDEX: u256 = 1;

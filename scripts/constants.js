@@ -36,6 +36,15 @@ const ZKLINK_CONSTANTS_PATH = "./src/utils/constants.cairo";
 // command
 const COMMAND_BUILD = "scarb --release build";
 
+// upgrade status
+const IDLE = "Idle";
+const NOTICE_PERIOD = "NoticePeriod";
+
+export var UpgradeStatus = {
+    IDLE,
+    NOTICE_PERIOD
+}
+
 export var command = {
     COMMAND_BUILD
 }

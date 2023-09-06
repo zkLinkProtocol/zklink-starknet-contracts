@@ -16,8 +16,8 @@
   },
   "scripts": {
     "build": "node scripts/build.js build",
-    "declareZklink": "node scripts/deploy_zklink.js declareZklink",
     "deployZklink": "node scripts/deploy_zklink.js deployZklink",
+    "upgradeZklink": "node scripts/upgrade_zklink.js upgradeZklink",
     "deployFaucetToken": "node scripts/deploy_faucet.js deployFaucetToken",
     "addToken": "node scripts/interact.js addToken",
     "addBridge": "node scripts/interact.js addBridge"
