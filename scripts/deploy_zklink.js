@@ -2,15 +2,8 @@ import { Contract, json, cairo } from "starknet";
 import fs from "fs";
 import { program } from "commander";
 import { logName, contractPath } from "./constants.js"
-import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklinkConstructorArgs, buildGateKeeperConstructorArgs, getClassHashFromError } from "./utils.js";
+import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklinkConstructorArgs, buildGateKeeperConstructorArgs, declare_zklink } from "./utils.js";
 
-
-program
-    .command("declareZklink")
-    .description("Declare zklink and verifier contract")
-    .action(async () => {
-        await declare_zklink();
-    });
 
 program
     .command("deployZklink")
@@ -29,107 +22,19 @@ program
         await deploy_zklink(options);
     });
 
-async function declare_zklink() {
-    const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
-
-    deployLog[logName.DEPLOY_LOG_DEPLOYER] = deployer.address;
-    fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
-
-    // declare gatekeeper contract
-    if (!(logName.DEPLOY_LOG_GATEKEEPER_CLASS_HASH in deployLog)) {
-        let gatekeeperContractClassHash;
-        const gatekeeperContractSierra = json.parse(fs.readFileSync(contractPath.GATEKEEPER_SIERRA_PATH).toString("ascii"));
-        const gatekeeperContractCasm = json.parse(fs.readFileSync(contractPath.GATEKEEPER_CASM_PATH).toString("ascii"));
-
-        try {
-            const gatekeeperDeclareResponse = await deployer.declare({ contract: gatekeeperContractSierra, casm: gatekeeperContractCasm });
-            await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
-            gatekeeperContractClassHash = gatekeeperDeclareResponse.class_hash;
-            console.log('✅ Gatekeeper Contract declared with classHash = ', gatekeeperContractClassHash);
-        } catch (error) {
-            if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
-                throw error;
-            }
-
-            gatekeeperContractClassHash = getClassHashFromError(error);
-            if (gatekeeperContractClassHash === undefined) {
-                console.log('❌ Cannot declare gatekeeper contract class hash:', error);
-                return;
-            } else {
-                console.log('✅ Gatekeeper Contract already declared with classHash =', gatekeeperContractClassHash);
-            }
-        }
-        deployLog[logName.DEPLOY_LOG_GATEKEEPER_CLASS_HASH] = gatekeeperContractClassHash;
-        fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
-    } else {
-        console.log('✅ Gatekeeper Contract already declared with classHash =', deployLog[logName.DEPLOY_LOG_GATEKEEPER_CLASS_HASH]);
-    }
-
-    // declare verifier contract
-    if (!(logName.DEPLOY_LOG_VERIFIER_CLASS_HASH in deployLog)) {
-        let verifierContractClassHash;
-        const verifierContractSierra = json.parse(fs.readFileSync(contractPath.VERIFIER_SIERRA_PATH).toString("ascii"));
-        const verifierContractCasm = json.parse(fs.readFileSync(contractPath.VERIFIER_CASM_PATH).toString("ascii"));
-
-        try {
-            const verifierDeclareResponse = await deployer.declare({ contract: verifierContractSierra, casm: verifierContractCasm });
-            await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
-            verifierContractClassHash = verifierDeclareResponse.class_hash;
-            console.log('✅ Verifier Contract declared with classHash = ', verifierContractClassHash);
-        } catch (error) {
-            if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
-                throw error;
-            }
-
-            verifierContractClassHash = getClassHashFromError(error);
-            if (verifierContractClassHash === undefined) {
-                console.log('❌ Cannot declare verifier contract class hash:', error);
-                return;
-            } else {
-                console.log('✅ Verifier Contract already declared with classHash =', verifierContractClassHash);
-            }
-        }
-        deployLog[logName.DEPLOY_LOG_VERIFIER_CLASS_HASH] = verifierContractClassHash;
-        fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
-    } else {
-        console.log('✅ Verifier Contract already declared with classHash =', deployLog[logName.DEPLOY_LOG_VERIFIER_CLASS_HASH]);
-    }
-
-    // declare zklink contract
-    if (!(logName.DEPLOY_LOG_ZKLINK_CLASS_HASH in deployLog)) {
-        let zklinkContractClassHash;
-        const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
-        const zklinkContractCasm = json.parse(fs.readFileSync(contractPath.ZKLINK_CASM_PATH).toString("ascii"));
-
-        try {
-            const zklinkDeclareResponse = await deployer.declare({ contract: zklinkContractSierra, casm: zklinkContractCasm });
-            await provider.waitForTransaction(zklinkDeclareResponse.transaction_hash);
-            zklinkContractClassHash = zklinkDeclareResponse.class_hash;
-            console.log('✅ Zklink Contract declared with classHash = ', zklinkContractClassHash);
-        } catch (error) {
-            if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
-                throw error;
-            }
-
-            zklinkContractClassHash = getClassHashFromError(error);
-            if (zklinkContractClassHash === undefined) {
-                console.log('❌ Cannot declare zklink contract class hash:', error);
-                return;
-            } else {
-                console.log('✅ Zklink Contract already declared with classHash =', zklinkContractClassHash);
-            }
-        }
-        deployLog[logName.DEPLOY_LOG_ZKLINK_CLASS_HASH] = zklinkContractClassHash;
-        fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
-    } else {
-        console.log('✅ Zklink Contract already declared with classHash =', deployLog[logName.DEPLOY_LOG_ZKLINK_CLASS_HASH]);
-    }
-}
-
 async function deploy_zklink(options) {
-    const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
+    const log = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
+    const { deployLogPath, deployLog } = log;
     let { provider, deployer, governor, netConfig } = await connectStarknet();
+
+    // declare contracts
+    const declare_options = {
+        declareGatekeeper: true,
+        declareVerifier: true,
+        declareZklink: true,
+        upgrade: false
+    };
+    await declare_zklink(provider, deployer, log, declare_options);
 
     if (options.governor === undefined) {
         options.governor = netConfig.network.accounts.governor.address;
