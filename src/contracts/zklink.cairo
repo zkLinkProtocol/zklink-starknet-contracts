@@ -273,7 +273,7 @@ mod Zklink {
         tokenIds: LegacyMap::<ContractAddress, u16>,
         // public
         // using map instead of array, index => BridgeInfo
-        // bridgeIndex[bridgeAddress] - 1 => BridgeInfo
+        // bridgeIndex[bridgeAddress] => BridgeInfo
         bridges: LegacyMap::<usize, BridgeInfo>,
         // public
         // bridges length
@@ -1398,13 +1398,13 @@ mod Zklink {
 
         // Get enableBridgeTo status
         fn isBridgeToEnabled(self: @ContractState, _bridge: ContractAddress) -> bool {
-            let index = self.bridgeIndex.read(_bridge) - 1;
+            let index = self.bridgeIndex.read(_bridge);
             self.bridges.read(index).enableBridgeTo
         }
 
         // Get enableBridgeFrom status
         fn isBridgeFromEnabled(self: @ContractState, _bridge: ContractAddress) -> bool {
-            let index = self.bridgeIndex.read(_bridge) - 1;
+            let index = self.bridgeIndex.read(_bridge);
             self.bridges.read(index).enableBridgeFrom
         }
 
