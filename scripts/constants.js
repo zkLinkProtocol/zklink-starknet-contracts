@@ -33,8 +33,17 @@ const FAUCET_TOKEN_SIERRA_PATH = "./target/release/zklink_FaucetToken.sierra.jso
 const FAUCET_TOKEN_CASM_PATH = "./target/release/zklink_FaucetToken.casm.json";
 const ZKLINK_CONSTANTS_PATH = "./src/utils/constants.cairo";
 
+// upgrade status
+const IDLE = "Idle";
+const NOTICE_PERIOD = "NoticePeriod";
+
 // command
 const COMMAND_BUILD = "scarb --release build";
+
+export var UpgradeStatus = {
+    IDLE,
+    NOTICE_PERIOD
+}
 
 export var command = {
     COMMAND_BUILD
