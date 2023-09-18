@@ -31,10 +31,11 @@ export async function connectStarknet() {
     const provider = buildProvider(netConfig.network);
 
     const deployerConfig = netConfig.network.accounts.deployer;
+    const governorConfig = netConfig.network.accounts.governor;
 
-    const deployer = new Account(provider, deployerConfig.address, deployerConfig.privateKey);
+    const deployer = new Account(provider, deployerConfig.address, deployerConfig.privateKey, deployerConfig.cairoVersion);
     console.log('✅ Deployer account connected, address =', deployer.address);
-    const governor = new Account(provider, netConfig.network.accounts.governor.address, netConfig.network.accounts.governor.privateKey);
+    const governor = new Account(provider, governorConfig.address, governorConfig.privateKey, governorConfig.cairoVersion);
     console.log('✅ Governor account connected, address =', governor.address);
     return { provider, deployer, governor, netConfig};
 }

@@ -5,11 +5,13 @@
         "accounts": {
             "deployer": {
                 "address": "",
-                "privateKey": ""
+                "privateKey": "",
+                "cairoVersion": ""
             },
             "governor": {
                 "address": "",
-                "privateKey": ""
+                "privateKey": "",
+                "cairoVersion": ""
             }
         }
     },
