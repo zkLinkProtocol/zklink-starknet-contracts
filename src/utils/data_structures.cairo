@@ -44,7 +44,7 @@ mod DataStructures {
 
     impl StoredBlockInfoIntoBytes of Into<StoredBlockInfo, Bytes> {
         fn into(self: StoredBlockInfo) -> Bytes {
-            let mut bytes = BytesTrait::new_empty();
+            let mut bytes = BytesTrait::new();
             bytes.append_u64(self.blockNumber);
             bytes.append_u64(self.priorityOperations);
             bytes.append_u256(self.pendingOnchainOperationsHash);
