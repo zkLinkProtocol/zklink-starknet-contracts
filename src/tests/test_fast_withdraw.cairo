@@ -125,17 +125,14 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
     // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
     // example = [1, 1, 2, 0x616c696365, 34, 10000000000000000000, 50]
     //
-    // size 61
-    // data = [79537647524229797850344587264, 0, 30151107623175070608391143424, 10995116277760000000000838860800]
-    let pubdata: Bytes = BytesTrait::new(
-        61,
-        array![
-            79537647524229797850344587264,
-            0,
-            30151107623175070608391143424,
-            10995116277760000000000838860800
-        ]
-    );
+    // data = [79537647524229797850344587264, 0, 30151107623175070608391143424]
+    // pending_data = 655360000000000000000050
+    // pending_data_size = 13
+    let pubdata = Bytes {
+        data: array![79537647524229797850344587264, 0, 30151107623175070608391143424],
+        pending_data: 655360000000000000000050,
+        pending_data_size: 13
+    };
     let hash = pubdata.keccak();
     let address = zklink_dispatcher.getAcceptor(accountId, hash);
     assert(address == owner, 'acceptor');

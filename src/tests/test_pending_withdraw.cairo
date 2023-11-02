@@ -106,17 +106,14 @@ fn test_zklink_withdrawPendingBalance_standard_erc20_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 34, 34, 1000000000000000000, 0x616c696365]
     //
-    // size 59
-    // data = [1334420292643450702982333137294458880, 1099511627776000000000000000000, 0, 460069391222763568496640]
-    let pubdata: Bytes = BytesTrait::new(
-        59,
-        array![
-            1334420292643450702982333137294458880,
-            1099511627776000000000000000000,
-            0,
-            460069391222763568496640
-        ]
-    );
+    // data = [1334420292643450702982333137294458880, 1099511627776000000000000000000, 0]
+    // pending_data = 418430673765
+    // pending_data_size = 11
+    let pubdata = Bytes {
+        data: array![1334420292643450702982333137294458880, 1099511627776000000000000000000, 0],
+        pending_data: 418430673765,
+        pending_data_size: 11
+    };
 
     // action1
     zklink_dispatcher.setExodus(true);
@@ -176,17 +173,14 @@ fn test_zklink_withdrawPendingBalance_nonstandard_erc20_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 35, 35, 800000000000000000, 0x616c696365]
     //
-    // size 59
-    // data = [1334420292643450703054391830844014592, 879609302220800000000000000000, 0, 460069391222763568496640]
-    let pubdata: Bytes = BytesTrait::new(
-        59,
-        array![
-            1334420292643450703054391830844014592,
-            879609302220800000000000000000,
-            0,
-            460069391222763568496640
-        ]
-    );
+    // data = [1334420292643450703054391830844014592, 879609302220800000000000000000, 0]
+    // pending_data = 418430673765
+    // pending_data_size = 11
+    let pubdata = Bytes {
+        data: array![1334420292643450703054391830844014592, 879609302220800000000000000000, 0],
+        pending_data: 418430673765,
+        pending_data_size: 11
+    };
 
     // action1
     zklink_dispatcher.setExodus(true);
