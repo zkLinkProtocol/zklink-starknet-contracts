@@ -32,22 +32,22 @@ fn test_min() {
     assert(uint_min(left, right) == left, 'u256 min');
 }
 
-// #[test]
-// #[available_gas(20000000000)]
-// #[should_panic(expected: ('invalid exp',))]
-// fn test_u128_fast_pow2() {
-//     let mut i = 0;
-//     let max_exp = 127;
-//     loop {
-//         if i > max_exp {
-//             break;
-//         }
-//         assert(u128_fast_pow2(i).into() == common_pow(2, i), 'invalid result');
-//         i = i + 1;
-//     };
+#[test]
+#[available_gas(20000000000)]
+#[should_panic(expected: ('exp too big',))]
+fn test_u128_fast_shift() {
+    let mut i = 0;
+    let max_exp = 16;
+    loop {
+        if i == max_exp {
+            break;
+        }
+        assert(u128_fast_shift(i).into() == common_pow(2, i*8), 'invalid result');
+        i = i + 1;
+    };
 
-//     assert(u128_fast_pow2(i).into() == common_pow(2, i), 'panic');
-// }
+    assert(u128_fast_shift(i).into() == common_pow(2, i*8), 'panic');
+}
 
 #[test]
 #[available_gas(20000000000)]

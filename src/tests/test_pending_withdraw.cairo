@@ -74,14 +74,14 @@ fn test_zklink_withdrawPendingBalance_no_pending_balance() {
 }
 
 // calculate pubData from Python
-// from eth_abi.packed import encode_abi_packed
+// from eth_abi.packed import encode_packed
 // def cal():
-//     data = encode_abi_packed(encode_format, example)
+//     data = encode_packed(encode_format, example)
 //     size = len(data)
-//     data += b'\x00' * (16 - size % 16)
 //     data = [int.from_bytes(x, 'big') for x in [data[i:i+16] for i in range(0, len(data), 16)]]
-//     print(size)
-//     print(data)
+//     print(data[:-1])
+//     print(data[-1])
+//     print(size % 16)
 
 #[test]
 #[available_gas(20000000000)]
