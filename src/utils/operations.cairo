@@ -164,7 +164,7 @@ mod Operations {
     impl DepositWriteOperation of OperationWriteTrait<Deposit> {
         fn writeForPriorityQueue(self: @Deposit) -> Bytes {
             let opType = OpType::Deposit(());
-            let mut pubData = BytesTrait::new_empty();
+            let mut pubData = BytesTrait::new();
             pubData.append_u8(opType.into());
             pubData.append_u8(*self.chainId);
             pubData.append_u32(0); // accountId (ignored during hash calculation)
@@ -228,7 +228,7 @@ mod Operations {
     impl FullExitWriteOperation of OperationWriteTrait<FullExit> {
         fn writeForPriorityQueue(self: @FullExit) -> Bytes {
             let opType = OpType::FullExit(());
-            let mut pubData = BytesTrait::new_empty();
+            let mut pubData = BytesTrait::new();
             pubData.append_u8(opType.into());
             pubData.append_u8(*self.chainId);
             pubData.append_u32(*self.accountId);

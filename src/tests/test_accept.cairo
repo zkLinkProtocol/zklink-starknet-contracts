@@ -126,14 +126,14 @@ fn test_zklink_accept_feerate_too_large() {
 }
 
 // calculate pubData from Python
-// from eth_abi.packed import encode_abi_packed
+// from eth_abi.packed import encode_packed
 // def cal():
-//     data = encode_abi_packed(encode_format, example)
+//     data = encode_packed(encode_format, example)
 //     size = len(data)
-//     data += b'\x00' * (16 - size % 16)
 //     data = [int.from_bytes(x, 'big') for x in [data[i:i+16] for i in range(0, len(data), 16)]]
-//     print(size)
-//     print(data)
+//     print(data[:-1])
+//     print(data[-1])
+//     print(size % 16)
 
 #[test]
 #[available_gas(20000000000)]
@@ -149,11 +149,14 @@ fn test_zklink_accept_has_acceptor() {
     // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
     // example = [10, 0, 1, 0x626f62, 33, 100, 100]
     //
-    // size 61
-    // data = [792281625142715433529477431296, 0, 464846565593906591825920, 109952840499200]
-    let pubData: Bytes = BytesTrait::new(
-        61, array![792281625142715433529477431296, 0, 464846565593906591825920, 109952840499200]
-    );
+    // data = [792281625142715433529477431296, 0, 464846565593906591825920]
+    // pending_data = 6553700
+    // pending_data_size = 13
+    let pubData = Bytes {
+        data: array![792281625142715433529477431296, 0, 464846565593906591825920],
+        pending_data: 6553700,
+        pending_data_size: 13
+    };
     let hash = pubData.keccak();
     let fwAId = 1;
     zklink_dispatcher.setAcceptor(fwAId, hash, alice);
@@ -231,17 +234,14 @@ fn test_zklink_accept_standard_erc20_success() {
     // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
     // example = [15, 3, 1, 0x616c696365, 34, 1000000000000000000, 100]
     //
-    // size 61
-    // data = [1189350892743501156703371526144, 0, 30151107623175070608391143424, 1099511627776000000001677721600]
-    let pubData: Bytes = BytesTrait::new(
-        61,
-        array![
-            1189350892743501156703371526144,
-            0,
-            30151107623175070608391143424,
-            1099511627776000000001677721600
-        ]
-    );
+    // data = [1189350892743501156703371526144, 0, 30151107623175070608391143424]
+    // pending_data = 65536000000000000000100
+    // pending_data_size = 13
+    let pubData = Bytes {
+        data: array![1189350892743501156703371526144, 0, 30151107623175070608391143424],
+        pending_data: 65536000000000000000100,
+        pending_data_size: 13
+    };
     let hash = pubData.keccak();
 
     let address = zklink_dispatcher.getAcceptor(fwAId, hash);

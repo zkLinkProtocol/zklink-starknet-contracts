@@ -97,17 +97,15 @@ fn test_u64_array_slice() {
 #[available_gas(20000000000)]
 fn test_concatHash() {
     let hash: u256 = 0xcb1bcb5098bb2f588b82ea341e3b1148b7d1eeea2552d624b30f4240b5b85995;
-    let mut array = ArrayTrait::<u128>::new();
-    array.append(0x10111213141516171810111213141516);
-    array.append(0x17180101020102030400000001000003);
-    array.append(0x04050607080000000000000010111213);
-    array.append(0x14151617180000000000000001020304);
-    array.append(0x05060708090000000000000000000102);
-    array.append(0x0304050607015401855d7796176b05d1);
-    array.append(0x60196ff92381eb7910f5446c2e0e04e1);
-    array.append(0x3db2194a4f0000000000000000000000);
-
-    let bytes: Bytes = BytesTrait::new(117, array);
+    let mut bytes = BytesTrait::new();
+    bytes.append_u128(0x10111213141516171810111213141516);
+    bytes.append_u128(0x17180101020102030400000001000003);
+    bytes.append_u128(0x04050607080000000000000010111213);
+    bytes.append_u128(0x14151617180000000000000001020304);
+    bytes.append_u128(0x05060708090000000000000000000102);
+    bytes.append_u128(0x0304050607015401855d7796176b05d1);
+    bytes.append_u128(0x60196ff92381eb7910f5446c2e0e04e1);
+    bytes.append_u128_packed(0x3db2194a4f, 5);
 
     let res = concatHash(hash, @bytes);
     assert(

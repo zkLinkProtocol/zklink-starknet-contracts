@@ -72,14 +72,14 @@ fn test_zklink_normal_withdraw_erc20_success() {
 }
 
 // calculate pubData from Python
-// from eth_abi.packed import encode_abi_packed
+// from eth_abi.packed import encode_packed
 // def cal():
-//     data = encode_abi_packed(encode_format, example)
+//     data = encode_packed(encode_format, example)
 //     size = len(data)
-//     data += b'\x00' * (16 - size % 16)
 //     data = [int.from_bytes(x, 'big') for x in [data[i:i+16] for i in range(0, len(data), 16)]]
-//     print(size)
-//     print(data)
+//     print(data[:-1])
+//     print(data[-1])
+//     print(size % 16)
 
 #[test]
 #[available_gas(20000000000)]
@@ -125,17 +125,14 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
     // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
     // example = [1, 1, 2, 0x616c696365, 34, 10000000000000000000, 50]
     //
-    // size 61
-    // data = [79537647524229797850344587264, 0, 30151107623175070608391143424, 10995116277760000000000838860800]
-    let pubdata: Bytes = BytesTrait::new(
-        61,
-        array![
-            79537647524229797850344587264,
-            0,
-            30151107623175070608391143424,
-            10995116277760000000000838860800
-        ]
-    );
+    // data = [79537647524229797850344587264, 0, 30151107623175070608391143424]
+    // pending_data = 655360000000000000000050
+    // pending_data_size = 13
+    let pubdata = Bytes {
+        data: array![79537647524229797850344587264, 0, 30151107623175070608391143424],
+        pending_data: 655360000000000000000050,
+        pending_data_size: 13
+    };
     let hash = pubdata.keccak();
     let address = zklink_dispatcher.getAcceptor(accountId, hash);
     assert(address == owner, 'acceptor');

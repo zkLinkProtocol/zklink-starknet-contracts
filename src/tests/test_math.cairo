@@ -1,7 +1,7 @@
 use core::option::OptionTrait;
 use core::traits::{TryInto, Into, DivRem};
 use zklink::utils::math::{
-    u128_fast_pow2, u128_join, u128_split, u128_sub_value, uint_min, fast_power10, u256_fast_pow2
+    u128_fast_shift, u128_join, u128_split, read_sub_u128, uint_min, fast_power10, u256_fast_pow2
 };
 
 #[test]
@@ -34,19 +34,19 @@ fn test_min() {
 
 #[test]
 #[available_gas(20000000000)]
-#[should_panic(expected: ('invalid exp',))]
-fn test_u128_fast_pow2() {
+#[should_panic(expected: ('exp too big',))]
+fn test_u128_fast_shift() {
     let mut i = 0;
-    let max_exp = 127;
+    let max_exp = 16;
     loop {
-        if i > max_exp {
+        if i == max_exp {
             break;
         }
-        assert(u128_fast_pow2(i).into() == common_pow(2, i), 'invalid result');
+        assert(u128_fast_shift(i).into() == common_pow(2, i * 8), 'invalid result');
         i = i + 1;
     };
 
-    assert(u128_fast_pow2(i).into() == common_pow(2, i), 'panic');
+    assert(u128_fast_shift(i).into() == common_pow(2, i * 8), 'panic');
 }
 
 #[test]
@@ -165,46 +165,46 @@ fn test_u128_split_common() {
 }
 
 #[test]
-fn test_u128_sub_value_full() {
+fn test_read_sub_u128_full() {
     let value = 0x01020304050607080102030405060708;
     let value_size = 16;
 
     // 1. offset=0, size=4
-    let sub = u128_sub_value(value, value_size, 0, 4);
+    let sub = read_sub_u128(value, value_size, 0, 4);
     assert(sub == 0x01020304, '1 invalid result');
 
     // 2. offset=0, size=value_size
-    let sub = u128_sub_value(value, value_size, 0, value_size);
+    let sub = read_sub_u128(value, value_size, 0, value_size);
     assert(sub == value, '2 invalid result');
 
     // 3. offset=1, size=value_size-1
-    let sub = u128_sub_value(value, value_size, 1, value_size - 1);
+    let sub = read_sub_u128(value, value_size, 1, value_size - 1);
     assert(sub == 0x020304050607080102030405060708, '3 invalid result');
 
     // 4. offset=3, size=11
-    let sub = u128_sub_value(value, value_size, 3, 11);
+    let sub = read_sub_u128(value, value_size, 3, 11);
     assert(sub == 0x405060708010203040506, '4 invalid result');
 }
 
 #[test]
-fn test_u128_sub_value_common() {
+fn test_read_sub_u128_common() {
     let value = 0x010203040506070801;
     let value_size = 9;
 
     // 1. offset=0, size=4
-    let sub = u128_sub_value(value, value_size, 0, 4);
+    let sub = read_sub_u128(value, value_size, 0, 4);
     assert(sub == 0x01020304, '1 invalid result');
 
     // 2. offset=0, size=value_size
-    let sub = u128_sub_value(value, value_size, 0, value_size);
+    let sub = read_sub_u128(value, value_size, 0, value_size);
     assert(sub == value, '2 invalid result');
 
     // 3. offset=1, size=value_size-1
-    let sub = u128_sub_value(value, value_size, 1, value_size - 1);
+    let sub = read_sub_u128(value, value_size, 1, value_size - 1);
     assert(sub == 0x0203040506070801, '3 invalid result');
 
     // 4. offset=3, size=11
-    let sub = u128_sub_value(value, value_size, 3, 4);
+    let sub = read_sub_u128(value, value_size, 3, 4);
     assert(sub == 0x4050607, '4 invalid result');
 }
 

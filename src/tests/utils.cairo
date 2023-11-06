@@ -243,7 +243,7 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
 }
 
 fn paddingChunk(ref pubdata: Bytes, chunks: usize) {
-    let mut zeroPadding = CHUNK_BYTES * chunks - pubdata.size;
+    let mut zeroPadding = CHUNK_BYTES * chunks - pubdata.size();
     loop {
         if zeroPadding == 0 {
             break;

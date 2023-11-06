@@ -202,14 +202,14 @@ fn test_zklink_deposit_subaccountid_too_large() {
 }
 
 // calculate pubData from Python
-// from eth_abi.packed import encode_abi_packed
+// from eth_abi.packed import encode_packed
 // def cal():
-//     data = encode_abi_packed(encode_format, example)
+//     data = encode_packed(encode_format, example)
 //     size = len(data)
-//     data += b'\x00' * (16 - size % 16)
 //     data = [int.from_bytes(x, 'big') for x in [data[i:i+16] for i in range(0, len(data), 16)]]
-//     print(size)
-//     print(data)
+//     print(data[:-1])
+//     print(data[-1])
+//     print(size % 16)
 
 #[test]
 #[available_gas(20000000000)]
@@ -245,17 +245,14 @@ fn test_zklink_deposit_standard_erc20_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 34, 34, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
     //
-    // size 59
-    // data = [1334420292643450702982333137294458880, 32985348833280, 2112475483491437590759, 179721859689502125521965815952033447936]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
-            1334420292643450702982333137294458880,
-            32985348833280,
-            2112475483491437590759,
-            179721859689502125521965815952033447936
-        ]
-    );
+    // data = [1334420292643450702982333137294458880, 32985348833280, 2112475483491437590759]
+    // pending_data = 163456079180379788815085536
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![1334420292643450702982333137294458880, 32985348833280, 2112475483491437590759],
+        pending_data: 163456079180379788815085536,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
 
@@ -293,17 +290,14 @@ fn test_zklink_deposit_camel_standard_erc20_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 37, 37, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
     //
-    // size 59
-    // data = [1334420292643450703198509217943126016, 32985348833280, 2112475483491437590759, 179721859689502125521965815952033447936]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
-            1334420292643450703198509217943126016,
-            32985348833280,
-            2112475483491437590759,
-            179721859689502125521965815952033447936
-        ]
-    );
+    // data = [1334420292643450703198509217943126016, 32985348833280, 2112475483491437590759]
+    // pending_data = 163456079180379788815085536
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![1334420292643450703198509217943126016, 32985348833280, 2112475483491437590759],
+        pending_data: 163456079180379788815085536,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
 
@@ -345,17 +339,14 @@ fn test_zklink_deposit_nonstandard_erc20_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 35, 35, 24, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
     //
-    // size 59
-    // data = [1334420292643450703054391830844014592, 26388279066624, 2112475483491437590759, 179721859689502125521965815952033447936]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
-            1334420292643450703054391830844014592,
-            26388279066624,
-            2112475483491437590759,
-            179721859689502125521965815952033447936
-        ]
-    );
+    // data = [1334420292643450703054391830844014592, 26388279066624, 2112475483491437590759]
+    // pending_data = 163456079180379788815085536
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![1334420292643450703054391830844014592, 26388279066624, 2112475483491437590759],
+        pending_data: 163456079180379788815085536,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
 
@@ -393,17 +384,14 @@ fn test_zklink_deposit_erc20_mapping_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 17, 1, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
     //
-    // size 59
-    // data = [1334420292643450701757317754765967360, 32985348833280, 2112475483491437590759, 179721859689502125521965815952033447936]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
-            1334420292643450701757317754765967360,
-            32985348833280,
-            2112475483491437590759,
-            179721859689502125521965815952033447936
-        ]
-    );
+    // data = [1334420292643450701757317754765967360, 32985348833280, 2112475483491437590759]
+    // pending_data = 163456079180379788815085536
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![1334420292643450701757317754765967360, 32985348833280, 2112475483491437590759],
+        pending_data: 163456079180379788815085536,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
 
@@ -443,17 +431,18 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
     // example = [1, 1, 0, 0, 36, 36, 30000000000000000000, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
     //
-    // size 59
-    // data = [1334420292643450703126450524393570304, 32985348833280000000000000000000, 2112475483491437590759, 179721859689502125521965815952033447936]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
+    // data = [1334420292643450703126450524393570304, 32985348833280000000000000000000, 2112475483491437590759]
+    // pending_data = 163456079180379788815085536
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![
             1334420292643450703126450524393570304,
             32985348833280000000000000000000,
-            2112475483491437590759,
-            179721859689502125521965815952033447936
-        ]
-    );
+            2112475483491437590759
+        ],
+        pending_data: 163456079180379788815085536,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
 
@@ -556,17 +545,18 @@ fn test_zklink_fullexit_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
     // example = [5, 1, 13, 0, 0x64656661756c7453656e646572, 33, 33, 0]
     //
-    // size 59
-    // data = [6651332275798830227802555977002123264, 110386672137580, 154623465419847618179872172595872792576, 0]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
+    // data = [6651332275798830227802555977002123264, 110386672137580, 154623465419847618179872172595872792576]
+    // pending_data = 0
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![
             6651332275798830227802555977002123264,
             110386672137580,
-            154623465419847618179872172595872792576,
-            0
-        ]
-    );
+            154623465419847618179872172595872792576
+        ],
+        pending_data: 0,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }
 
@@ -588,16 +578,17 @@ fn test_zklink_fullexit_mapping_success() {
     // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
     // example = [5, 1, 13, 0, 0x64656661756c7453656e646572, 17, 1, 0]
     //
-    // size 59
-    // data = [6651332275798830227802555977002123264, 110386672137580, 154623465419847618178719215906893856768, 0]
-    let pubData: Bytes = BytesTrait::new(
-        59,
-        array![
+    // data = [6651332275798830227802555977002123264, 110386672137580, 154623465419847618178719215906893856768]
+    // pending_data = 0
+    // pending_data_size = 11
+    let pubData = Bytes {
+        data: array![
             6651332275798830227802555977002123264,
             110386672137580,
-            154623465419847618178719215906893856768,
-            0
-        ]
-    );
+            154623465419847618178719215906893856768
+        ],
+        pending_data: 0,
+        pending_data_size: 11
+    };
     assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
 }

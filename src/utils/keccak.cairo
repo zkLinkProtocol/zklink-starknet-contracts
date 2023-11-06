@@ -5,7 +5,7 @@ use option::OptionTrait;
 use traits::DivRem;
 use starknet::SyscallResultTrait;
 use keccak::{u128_to_u64, u128_split as u128_split_to_u64, cairo_keccak};
-use zklink::utils::math::{uint_min, u128_split, u128_fast_pow2, u128_join};
+use zklink::utils::math::{uint_min, u128_split, u128_fast_shift, u128_join};
 use zklink::utils::utils::u64_array_slice;
 
 const KECCAK_FULL_RATE_IN_U64S: usize = 17;
@@ -58,7 +58,7 @@ fn keccak_add_uint128_be(ref keccak_input: Array::<u64>, value: u128, value_size
             keccak_input.append(u128_to_u64(reversed_value));
         } else {
             let (high, low) = DivRem::div_rem(
-                reversed_value, u128_fast_pow2(64).try_into().unwrap()
+                reversed_value, u128_fast_shift(8).try_into().unwrap()
             );
             keccak_input.append(u128_to_u64(low));
             keccak_input.append(u128_to_u64(high));

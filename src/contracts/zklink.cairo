@@ -1879,7 +1879,7 @@ mod Zklink {
                     let (_, chunkIdCommitment) = offsetsCommitment.read_u8(chunkId);
                     // offset commitment should be empty
                     assert(chunkIdCommitment == 0, 'h3');
-                    offsetsCommitment.update(chunkId, 0x01);
+                    offsetsCommitment.update_at(chunkId, 0x01);
                 }
 
                 // chainIdOffset = pubdataOffset + 1
@@ -1933,8 +1933,8 @@ mod Zklink {
             _ethWitness: @Bytes
         ) -> (u64, Bytes, Bytes) {
             let mut priorityOperationsProcessed: u64 = 0;
-            let mut processablePubData: Bytes = BytesTrait::new_empty();
-            let mut opPubData: Bytes = BytesTrait::new_empty();
+            let mut processablePubData: Bytes = BytesTrait::new();
+            let mut opPubData: Bytes = BytesTrait::new();
             // ignore check if ops are not part of the current chain
             if _opType == OpType::Deposit(()) {
                 let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
@@ -2225,7 +2225,7 @@ mod Zklink {
         _amount: u128,
         _fastWithdrawFeeRate: u16
     ) -> u256 {
-        let mut bytes: Bytes = BytesTrait::new_empty();
+        let mut bytes: Bytes = BytesTrait::new();
         bytes.append_u32(_accountIdOfNonce);
         bytes.append_u8(_subAccountIdOfNonce);
         bytes.append_u32(_nonce);
@@ -2309,7 +2309,7 @@ mod Zklink {
         } else {
             *(_newBlockExtraData.publicDataHash)
         };
-        let mut BlockCommitmentBytes = BytesTrait::new_empty();
+        let mut BlockCommitmentBytes = BytesTrait::new();
         BlockCommitmentBytes.append_u256((*_newBlockData.blockNumber).into());
         BlockCommitmentBytes.append_u256((*_newBlockData.feeAccount).into());
         BlockCommitmentBytes.append_u256((*_previousBlock.stateHash));
