@@ -279,7 +279,11 @@ fn test_zklink_collectOnchainOps_invalid_chain_id1() {
     // pending_data_size = 11
 
     let mut publicData = Bytes {
-        data: array![1329227995786124801101358576590389248, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1329227995786124801101358576590389248,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -326,7 +330,11 @@ fn test_zklink_collectOnchainOps_invalid_chain_id2() {
     // pending_data_size = 11
 
     let mut publicData = Bytes {
-        data: array![1355189480078798939244011058236489728, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1355189480078798939244011058236489728,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -372,12 +380,20 @@ fn test_zklink_collectOnchainOps_duplicate_pubdata_offset() {
     // pending_data_size = 11
 
     let mut depositData0 = Bytes {
-        data: array![1339612589503194456358419569248829440, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1339612589503194456358419569248829440,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
     let mut depositData1 = Bytes {
-        data: array![1339612589503194456358419569248829440, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1339612589503194456358419569248829440,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -440,7 +456,11 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 3254000107459431534606125
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![1334420292644659628729889072919609344, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1334420292644659628729889072919609344,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -451,7 +471,11 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 3254000107459431534606125
     // pending_data_size = 11
     let opOfWrite = Bytes {
-        data: array![1334420292643450702910274443744903168, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1334420292643450702910274443744903168,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -485,7 +509,12 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 2424977
     // pending_data_size = 3
     let mut op = Bytes {
-        data: array![7990944865287520720191985022115949226, 226854911280625642308916404252811464590, 179892997260459296479640320015568236610, 3577810954935998486498406173769736192],
+        data: array![
+            7990944865287520720191985022115949226,
+            226854911280625642308916404252811464590,
+            179892997260459296479640320015568236610,
+            3577810954935998486498406173769736192
+        ],
         pending_data: 2424977,
         pending_data_size: 3
     };
@@ -526,7 +555,11 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 3254000107459431534606125
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![1349997183222710297597724425227075584, 379362818658190, 179892997260459296479640320015568236610],
+        data: array![
+            1349997183222710297597724425227075584,
+            379362818658190,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -550,7 +583,11 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 245
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![6666909166410712037873566033893757948, 42577624153754863967194330481103536495, 278544165408887043319642418119171899392],
+        data: array![
+            6666909166410712037873566033893757948,
+            42577624153754863967194330481103536495,
+            278544165408887043319642418119171899392
+        ],
         pending_data: 245,
         pending_data_size: 11
     };
@@ -572,11 +609,7 @@ fn test_zklink_collectOnchainOps_success() {
     //
     // data = []
     // pending_data_size = 1
-    let mut op = Bytes {
-        data: array![],
-        pending_data: 1,
-        pending_data_size: 1
-    };
+    let mut op = Bytes { data: array![], pending_data: 1, pending_data_size: 1 };
     utils::paddingChunk(ref op, utils::OP_NOOP_CHUNKS);
     pubdatas.concat(@op);
     publicDataOffset += op.size();
@@ -590,7 +623,12 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 1646442285
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![9320172861106316424366063172242647810, 181733163034406966250383145560965120, 19413155728529532836176956146393, 227142569737839188506614686513323349732],
+        data: array![
+            9320172861106316424366063172242647810,
+            181733163034406966250383145560965120,
+            19413155728529532836176956146393,
+            227142569737839188506614686513323349732
+        ],
         pending_data: 1646442285,
         pending_data_size: 4
     };
@@ -614,7 +652,12 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 234893825
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![3992876284219327077888020403728678912, 989561019029737, 325930098572440622605242809423852945235, 258714655159228338356975277813679521792],
+        data: array![
+            3992876284219327077888020403728678912,
+            989561019029737,
+            325930098572440622605242809423852945235,
+            258714655159228338356975277813679521792
+        ],
         pending_data: 234893825,
         pending_data_size: 4
     };
@@ -647,7 +690,11 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 14
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![6651332275801257632038764928014324732, 42577624153754863967194330481103536495, 278544165408887043319498300732072787968],
+        data: array![
+            6651332275801257632038764928014324732,
+            42577624153754863967194330481103536495,
+            278544165408887043319498300732072787968
+        ],
         pending_data: 14,
         pending_data_size: 11
     };
@@ -658,7 +705,11 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 0
     // pending_data_size = 11
     let opOfWrite = Bytes {
-        data: array![6651332275801257632038764928014324732, 42577624153754863967194330481103536495, 278544165408887043319498300732072787968],
+        data: array![
+            6651332275801257632038764928014324732,
+            42577624153754863967194330481103536495,
+            278544165408887043319498300732072787968
+        ],
         pending_data: 0,
         pending_data_size: 11
     };
@@ -693,7 +744,12 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 1646442285
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![9309788267368680863076101576143673090, 181733163034406966250383145560965120, 194111254072482397229941366637273, 227142569737839188506614686513323349732],
+        data: array![
+            9309788267368680863076101576143673090,
+            181733163034406966250383145560965120,
+            194111254072482397229941366637273,
+            227142569737839188506614686513323349732
+        ],
         pending_data: 1646442285,
         pending_data_size: 4
     };
@@ -725,7 +781,12 @@ fn test_zklink_collectOnchainOps_success() {
     // pending_data = 234893824
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![4008453174807044430802172532689469440, 1099512181807337, 325930098572440622605242809423852945235, 258714655159228338356975277813679521792],
+        data: array![
+            4008453174807044430802172532689469440,
+            1099512181807337,
+            325930098572440622605242809423852945235,
+            258714655159228338356975277813679521792
+        ],
         pending_data: 234893824,
         pending_data_size: 4
     };
@@ -762,7 +823,9 @@ fn test_zklink_collectOnchainOps_success() {
     assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invaid value2');
     assert(actual_offsetsCommitment.size() == offsetsCommitment.size(), 'invaid value3');
     assert(*actual_offsetsCommitment.data[0] == *offsetsCommitment.data[0], 'invaid value4');
-    assert(actual_offsetsCommitment.pending_data == offsetsCommitment.pending_data, 'invaid value5');
+    assert(
+        actual_offsetsCommitment.pending_data == offsetsCommitment.pending_data, 'invaid value5'
+    );
     assert(*actual_onchainOperationPubdataHashs[0] == 0, 'invaid value6');
     assert(*actual_onchainOperationPubdataHashs[1] == onchainOpPubdataHash1, 'invaid value7');
     assert(*actual_onchainOperationPubdataHashs[2] == EMPTY_STRING_KECCAK, 'invaid value8');
@@ -873,7 +936,11 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 3254000107459431534606125
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![1334420292644659628729889072919609344, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1334420292644659628729889072919609344,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -884,7 +951,11 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 3254000107459431534606125
     // pending_data_size = 11
     let opOfWrite = Bytes {
-        data: array![1334420292643450702910274443744903168, 549787120963470, 179892997260459296479640320015568236610],
+        data: array![
+            1334420292643450702910274443744903168,
+            549787120963470,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -918,7 +989,12 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 2424977
     // pending_data_size = 3
     let mut op = Bytes {
-        data: array![7990944865287520720191985022115949226, 226854911280625642308916404252811464590, 179892997260459296479640320015568236610, 3577810954935998486498406173769736192],
+        data: array![
+            7990944865287520720191985022115949226,
+            226854911280625642308916404252811464590,
+            179892997260459296479640320015568236610,
+            3577810954935998486498406173769736192
+        ],
         pending_data: 2424977,
         pending_data_size: 3
     };
@@ -959,7 +1035,11 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 3254000107459431534606125
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![1349997183222710297597724425227075584, 379362818658190, 179892997260459296479640320015568236610],
+        data: array![
+            1349997183222710297597724425227075584,
+            379362818658190,
+            179892997260459296479640320015568236610
+        ],
         pending_data: 3254000107459431534606125,
         pending_data_size: 11
     };
@@ -983,7 +1063,11 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 245
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![6666909166410712037873566033893757948, 42577624153754863967194330481103536495, 278544165408887043319642418119171899392],
+        data: array![
+            6666909166410712037873566033893757948,
+            42577624153754863967194330481103536495,
+            278544165408887043319642418119171899392
+        ],
         pending_data: 245,
         pending_data_size: 11
     };
@@ -1005,11 +1089,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     //
     // data = []
     // pending_data_size = 1
-    let mut op = Bytes {
-        data: array![],
-        pending_data: 1,
-        pending_data_size: 1
-    };
+    let mut op = Bytes { data: array![], pending_data: 1, pending_data_size: 1 };
     utils::paddingChunk(ref op, utils::OP_NOOP_CHUNKS);
     pubdatas.concat(@op);
     publicDataOffset += op.size();
@@ -1023,7 +1103,12 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 1646442285
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![9320172861106316424366063172242647810, 181733163034406966250383145560965120, 19413155728529532836176956146393, 227142569737839188506614686513323349732],
+        data: array![
+            9320172861106316424366063172242647810,
+            181733163034406966250383145560965120,
+            19413155728529532836176956146393,
+            227142569737839188506614686513323349732
+        ],
         pending_data: 1646442285,
         pending_data_size: 4
     };
@@ -1047,7 +1132,12 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 234893825
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![3992876284219327077888020403728678912, 989561019029737, 325930098572440622605242809423852945235, 258714655159228338356975277813679521792],
+        data: array![
+            3992876284219327077888020403728678912,
+            989561019029737,
+            325930098572440622605242809423852945235,
+            258714655159228338356975277813679521792
+        ],
         pending_data: 234893825,
         pending_data_size: 4
     };
@@ -1080,7 +1170,11 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 14
     // pending_data_size = 11
     let mut op = Bytes {
-        data: array![6651332275801257632038764928014324732, 42577624153754863967194330481103536495, 278544165408887043319498300732072787968],
+        data: array![
+            6651332275801257632038764928014324732,
+            42577624153754863967194330481103536495,
+            278544165408887043319498300732072787968
+        ],
         pending_data: 14,
         pending_data_size: 11
     };
@@ -1091,7 +1185,11 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 0
     // pending_data_size = 11
     let opOfWrite = Bytes {
-        data: array![6651332275801257632038764928014324732, 42577624153754863967194330481103536495, 278544165408887043319498300732072787968],
+        data: array![
+            6651332275801257632038764928014324732,
+            42577624153754863967194330481103536495,
+            278544165408887043319498300732072787968
+        ],
         pending_data: 0,
         pending_data_size: 11
     };
@@ -1126,7 +1224,12 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 1646442285
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![9309788267368680863076101576143673090, 181733163034406966250383145560965120, 194111254072482397229941366637273, 227142569737839188506614686513323349732],
+        data: array![
+            9309788267368680863076101576143673090,
+            181733163034406966250383145560965120,
+            194111254072482397229941366637273,
+            227142569737839188506614686513323349732
+        ],
         pending_data: 1646442285,
         pending_data_size: 4
     };
@@ -1158,7 +1261,12 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     // pending_data = 234893824
     // pending_data_size = 4
     let mut op = Bytes {
-        data: array![4008453174807044430802172532689469440, 1099512181807337, 325930098572440622605242809423852945235, 258714655159228338356975277813679521792],
+        data: array![
+            4008453174807044430802172532689469440,
+            1099512181807337,
+            325930098572440622605242809423852945235,
+            258714655159228338356975277813679521792
+        ],
         pending_data: 234893824,
         pending_data_size: 4
     };

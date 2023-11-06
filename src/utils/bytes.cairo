@@ -451,7 +451,7 @@ impl BytesImpl of BytesTrait {
             self.pending_data_size = size;
             return;
         }
-        
+
         self.pending_data = u128_join(self.pending_data, value, size);
         self.pending_data_size += size;
     }

@@ -435,7 +435,11 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
     // pending_data = 163456079180379788815085536
     // pending_data_size = 11
     let pubData = Bytes {
-        data: array![1334420292643450703126450524393570304, 32985348833280000000000000000000, 2112475483491437590759],
+        data: array![
+            1334420292643450703126450524393570304,
+            32985348833280000000000000000000,
+            2112475483491437590759
+        ],
         pending_data: 163456079180379788815085536,
         pending_data_size: 11
     };
@@ -545,7 +549,11 @@ fn test_zklink_fullexit_success() {
     // pending_data = 0
     // pending_data_size = 11
     let pubData = Bytes {
-        data: array![6651332275798830227802555977002123264, 110386672137580, 154623465419847618179872172595872792576],
+        data: array![
+            6651332275798830227802555977002123264,
+            110386672137580,
+            154623465419847618179872172595872792576
+        ],
         pending_data: 0,
         pending_data_size: 11
     };
@@ -574,7 +582,11 @@ fn test_zklink_fullexit_mapping_success() {
     // pending_data = 0
     // pending_data_size = 11
     let pubData = Bytes {
-        data: array![6651332275798830227802555977002123264, 110386672137580, 154623465419847618178719215906893856768],
+        data: array![
+            6651332275798830227802555977002123264,
+            110386672137580,
+            154623465419847618178719215906893856768
+        ],
         pending_data: 0,
         pending_data_size: 11
     };

@@ -42,11 +42,11 @@ fn test_u128_fast_shift() {
         if i == max_exp {
             break;
         }
-        assert(u128_fast_shift(i).into() == common_pow(2, i*8), 'invalid result');
+        assert(u128_fast_shift(i).into() == common_pow(2, i * 8), 'invalid result');
         i = i + 1;
     };
 
-    assert(u128_fast_shift(i).into() == common_pow(2, i*8), 'panic');
+    assert(u128_fast_shift(i).into() == common_pow(2, i * 8), 'panic');
 }
 
 #[test]

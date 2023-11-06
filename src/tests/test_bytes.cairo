@@ -415,9 +415,8 @@ fn test_bytes_append() {
     assert(bytes.pending_data == 0x0304050607, 'append_u256_value_6');
 
     // append_address
-    let address = contract_address_const::<
-        0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f
-    >();
+    let address =
+        contract_address_const::<0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f>();
     bytes.append_address(address);
     assert(bytes.size() == 117, 'append_address_size_1');
     assert(bytes.pending_data_size == 5, 'append_address_size_2');
@@ -450,10 +449,7 @@ fn test_bytes_concat() {
     };
 
     let other = Bytes {
-        data: array![
-            0x01020304050607080910111213140154,
-            0x01855d7796176b05d160196ff92381eb
-        ],
+        data: array![0x01020304050607080910111213140154, 0x01855d7796176b05d160196ff92381eb],
         pending_data: 0x7910f5446c2e0e04e13db2194a4f,
         pending_data_size: 14,
     };
@@ -523,11 +519,7 @@ fn test_bytes_keccak() {
     assert(res == hash, 'bytes_keccak_0');
 
     // u256{low: 1, high: 0}
-    let bytes: Bytes = Bytes{
-        data: array![0, 1],
-        pending_data: 0,
-        pending_data_size: 0,
-    };
+    let bytes: Bytes = Bytes { data: array![0, 1], pending_data: 0, pending_data_size: 0, };
     let res = bytes.keccak();
     let hash: u256 = 0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6;
     assert(res == hash, 'bytes_keccak_1');
@@ -559,11 +551,7 @@ fn test_bytes_sha256() {
 
     // u256{low: 1, high: 0}
     // 0x0000000000000000000000000000000000000000000000000000000000000001
-    let bytes: Bytes = Bytes{
-        data: array![0, 1],
-        pending_data: 0,
-        pending_data_size: 0,
-    };
+    let bytes: Bytes = Bytes { data: array![0, 1], pending_data: 0, pending_data_size: 0, };
     let res = bytes.sha256();
     let hash: u256 = 0xec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5;
     assert(res == hash, 'bytes_sha256_1');
