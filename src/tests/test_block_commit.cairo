@@ -42,7 +42,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_length1() {
         feeAccount: 0
     };
 
-    dispatcher.testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_length2() {
         feeAccount: 0
     };
 
-    dispatcher.testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -90,14 +90,10 @@ fn test_zklink_collectOnchainOps_no_pubdata() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
+    let (processableOperationsHash, priorityOperationsProcessed, offsetsCommitment,
+    onchainOperationPubdataHashs) =
         dispatcher
-        .testCollectOnchainOps(block);
+        .testCollectOnchainOps(block, true);
 
     assert(processableOperationsHash == EMPTY_STRING_KECCAK, 'invalid value 0');
     assert(priorityOperationsProcessed == 0, 'invalid value 1');
@@ -135,14 +131,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset1() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -171,14 +160,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset2() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -207,14 +189,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset3() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -243,14 +218,7 @@ fn test_zklink_collectOnchainOps_invalid_op_type() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 // calculate pubData from Python
@@ -304,14 +272,7 @@ fn test_zklink_collectOnchainOps_invalid_chain_id1() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -354,14 +315,7 @@ fn test_zklink_collectOnchainOps_invalid_chain_id2() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, true);
 }
 
 #[test]
@@ -417,14 +371,7 @@ fn test_zklink_collectOnchainOps_duplicate_pubdata_offset() {
         feeAccount: 0
     };
 
-    let (
-        processableOperationsHash,
-        priorityOperationsProcessed,
-        offsetsCommitment,
-        onchainOperationPubdataHashs
-    ) =
-        dispatcher
-        .testCollectOnchainOps(block);
+    dispatcher.testCollectOnchainOps(block, false);
 }
 
 #[test]
@@ -817,7 +764,7 @@ fn test_zklink_collectOnchainOps_success() {
         actual_onchainOperationPubdataHashs
     ) =
         dispatcher
-        .testCollectOnchainOps(block);
+        .testCollectOnchainOps(block, false);
 
     assert(actual_processableOperationsHash == processableOpPubdataHash, 'invaid value1');
     assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invaid value2');
@@ -1320,8 +1267,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     };
 
     let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: pubdatas.sha256(),
-        offsetCommitmentHash: offsetsCommitment.sha256(),
+        publicDataHash: pubdatas.keccak(),
+        offsetCommitmentHash: offsetsCommitment.keccak(),
         onchainOperationPubdataHashs: array![
             0,
             onchainOpPubdataHash1,

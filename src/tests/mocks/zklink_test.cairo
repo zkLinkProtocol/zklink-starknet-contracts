@@ -79,7 +79,7 @@ trait IZklinkMock<TContractState> {
     fn getPendingBalance(self: @TContractState, _address: u256, _tokenId: u16) -> u128;
     fn mockExecBlock(self: @TContractState, _storedBlockInfo: StoredBlockInfo);
     fn testCollectOnchainOps(
-        self: @TContractState, _newBlockData: CommitBlockInfo
+        self: @TContractState, _newBlockData: CommitBlockInfo, _compressed: bool
     ) -> (u256, u64, Bytes, Array<u256>);
     fn testAddPriorityRequest(self: @TContractState, _opType: OpType, _opData: Bytes);
     fn testCommitOneBlock(
@@ -334,10 +334,10 @@ mod ZklinkMock {
         }
 
         fn testCollectOnchainOps(
-            self: @ContractState, _newBlockData: CommitBlockInfo
+            self: @ContractState, _newBlockData: CommitBlockInfo, _compressed: bool
         ) -> (u256, u64, Bytes, Array<u256>) {
             let state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
+            Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData, _compressed)
         }
 
         fn testAddPriorityRequest(self: @ContractState, _opType: OpType, _opData: Bytes) {

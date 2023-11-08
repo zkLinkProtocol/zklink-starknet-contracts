@@ -249,6 +249,10 @@ mod Zklink {
         // Block number is u64 in Starknet
         storedBlockHashes: LegacyMap::<u64, u256>,
         // internal
+        // Stored proof commitment for some block number
+        // Block number is u64 in Starknet
+        storedProofCommitments: LegacyMap::<u64, u256>,
+        // internal
         // if (`synchronizedChains` | CHAIN_INDEX) == `ALL_CHAINS` defined in `constants.cairo` then blocks at `blockHeight` and before it can be executed
         // the key is the `syncHash` of `StoredBlockInfo`
         // the value is the `synchronizedChains` of `syncHash` collected from all other chains
@@ -1795,11 +1799,11 @@ mod Zklink {
                 mut onchainOpPubdataHashs
             ) =
                 self
-                .collectOnchainOps(_newBlock);
+                .collectOnchainOps(_newBlock, _compressed);
 
             // Create block commitment for verification proof
-            let commitment: u256 = createBlockCommitment(
-                _previousBlock, _newBlock, _compressed, _newBlockExtra, onchainOpsOffsetCommitment
+            let sync_commitment: u256 = createSyncBlockCommitment(
+                _previousBlock, _newBlock, _compressed, _newBlockExtra, @onchainOpsOffsetCommitment
             );
 
             // Create synchronization hash for cross chain block verify
@@ -1811,18 +1815,26 @@ mod Zklink {
                     if i > MAX_CHAIN_ID {
                         break ();
                     }
-
-                    if i != CHAIN_ID {
+                    let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
+                    if i != CHAIN_ID && (chainIndex & ALL_CHAINS) == chainIndex {
+                        let old_hash: u256 = *onchainOpPubdataHashs[i.into()];
                         let hash: u256 = *hashs[i.into()];
-                        onchainOpPubdataHashs =
-                            update_u256_array_at(@onchainOpPubdataHashs, i.into(), hash);
+                        if hash != old_hash {
+                            onchainOpPubdataHashs =
+                                update_u256_array_at(@onchainOpPubdataHashs, i.into(), hash);
+                        }
                     }
                     i += 1;
                 };
+            } else {
+                let proof_commitment: u256 = createProofBlockCommitment(
+                    _previousBlock, _newBlock, @onchainOpsOffsetCommitment
+                );
+                self.storedProofCommitments.write(*_newBlock.blockNumber, proof_commitment);
             }
 
             let syncHash = createSyncHash(
-                *_previousBlock.syncHash, commitment, @onchainOpPubdataHashs
+                *_previousBlock.syncHash, sync_commitment, @onchainOpPubdataHashs
             );
 
             StoredBlockInfo {
@@ -1831,7 +1843,7 @@ mod Zklink {
                 pendingOnchainOperationsHash: pendingOnchainOpsHash,
                 timestamp: *_newBlock.timestamp,
                 stateHash: *_newBlock.newStateHash,
-                commitment: commitment,
+                commitment: sync_commitment,
                 syncHash: syncHash
             }
         }
@@ -1847,7 +1859,7 @@ mod Zklink {
         //  offsetsCommitment - array where 1 is stored in chunk where onchainOperation begins and other are 0 (used in commitments)
         //  onchainOperationPubdatas - onchain operation (Deposits, ChangePubKeys, Withdraws, ForcedExits, FullExits) pubdatas group by chain id (used in cross chain block verify)
         fn collectOnchainOps(
-            self: @ContractState, _newBlockData: @CommitBlockInfo
+            self: @ContractState, _newBlockData: @CommitBlockInfo, _compressed: bool
         ) -> (u256, u64, Bytes, Array<u256>) {
             let pubData = _newBlockData.publicData;
             // pubdata length must be a multiple of CHUNK_BYTES
@@ -1874,7 +1886,7 @@ mod Zklink {
                 assert(pubdataOffset + 1 < pubData.size(), 'h1');
                 assert(pubdataOffset % CHUNK_BYTES == 0, 'h2');
 
-                {
+                if !_compressed {
                     let chunkId: u32 = pubdataOffset / CHUNK_BYTES;
                     let (_, chunkIdCommitment) = offsetsCommitment.read_u8(chunkId);
                     // offset commitment should be empty
@@ -2291,21 +2303,41 @@ mod Zklink {
 
     // Creates block commitment from its data
     // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
-    fn createBlockCommitment(
+    fn createProofBlockCommitment(
+        _previousBlock: @StoredBlockInfo, _newBlockData: @CommitBlockInfo, _offsetsCommitment: @Bytes
+    ) -> u256 {
+        let offsetsCommitmentHash = _offsetsCommitment.sha256();
+        let newBlockPubDataHash = _newBlockData.publicData.sha256();
+
+        let mut BlockCommitmentBytes = BytesTrait::new();
+        BlockCommitmentBytes.append_u256((*_newBlockData.blockNumber).into());
+        BlockCommitmentBytes.append_u256((*_newBlockData.feeAccount).into());
+        BlockCommitmentBytes.append_u256((*_previousBlock.stateHash));
+        BlockCommitmentBytes.append_u256((*_newBlockData.newStateHash));
+        BlockCommitmentBytes.append_u256((*_newBlockData.timestamp).into());
+        BlockCommitmentBytes.append_u256(newBlockPubDataHash);
+        BlockCommitmentBytes.append_u256(offsetsCommitmentHash);
+
+        BlockCommitmentBytes.sha256()
+    }
+
+    // Creates block commitment from its data
+    // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
+    fn createSyncBlockCommitment(
         _previousBlock: @StoredBlockInfo,
         _newBlockData: @CommitBlockInfo,
         _compressed: bool,
         _newBlockExtraData: @CompressedBlockExtraInfo,
-        _offsetsCommitment: Bytes
+        _offsetsCommitment: @Bytes
     ) -> u256 {
         let offsetsCommitmentHash = if !_compressed {
-            _offsetsCommitment.sha256()
+            _offsetsCommitment.keccak()
         } else {
             *(_newBlockExtraData.offsetCommitmentHash)
         };
 
         let newBlockPubDataHash = if !_compressed {
-            _newBlockData.publicData.sha256()
+            _newBlockData.publicData.keccak()
         } else {
             *(_newBlockExtraData.publicDataHash)
         };
@@ -2318,7 +2350,7 @@ mod Zklink {
         BlockCommitmentBytes.append_u256(newBlockPubDataHash);
         BlockCommitmentBytes.append_u256(offsetsCommitmentHash);
 
-        BlockCommitmentBytes.sha256()
+        BlockCommitmentBytes.keccak()
     }
 
     // Create synchronization hash for cross chain block verify
