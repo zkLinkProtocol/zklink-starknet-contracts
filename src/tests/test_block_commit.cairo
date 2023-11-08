@@ -90,8 +90,12 @@ fn test_zklink_collectOnchainOps_no_pubdata() {
         feeAccount: 0
     };
 
-    let (processableOperationsHash, priorityOperationsProcessed, offsetsCommitment,
-    onchainOperationPubdataHashs) =
+    let (
+        processableOperationsHash,
+        priorityOperationsProcessed,
+        offsetsCommitment,
+        onchainOperationPubdataHashs
+    ) =
         dispatcher
         .testCollectOnchainOps(block, true);
 

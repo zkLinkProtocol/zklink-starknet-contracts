@@ -2304,7 +2304,9 @@ mod Zklink {
     // Creates block commitment from its data
     // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
     fn createProofBlockCommitment(
-        _previousBlock: @StoredBlockInfo, _newBlockData: @CommitBlockInfo, _offsetsCommitment: @Bytes
+        _previousBlock: @StoredBlockInfo,
+        _newBlockData: @CommitBlockInfo,
+        _offsetsCommitment: @Bytes
     ) -> u256 {
         let offsetsCommitmentHash = _offsetsCommitment.sha256();
         let newBlockPubDataHash = _newBlockData.publicData.sha256();
