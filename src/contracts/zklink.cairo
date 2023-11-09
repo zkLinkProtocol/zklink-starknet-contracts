@@ -1904,13 +1904,7 @@ mod Zklink {
                     + priorityOperationsProcessed;
 
                 let (newPriorityProceeded, opPubData, processablePubData) = self
-                    .checkOnchainOp(
-                        opType,
-                        chainId,
-                        pubData,
-                        pubdataOffset,
-                        nextPriorityOpIndex,
-                        onchainOpData.ethWitness
+                    .checkOnchainOp(opType, chainId, pubData, pubdataOffset, nextPriorityOpIndex,// onchainOpData.ethWitness
                     );
 
                 priorityOperationsProcessed += newPriorityProceeded;
@@ -1942,7 +1936,7 @@ mod Zklink {
             _pubData: @Bytes,
             _pubdataOffset: usize,
             _nextPriorityOpIdx: u64,
-            _ethWitness: @Bytes
+        // _ethWitness: @Bytes
         ) -> (u64, Bytes, Bytes) {
             let mut priorityOperationsProcessed: u64 = 0;
             let mut processablePubData: Bytes = BytesTrait::new();
