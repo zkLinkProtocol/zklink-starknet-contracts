@@ -28,14 +28,6 @@ trait IZklinkMock<TContractState> {
         _nonce: u32,
         _amountTransfer: u128
     );
-    fn transferERC20(
-        self: @TContractState,
-        _token: ContractAddress,
-        _to: ContractAddress,
-        _amount: u128,
-        _maxAmount: u128,
-        _isStandard: bool
-    ) -> u128;
     fn requestFullExit(
         self: @TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
     );
@@ -187,19 +179,6 @@ mod ZklinkMock {
                 _nonce,
                 _amountTransfer
             );
-        }
-
-        fn transferERC20(
-            self: @ContractState,
-            _token: ContractAddress,
-            _to: ContractAddress,
-            _amount: u128,
-            _maxAmount: u128,
-            _isStandard: bool
-        ) -> u128 {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            set_caller_address(get_caller_address());
-            Zklink::Zklink::transferERC20(ref state, _token, _to, _amount, _maxAmount, _isStandard)
         }
 
         fn requestFullExit(

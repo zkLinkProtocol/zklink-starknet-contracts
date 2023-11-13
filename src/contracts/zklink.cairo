@@ -15,14 +15,6 @@ trait IZklink<TContractState> {
         _subAccountId: u8,
         _mapping: bool
     );
-    fn transferERC20(
-        ref self: TContractState,
-        _token: ContractAddress,
-        _to: ContractAddress,
-        _amount: u128,
-        _maxAmount: u128,
-        _isStandard: bool
-    ) -> u128;
     fn acceptERC20(
         ref self: TContractState,
         _acceptor: ContractAddress,
@@ -521,49 +513,6 @@ mod Zklink {
             self.end();
         }
 
-        // Sends tokens
-        // NOTE: will revert if transfer call fails or rollup balance difference (before and after transfer) is bigger than _maxAmount
-        // This function is used to allow tokens to spend zkLink contract balance up to amount that is requested
-        // Parameters:
-        //  _token Token address
-        //  _to Address of recipient
-        //  _amount Amount of tokens to transfer
-        //  _maxAmount Maximum possible amount of tokens to transfer to this account
-        //  _isStandard If token is a standard erc20
-        //  withdrawnAmount The really amount than will be debited from user
-        fn transferERC20(
-            ref self: ContractState,
-            _token: ContractAddress,
-            _to: ContractAddress,
-            _amount: u128,
-            _maxAmount: u128,
-            _isStandard: bool
-        ) -> u128 {
-            let sender = get_caller_address();
-            let contract_address = get_contract_address();
-            assert(sender == contract_address, 'n0');
-
-            // most tokens are standard, fewer query token balance can save gas
-            if _isStandard {
-                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                return _amount;
-            } else {
-                let balanceBefore = IERC20CamelDispatcher { contract_address: _token }
-                    .balanceOf(contract_address);
-                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                let balanceAfter = IERC20CamelDispatcher { contract_address: _token }
-                    .balanceOf(contract_address);
-                let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
-                assert(
-                    balanceDiff > 0, 'n1'
-                ); // transfer is considered successful only if the balance of the contract decreased after transfer
-                assert(
-                    balanceDiff <= _maxAmount, 'n2'
-                ); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
-                return balanceDiff;
-            }
-        }
-
         // Acceptor accept a erc20 token fast withdraw, acceptor will get a fee for profit
         // Parameters:
         //  acceptor Acceptor who accept a fast withdraw
@@ -938,9 +887,7 @@ mod Zklink {
 
             // Interactions
             let tokenAddress: ContractAddress = rt.tokenAddress;
-            let contract_address = get_contract_address();
-            amount = IZklinkDispatcher { contract_address }
-                .transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
+            amount = self.transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
 
             self
                 .pendingBalances
@@ -1548,6 +1495,46 @@ mod Zklink {
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
+        // Sends tokens
+        // NOTE: will revert if transfer call fails or rollup balance difference (before and after transfer) is bigger than _maxAmount
+        // This function is used to allow tokens to spend zkLink contract balance up to amount that is requested
+        // Parameters:
+        //  _token Token address
+        //  _to Address of recipient
+        //  _amount Amount of tokens to transfer
+        //  _maxAmount Maximum possible amount of tokens to transfer to this account
+        //  _isStandard If token is a standard erc20
+        //  withdrawnAmount The really amount than will be debited from user
+        fn transferERC20(
+            self: @ContractState,
+            _token: ContractAddress,
+            _to: ContractAddress,
+            _amount: u128,
+            _maxAmount: u128,
+            _isStandard: bool
+        ) -> u128 {
+            let contract_address = get_contract_address();
+
+            // most tokens are standard, fewer query token balance can save gas
+            if _isStandard {
+                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
+                return _amount;
+            } else {
+                let balanceBefore = IERC20CamelDispatcher { contract_address: _token }
+                    .balanceOf(contract_address);
+                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
+                let balanceAfter = IERC20CamelDispatcher { contract_address: _token }
+                    .balanceOf(contract_address);
+                let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
+                assert(
+                    balanceDiff > 0, 'n1'
+                ); // transfer is considered successful only if the balance of the contract decreased after transfer
+                assert(
+                    balanceDiff <= _maxAmount, 'n2'
+                ); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
+                return balanceDiff;
+            }
+        }
         // Deposit ERC20 token internal function
         // Parameters:
         //  _token Token address
