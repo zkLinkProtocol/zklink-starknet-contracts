@@ -30,8 +30,6 @@ mod FaucetToken {
         _name: felt252,
         _symbol: felt252,
         _decimals: u8,
-        _from_transfer_fee_ratio: u8,
-        _to_transfer_fee_ratio: u8,
         _total_supply: u256,
         _balances: LegacyMap<ContractAddress, u256>,
         _allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
@@ -59,19 +57,10 @@ mod FaucetToken {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        name: felt252,
-        symbol: felt252,
-        decimals: u8,
-        from_transfer_fee_ratio: u8,
-        to_transfer_fee_ratio: u8
-    ) {
+    fn constructor(ref self: ContractState, name: felt252, symbol: felt252, decimals: u8) {
         self._name.write(name);
         self._symbol.write(symbol);
         self._decimals.write(decimals);
-        self._from_transfer_fee_ratio.write(from_transfer_fee_ratio);
-        self._to_transfer_fee_ratio.write(to_transfer_fee_ratio);
     }
 
     #[external(v0)]
@@ -172,14 +161,6 @@ mod FaucetToken {
             self._balances.write(sender, self._balances.read(sender) - amount);
             self._balances.write(recipient, self._balances.read(recipient) + amount);
             self.emit(Transfer { from: sender, to: recipient, value: amount });
-
-            if sender.is_non_zero() && self._from_transfer_fee_ratio.read() > 0 {
-                self._burn(sender, amount / self._from_transfer_fee_ratio.read().into());
-            }
-
-            if recipient.is_non_zero() && self._to_transfer_fee_ratio.read() > 0 {
-                self._burn(recipient, amount / self._to_transfer_fee_ratio.read().into());
-            }
         }
 
         fn _spend_allowance(

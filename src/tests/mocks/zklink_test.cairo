@@ -25,8 +25,7 @@ trait IZklinkMock<TContractState> {
         _withdrawFeeRate: u16,
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
-        _nonce: u32,
-        _amountTransfer: u128
+        _nonce: u32
     );
     fn requestFullExit(
         self: @TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
@@ -56,11 +55,7 @@ trait IZklinkMock<TContractState> {
         self: @TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
     ) -> bool;
     fn addToken(
-        self: @TContractState,
-        _tokenId: u16,
-        _tokenAddress: ContractAddress,
-        _decimals: u8,
-        _standard: bool
+        self: @TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
     );
     fn setTokenPaused(self: @TContractState, _tokenId: u16, _paused: bool);
     fn setExodus(self: @TContractState, _exodusMode: bool);
@@ -161,8 +156,7 @@ mod ZklinkMock {
             _withdrawFeeRate: u16,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
-            _nonce: u32,
-            _amountTransfer: u128
+            _nonce: u32
         ) {
             set_caller_address(get_caller_address());
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
@@ -176,8 +170,7 @@ mod ZklinkMock {
                 _withdrawFeeRate,
                 _accountIdOfNonce,
                 _subAccountIdOfNonce,
-                _nonce,
-                _amountTransfer
+                _nonce
             );
         }
 
@@ -253,16 +246,12 @@ mod ZklinkMock {
         }
 
         fn addToken(
-            self: @ContractState,
-            _tokenId: u16,
-            _tokenAddress: ContractAddress,
-            _decimals: u8,
-            _standard: bool
+            self: @ContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
         ) {
             // only governor can add token
             set_caller_address(self._governor.read());
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::Zklink::addToken(ref state, _tokenId, _tokenAddress, _decimals, _standard);
+            Zklink::Zklink::addToken(ref state, _tokenId, _tokenAddress, _decimals);
         }
 
         fn setTokenPaused(self: @ContractState, _tokenId: u16, _paused: bool) {

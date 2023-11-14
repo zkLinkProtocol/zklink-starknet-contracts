@@ -11,7 +11,6 @@ program
     .requiredOption('--token-id <tokenId>', 'The token id')
     .requiredOption('--token-address <tokenAddress>', 'The token address')
     .option('--token-decimals <tokenDecimals>', 'The token decimals', 18)
-    .option('--standard <standard>', 'The token is a standard ERC20 token', true)
     .action(async (options) => {
         await add_token(options);
     });
@@ -34,21 +33,19 @@ async function add_token(options) {
     const tokenId = options.tokenId;
     const tokenAddress = options.tokenAddress;
     const tokenDecimals = options.tokenDecimals;
-    const standard = options.standard;
 
     console.log("zklink:", zklinkAddress);
     console.log("governor:", governor.address);
     console.log("tokenId:", tokenId);
     console.log("tokenAddress:", tokenAddress);
     console.log("tokenDecimals:", tokenDecimals);
-    console.log("standard:", standard);
     console.log("Adding new ERC20 token to zklink");
 
     const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
     const zklink = new Contract(zklinkContractSierra.abi, zklinkAddress, provider);
 
     zklink.connect(governor);
-    const call = zklink.populate("addToken", [tokenId, tokenAddress, tokenDecimals, standard]);
+    const call = zklink.populate("addToken", [tokenId, tokenAddress, tokenDecimals]);
     const tx = await zklink.addToken(call.calldata);
     await provider.waitForTransaction(tx.transaction_hash);
     console.log('✅ zklink add new ERC20 token success, tx:', tx.transaction_hash);

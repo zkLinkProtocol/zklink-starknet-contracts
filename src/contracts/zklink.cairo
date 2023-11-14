@@ -1,6 +1,6 @@
 use starknet::{ContractAddress, ClassHash};
 use zklink::utils::data_structures::DataStructures::{
-    StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo,
+    StoredBlockInfo, CommitBlockInfo, ProofInput, CompressedBlockExtraInfo, ExecuteBlockInfo,
     RegisteredToken, BridgeInfo
 };
 use zklink::utils::bytes::Bytes;
@@ -25,8 +25,7 @@ trait IZklink<TContractState> {
         _withdrawFeeRate: u16,
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
-        _nonce: u32,
-        _amountTransfer: u128
+        _nonce: u32
     );
     fn requestFullExit(
         ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
@@ -68,13 +67,8 @@ trait IZklink<TContractState> {
     ) -> bool;
     fn changeGovernor(ref self: TContractState, _newGovernor: ContractAddress);
     fn addToken(
-        ref self: TContractState,
-        _tokenId: u16,
-        _tokenAddress: ContractAddress,
-        _decimals: u8,
-        _standard: bool
+        ref self: TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
     );
-    fn addTokens(ref self: TContractState, _tokenList: Array<Token>);
     fn setTokenPaused(ref self: TContractState, _tokenId: u16, _tokenPaused: bool);
     fn setValidator(ref self: TContractState, _validator: ContractAddress, _active: bool);
     fn addBridge(ref self: TContractState, _bridge: ContractAddress) -> usize;
@@ -152,7 +146,7 @@ mod Zklink {
     };
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken, BridgeInfo, StoredBlockInfo, CommitBlockInfo, CompressedBlockExtraInfo,
-        ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
+        ExecuteBlockInfo, OnchainOperationData, ProofInput,
     };
     use zklink::utils::math::{fast_power10, u256_fast_pow2, uint_min};
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash};
@@ -364,7 +358,6 @@ mod Zklink {
         accountIdOfNonce: u32,
         subAccountIdOfNonce: u8,
         nonce: u32,
-        amountSent: u128,
         amountReceive: u128
     }
 
@@ -524,8 +517,6 @@ mod Zklink {
         //  nonceFromAccountId Account that supply nonce, may be different from accountId
         //  nonceFromSubAccountId SubAccount that supply nonce
         //  nonce SubAccount nonce, used to produce unique accept info
-        //  amountTransfer Amount that transfer from acceptor to receiver
-        // may be a litter larger than the amount receiver received
         fn acceptERC20(
             ref self: ContractState,
             _acceptor: ContractAddress,
@@ -536,13 +527,12 @@ mod Zklink {
             _withdrawFeeRate: u16,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
-            _nonce: u32,
-            _amountTransfer: u128
+            _nonce: u32
         ) {
             self.start();
 
             // Checks
-            let (mut amountReceive, tokenAddress) = self
+            let (amountReceive, tokenAddress) = self
                 ._checkAccept(
                     _acceptor,
                     _accountId,
@@ -556,43 +546,20 @@ mod Zklink {
                 );
 
             // Interactions
-            let receiverBalanceBefore: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_receiver);
-            let acceptorBalanceBefore: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_acceptor);
             let _ = IERC20CamelDispatcher { contract_address: tokenAddress }
-                .transferFrom(_acceptor, _receiver, _amountTransfer.into());
-            let receiverBalanceAfter: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_receiver);
-            let acceptorBalanceAfter: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_acceptor);
-            let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore)
-                .try_into()
-                .unwrap();
-            assert(receiverBalanceDiff >= amountReceive, 'F0');
-            amountReceive = receiverBalanceDiff;
-            let amountSent: u128 = (acceptorBalanceBefore - acceptorBalanceAfter)
-                .try_into()
-                .unwrap();
+                .transferFrom(_acceptor, _receiver, amountReceive.into());
 
             let sender = get_caller_address();
             if sender != _acceptor {
                 assert(
-                    Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountSent, 'F1'
+                    Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountReceive,
+                    'F1'
                 );
                 self
                     .brokerAllowances
                     .write(
                         (_tokenId, _acceptor, sender),
-                        self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountSent
+                        self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountReceive
                     );
             }
 
@@ -608,7 +575,6 @@ mod Zklink {
                         accountIdOfNonce: _accountIdOfNonce,
                         subAccountIdOfNonce: _subAccountIdOfNonce,
                         nonce: _nonce,
-                        amountSent: amountSent,
                         amountReceive: amountReceive,
                     }
                 );
@@ -882,12 +848,12 @@ mod Zklink {
             let owner: u256 = extendAddress(_owner);
             let balance: u128 = self.pendingBalances.read((owner, _tokenId));
             let withdrawBalance = recoveryDecimals(balance, rt.decimals);
-            let mut amount = uint_min(_amount, withdrawBalance);
+            let amount = uint_min(_amount, withdrawBalance);
             assert(amount > 0, 'b1');
 
             // Interactions
-            let tokenAddress: ContractAddress = rt.tokenAddress;
-            amount = self.transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
+            IERC20CamelDispatcher { contract_address: rt.tokenAddress }
+                .transfer(_owner, amount.into());
 
             self
                 .pendingBalances
@@ -1138,11 +1104,7 @@ mod Zklink {
         //  _decimals Token decimals of layer one
         //  _standard If token is a standard erc20
         fn addToken(
-            ref self: ContractState,
-            _tokenId: u16,
-            _tokenAddress: ContractAddress,
-            _decimals: u8,
-            _standard: bool
+            ref self: ContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
         ) {
             self.onlyGovernor();
 
@@ -1161,27 +1123,9 @@ mod Zklink {
             rt.registered = true;
             rt.tokenAddress = _tokenAddress;
             rt.decimals = _decimals;
-            rt.standard = _standard;
             self.tokens.write(_tokenId, rt);
             self.tokenIds.write(_tokenAddress, _tokenId);
             self.emit(NewToken { tokenId: _tokenId, token: _tokenAddress, decimals: _decimals });
-        }
-
-        // Add tokens to the list of networks tokens
-        // Parameters:
-        //  _tokenList Token list
-        fn addTokens(ref self: ContractState, _tokenList: Array<Token>) {
-            let mut i: usize = 0;
-            loop {
-                if i == _tokenList.len() {
-                    break ();
-                }
-                let _token: Token = *_tokenList[i];
-                Zklink::addToken(
-                    ref self, _token.tokenId, _token.tokenAddress, _token.decimals, _token.standard
-                );
-                i += 1;
-            };
         }
 
         // Pause token deposits for the given token
@@ -1495,46 +1439,6 @@ mod Zklink {
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-        // Sends tokens
-        // NOTE: will revert if transfer call fails or rollup balance difference (before and after transfer) is bigger than _maxAmount
-        // This function is used to allow tokens to spend zkLink contract balance up to amount that is requested
-        // Parameters:
-        //  _token Token address
-        //  _to Address of recipient
-        //  _amount Amount of tokens to transfer
-        //  _maxAmount Maximum possible amount of tokens to transfer to this account
-        //  _isStandard If token is a standard erc20
-        //  withdrawnAmount The really amount than will be debited from user
-        fn transferERC20(
-            self: @ContractState,
-            _token: ContractAddress,
-            _to: ContractAddress,
-            _amount: u128,
-            _maxAmount: u128,
-            _isStandard: bool
-        ) -> u128 {
-            let contract_address = get_contract_address();
-
-            // most tokens are standard, fewer query token balance can save gas
-            if _isStandard {
-                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                return _amount;
-            } else {
-                let balanceBefore = IERC20CamelDispatcher { contract_address: _token }
-                    .balanceOf(contract_address);
-                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                let balanceAfter = IERC20CamelDispatcher { contract_address: _token }
-                    .balanceOf(contract_address);
-                let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
-                assert(
-                    balanceDiff > 0, 'n1'
-                ); // transfer is considered successful only if the balance of the contract decreased after transfer
-                assert(
-                    balanceDiff <= _maxAmount, 'n2'
-                ); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
-                return balanceDiff;
-            }
-        }
         // Deposit ERC20 token internal function
         // Parameters:
         //  _token Token address
@@ -1569,26 +1473,17 @@ mod Zklink {
             // transfer erc20 token from sender to zkLink contract
             let sender = get_caller_address();
             let this = get_contract_address();
-            let mut _amount = _amount;
-            if rt.standard {
-                IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .transferFrom(sender, this, _amount.into());
-            } else {
-                // support non-standard tokens
-                let balanceBefore = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .balanceOf(this);
-                // NOTE, the balance of this contract will be increased
-                // if the token is not a pure erc20 token, it could do anything within the transferFrom
-                // we MUST NOT use `token.balanceOf(address(this))` in any control structures
-                IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .transferFrom(sender, this, _amount.into());
-                let balanceAfter = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .balanceOf(this);
-                _amount = (balanceAfter - balanceBefore).try_into().unwrap();
-            }
+            let balanceBefore = IERC20CamelDispatcher { contract_address: _tokenAddress }
+                .balanceOf(this);
+            IERC20CamelDispatcher { contract_address: _tokenAddress }
+                .transferFrom(sender, this, _amount.into());
+            let balanceAfter = IERC20CamelDispatcher { contract_address: _tokenAddress }
+                .balanceOf(this);
+            // only support pure erc20
+            assert(_amount.into() == balanceAfter - balanceBefore, 'e6');
 
             // improve decimals before send to layer two
-            _amount = improveDecimals(_amount, rt.decimals);
+            let _amount = improveDecimals(_amount, rt.decimals);
             // disable deposit with zero amount
             assert(_amount > 0 && _amount <= MAX_DEPOSIT_AMOUNT, 'e0');
 

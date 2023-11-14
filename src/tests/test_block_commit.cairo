@@ -26,7 +26,7 @@ use debug::PrintTrait;
 #[should_panic(expected: ('h0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_pubdata_length1() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -51,7 +51,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_length1() {
 #[should_panic(expected: ('h0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_pubdata_length2() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -75,7 +75,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_length2() {
 #[available_gas(20000000000)]
 fn test_zklink_collectOnchainOps_no_pubdata() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -107,7 +107,7 @@ fn test_zklink_collectOnchainOps_no_pubdata() {
 #[should_panic(expected: ('h1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_pubdata_offset1() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -134,7 +134,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset1() {
 #[should_panic(expected: ('h2', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_pubdata_offset2() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -161,7 +161,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset2() {
 #[should_panic(expected: ('h2', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_pubdata_offset3() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -188,7 +188,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset3() {
 #[should_panic(expected: ('k2', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_op_type() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut publicData: Bytes = BytesTrait::new();
@@ -225,7 +225,7 @@ fn test_zklink_collectOnchainOps_invalid_op_type() {
 #[should_panic(expected: ('i1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_chain_id1() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     // chain_id = MIN_CHAIN_ID - 1
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -267,7 +267,7 @@ fn test_zklink_collectOnchainOps_invalid_chain_id1() {
 #[should_panic(expected: ('i1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_collectOnchainOps_invalid_chain_id2() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     // chain_id = MAX_CHAIN_ID + 1
     // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
@@ -307,7 +307,7 @@ fn test_zklink_collectOnchainOps_invalid_chain_id2() {
 #[available_gas(20000000000)]
 fn test_zklink_collectOnchainOps_success() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let mut dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut pubdatas: Bytes = BytesTrait::new();
@@ -486,7 +486,7 @@ fn test_zklink_collectOnchainOps_success() {
 #[should_panic(expected: ('g0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_testCommitOneBlock_invalid_block_number() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let preBlock = StoredBlockInfo {
@@ -522,7 +522,7 @@ fn test_zklink_testCommitOneBlock_invalid_block_number() {
 #[should_panic(expected: ('g2', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_testCommitOneBlock_invalid_timestamp() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let mut preBlock = StoredBlockInfo {
@@ -558,7 +558,7 @@ fn test_zklink_testCommitOneBlock_invalid_timestamp() {
 #[available_gas(20000000000)]
 fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[6];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     // build test block
     let mut pubdatas: Bytes = BytesTrait::new();

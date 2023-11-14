@@ -16,9 +16,6 @@ use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcher;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcherTrait;
-use zklink::tests::mocks::non_standard_token::NonStandardToken;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcher;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
@@ -35,10 +32,10 @@ use zklink::utils::operations::Operations::Withdraw;
 #[available_gas(20000000000)]
 fn test_zklink_normal_withdraw_erc20_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let bob = *addrs[5];
-    let zklink = *addrs[6];
+    let bob = *addrs[utils::ADDR_BOB];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token2: Token = *tokens[1];
+    let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
 
     let chainId: u8 = 1;
@@ -86,10 +83,10 @@ fn test_zklink_normal_withdraw_erc20_success() {
 fn test_zklink_fast_withdraw_and_not_accept_success() {
     // fast withdraw but accept not finish, token should be sent to owner as normal
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token2: Token = *tokens[1];
+    let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
 
     let chainId: u8 = 1;
@@ -142,11 +139,11 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
 #[available_gas(20000000000)]
 fn test_zklink_fast_withdraw_and_accept_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let alice = *addrs[4];
-    let bob = *addrs[5];
-    let zklink = *addrs[6];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let bob = *addrs[utils::ADDR_BOB];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token5: Token = *tokens[4];
+    let token5: Token = *tokens[utils::TOKEN_T5];
     let token5_dispatcher = IStandardDecimalsTokenDispatcher {
         contract_address: token5.tokenAddress
     };
@@ -188,8 +185,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
             fastWithdrawFeeRate,
             accountId,
             subAccountId,
-            nonce,
-            amountTransfer
+            nonce
         );
 
     let op = Withdraw {

@@ -18,7 +18,6 @@ use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
-use zklink::tests::mocks::non_standard_token::NonStandardToken;
 use zklink::tests::mocks::camel_standard_token::CamelStandardToken;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
 use zklink::tests::mocks::verifier_test::VerifierMock;
@@ -102,7 +101,6 @@ fn assert_event_Accept(
     _accountIdOfNonce: u32,
     _subAccountIdOfNonce: u8,
     _nonce: u32,
-    _amountSent: u128,
     _amountReceive: u128
 ) {
     assert_eq(
@@ -118,7 +116,6 @@ fn assert_event_Accept(
                 accountIdOfNonce: _accountIdOfNonce,
                 subAccountIdOfNonce: _subAccountIdOfNonce,
                 nonce: _nonce,
-                amountSent: _amountSent,
                 amountReceive: _amountReceive
             }
         ),
@@ -160,6 +157,21 @@ struct Token {
     tokenAddress: ContractAddress
 }
 
+const TOKEN_ETH: usize = 0;
+const TOKEN_T2: usize = 1;
+const TOKEN_T4: usize = 2;
+const TOKEN_T5: usize = 3;
+const TOKEN_T6: usize = 4;
+
+const ADDR_DEFAULT: usize = 0;
+const ADDR_GOVERNOR: usize = 1;
+const ADDR_VALIDATOR: usize = 2;
+const ADDR_FEE_ACCOUNT: usize = 3;
+const ADDR_ALICE: usize = 4;
+const ADDR_BOB: usize = 5;
+const ADDR_ZKLINK: usize = 6;
+const ADDR_VERIFIER: usize = 7;
+
 fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     // cairo test will auto generate contract address
     // The first deployed contact address is 0x1, and the second is 0x2, and so on.
@@ -198,46 +210,40 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     let eth = Token {
         tokenId: 33, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Ether', 'ETH'])
     };
-    dispatcher.addToken(eth.tokenId, eth.tokenAddress, 18, true);
+    dispatcher.addToken(eth.tokenId, eth.tokenAddress, 18);
     drop_event(zklink);
 
     let token2 = Token {
         tokenId: 34, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token2', 'T2'])
     };
-    dispatcher.addToken(token2.tokenId, token2.tokenAddress, 18, true);
-    drop_event(zklink);
-
-    let token3 = Token {
-        tokenId: 35, tokenAddress: deploy(NonStandardToken::TEST_CLASS_HASH, array!['Token3', 'T3'])
-    };
-    dispatcher.addToken(token3.tokenId, token3.tokenAddress, 18, false);
+    dispatcher.addToken(token2.tokenId, token2.tokenAddress, 18);
     drop_event(zklink);
 
     let token4 = Token {
         tokenId: 17, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token4', 'T4'])
     };
-    dispatcher.addToken(token4.tokenId, token4.tokenAddress, 18, true);
+    dispatcher.addToken(token4.tokenId, token4.tokenAddress, 18);
     drop_event(zklink);
 
     let token5 = Token {
         tokenId: 36,
         tokenAddress: deploy(StandardDecimalsToken::TEST_CLASS_HASH, array!['Token5', 'T5', 6])
     };
-    dispatcher.addToken(token5.tokenId, token5.tokenAddress, 6, true);
+    dispatcher.addToken(token5.tokenId, token5.tokenAddress, 6);
     drop_event(zklink);
 
     let token6 = Token {
         tokenId: 37,
         tokenAddress: deploy(CamelStandardToken::TEST_CLASS_HASH, array!['Token6', 'T6'])
     };
-    dispatcher.addToken(token6.tokenId, token6.tokenAddress, 18, true);
+    dispatcher.addToken(token6.tokenId, token6.tokenAddress, 18);
     drop_event(zklink);
 
     let address: Array<ContractAddress> = array![
         defaultSender, governor, validator, feeAccount, alice, bob, zklink, verifier
     ];
 
-    let tokens: Array<Token> = array![eth, token2, token3, token4, token5, token6];
+    let tokens: Array<Token> = array![eth, token2, token4, token5, token6];
 
     (address, tokens)
 }
