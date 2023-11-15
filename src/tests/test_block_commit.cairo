@@ -9,7 +9,7 @@ use starknet::Felt252TryIntoContractAddress;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
-use zklink::contracts::zklink::Zklink::{createSyncHash, createBlockCommitment};
+use zklink::contracts::zklink::Zklink::{createSyncHash, createBlockCommitmentForSync};
 use zklink::utils::data_structures::DataStructures::{
     CommitBlockInfo, OnchainOperationData, StoredBlockInfo, CompressedBlockExtraInfo
 };
@@ -836,7 +836,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         ]
     };
 
-    let commitment = createBlockCommitment(@preBlock, @compressedBlock, @extraBlock);
+    let commitment = createBlockCommitmentForSync(@preBlock, @compressedBlock, @extraBlock);
 
     let r1: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, compressedBlock, extraBlock);
 
@@ -845,7 +845,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     assert(r1.pendingOnchainOperationsHash == processableOpPubdataHash, 'invaid value3');
     assert(r1.timestamp == timestamp, 'invaid value4');
     assert(r1.stateHash == newStateHash, 'invaid value5');
-    assert(r1.commitment == commitment, 'invaid value6');
+    assert(r1.commitment == 0, 'invaid value6');
     assert(r1.syncHash.low == 0xf592534d947803bd7707e40ec34a185b, 'invaid value7');
     assert(r1.syncHash.high == 0x415190de4c2749e44e1565072210a8fa, 'invaid value7');
 }

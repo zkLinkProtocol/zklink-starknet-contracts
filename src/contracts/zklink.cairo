@@ -1768,7 +1768,9 @@ mod Zklink {
                 .collectOnchainOps(_newBlock);
 
             // Create block commitment for verification proof
-            let commitment: u256 = createBlockCommitment(_previousBlock, _newBlock, _newBlockExtra);
+            let commitmentForSync: u256 = createBlockCommitmentForSync(
+                _previousBlock, _newBlock, _newBlockExtra
+            );
 
             // Create synchronization hash for cross chain block verify
             let onchainOpPubdataHashs: Array<u256> = buildOnchainOperationPubdataHashs(
@@ -1776,7 +1778,7 @@ mod Zklink {
             );
 
             let syncHash = createSyncHash(
-                *_previousBlock.syncHash, commitment, @onchainOpPubdataHashs
+                *_previousBlock.syncHash, commitmentForSync, @onchainOpPubdataHashs
             );
 
             StoredBlockInfo {
@@ -1785,7 +1787,7 @@ mod Zklink {
                 pendingOnchainOperationsHash: pendingOnchainOpsHash,
                 timestamp: *_newBlock.timestamp,
                 stateHash: *_newBlock.newStateHash,
-                commitment: commitment,
+                commitment: 0,
                 syncHash: syncHash
             }
         }
@@ -2226,7 +2228,7 @@ mod Zklink {
 
     // Creates block commitment from its data
     // _offsetCommitment - hash of the array where 1 is stored in chunk where onchainOperation begins and 0 for other chunks
-    fn createBlockCommitment(
+    fn createBlockCommitmentForSync(
         _previousBlock: @StoredBlockInfo,
         _newBlockData: @CommitBlockInfo,
         _newBlockExtraData: @CompressedBlockExtraInfo,
