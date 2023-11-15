@@ -135,7 +135,7 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
         pending_data_size: 13
     };
     let hash = pubdata.keccak();
-    let address = zklink_dispatcher.getAcceptor(accountId, hash);
+    let address = zklink_dispatcher.getAcceptor(hash);
     assert(address == owner, 'acceptor');
 }
 
@@ -177,15 +177,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     token5_dispatcher.approve(zklink, amountTransfer.into());
     zklink_dispatcher
         .acceptERC20(
-            bob,
-            accountId,
-            owner,
-            tokenId,
-            l1Amount,
-            fastWithdrawFeeRate,
-            accountId,
-            subAccountId,
-            nonce
+            bob, owner, tokenId, l1Amount, fastWithdrawFeeRate, accountId, subAccountId, nonce
         );
 
     let op = Withdraw {

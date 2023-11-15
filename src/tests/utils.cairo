@@ -94,7 +94,6 @@ fn assert_event_BrokerApprove(
 fn assert_event_Accept(
     zklink: ContractAddress,
     _acceptor: ContractAddress,
-    _accountId: u32,
     _receiver: ContractAddress,
     _tokenId: u16,
     _amount: u128,
@@ -109,7 +108,6 @@ fn assert_event_Accept(
         @Zklink::Event::Accept(
             Zklink::Accept {
                 acceptor: _acceptor,
-                accountId: _accountId,
                 receiver: _receiver,
                 tokenId: _tokenId,
                 amount: _amount,

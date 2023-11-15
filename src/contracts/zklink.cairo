@@ -18,7 +18,6 @@ trait IZklink<TContractState> {
     fn acceptERC20(
         ref self: TContractState,
         _acceptor: ContractAddress,
-        _accountId: u32,
         _receiver: ContractAddress,
         _tokenId: u16,
         _amount: u128,
@@ -111,7 +110,7 @@ trait IZklink<TContractState> {
         _deductTokenId: u16
     ) -> bool;
     fn authFacts(self: @TContractState, _owner: ContractAddress, _nonce: u32) -> u256;
-    fn accepts(self: @TContractState, _accountId: u32, _hash: u256) -> ContractAddress;
+    fn accepts(self: @TContractState, _hash: u256) -> ContractAddress;
     fn validators(self: @TContractState, _validator: ContractAddress) -> bool;
     fn tokens(self: @TContractState, _tokenId: u16) -> RegisteredToken;
     fn tokenIds(self: @TContractState, _tokenAddress: ContractAddress) -> u16;
@@ -258,8 +257,8 @@ mod Zklink {
         synchronizedChains: LegacyMap::<u256, u256>,
         // public
         // Accept infos of fast withdraw of account
-        // (accountId, keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate)) => acceptor address
-        accepts: LegacyMap::<(u32, u256), ContractAddress>,
+        // keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate) => acceptor address
+        accepts: LegacyMap::<u256, ContractAddress>,
         // internal
         // Broker allowance used in accept, acceptor can authorize broker to do accept
         // Similar to the allowance of transfer in ERC20
@@ -370,8 +369,6 @@ mod Zklink {
     struct Accept {
         #[key]
         acceptor: ContractAddress,
-        #[key]
-        accountId: u32,
         #[key]
         receiver: ContractAddress,
         tokenId: u16,
@@ -555,7 +552,6 @@ mod Zklink {
         // Acceptor accept a erc20 token fast withdraw, acceptor will get a fee for profit
         // Parameters:
         //  acceptor Acceptor who accept a fast withdraw
-        //  accountId Account that request fast withdraw
         //  receiver User receive token from acceptor (the owner of withdraw operation)
         //  tokenId Token id
         //  amount The amount of withdraw operation
@@ -566,7 +562,6 @@ mod Zklink {
         fn acceptERC20(
             ref self: ContractState,
             _acceptor: ContractAddress,
-            _accountId: u32,
             _receiver: ContractAddress,
             _tokenId: u16,
             _amount: u128,
@@ -581,7 +576,6 @@ mod Zklink {
             let (amountReceive, tokenAddress) = self
                 ._checkAccept(
                     _acceptor,
-                    _accountId,
                     _receiver,
                     _tokenId,
                     _amount,
@@ -613,7 +607,6 @@ mod Zklink {
                 .emit(
                     Accept {
                         acceptor: _acceptor,
-                        accountId: _accountId,
                         receiver: _receiver,
                         tokenId: _tokenId,
                         amount: _amount,
@@ -1443,8 +1436,8 @@ mod Zklink {
             self.authFacts.read((_owner, _nonce))
         }
 
-        fn accepts(self: @ContractState, _accountId: u32, _hash: u256) -> ContractAddress {
-            self.accepts.read((_accountId, _hash))
+        fn accepts(self: @ContractState, _hash: u256) -> ContractAddress {
+            self.accepts.read(_hash)
         }
 
         fn validators(self: @ContractState, _validator: ContractAddress) -> bool {
@@ -1953,7 +1946,6 @@ mod Zklink {
                     self
                         ._executeWithdraw(
                             op.accountId,
-                            op.accountId,
                             op.subAccountId,
                             op.nonce,
                             op.owner,
@@ -1968,7 +1960,6 @@ mod Zklink {
                     // forced exit require fast withdraw default and take no fee for fast withdraw
                     self
                         ._executeWithdraw(
-                            op.targetAccountId,
                             op.initiatorAccountId,
                             op.initiatorSubAccountId,
                             op.initiatorNonce,
@@ -2001,7 +1992,6 @@ mod Zklink {
         // Execute fast withdraw or normal withdraw according by fastWithdraw flag
         fn _executeWithdraw(
             ref self: ContractState,
-            _accountId: u32,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
             _nonce: u32,
@@ -2038,10 +2028,10 @@ mod Zklink {
                         )
                     )
             } else {
-                let acceptor: ContractAddress = self.accepts.read((_accountId, withdrawHash));
+                let acceptor: ContractAddress = self.accepts.read(withdrawHash);
                 if acceptor == Zeroable::zero() {
                     // receiver act as a acceptor
-                    self.accepts.write((_accountId, withdrawHash), _owner);
+                    self.accepts.write(withdrawHash, _owner);
                     self.increasePendingBalance(_tokenId, _owner, _amount);
                 } else {
                     self.increasePendingBalance(_tokenId, acceptor, _amount);
@@ -2081,7 +2071,6 @@ mod Zklink {
         fn _checkAccept(
             ref self: ContractState,
             _acceptor: ContractAddress,
-            _accountId: u32,
             _receiver: ContractAddress,
             _tokenId: u16,
             _amount: u128,
@@ -2118,10 +2107,10 @@ mod Zklink {
                 _amount,
                 _withdrawFeeRate
             );
-            assert(self.accepts.read((_accountId, hash)) == Zeroable::zero(), 'H6');
+            assert(self.accepts.read(hash) == Zeroable::zero(), 'H6');
 
             // ===Effects===
-            self.accepts.write((_accountId, hash), _acceptor);
+            self.accepts.write(hash, _acceptor);
 
             (amountReceive, tokenAddress)
         }
