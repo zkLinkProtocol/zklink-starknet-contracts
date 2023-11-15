@@ -71,9 +71,6 @@ trait IZklink<TContractState> {
     fn revertBlocks(ref self: TContractState, _blocksToRevert: Array<StoredBlockInfo>);
     fn receiveSynchronizationProgress(ref self: TContractState, _syncHash: u256, _progress: u256);
     fn syncBlocks(ref self: TContractState, _block: StoredBlockInfo);
-    fn brokerApprove(
-        ref self: TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-    ) -> bool;
     fn changeGovernor(ref self: TContractState, _newGovernor: ContractAddress);
     fn addToken(
         ref self: TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
@@ -86,9 +83,6 @@ trait IZklink<TContractState> {
     );
     fn setGateway(ref self: TContractState, _gateway: ContractAddress);
     fn getSynchronizedProgress(self: @TContractState, _block: StoredBlockInfo) -> u256;
-    fn brokerAllowance(
-        self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress
-    ) -> u128;
     fn getPendingBalance(self: @TContractState, _address: u256, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
@@ -259,11 +253,6 @@ mod Zklink {
         // Accept infos of fast withdraw of account
         // keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate) => acceptor address
         accepts: LegacyMap::<u256, ContractAddress>,
-        // internal
-        // Broker allowance used in accept, acceptor can authorize broker to do accept
-        // Similar to the allowance of transfer in ERC20
-        // (tokenId, acceptor, broker) => allowance
-        brokerAllowances: LegacyMap::<(u16, ContractAddress, ContractAddress), u128>,
         // public
         // A set of permitted validators
         validators: LegacyMap::<ContractAddress, bool>,
@@ -380,18 +369,6 @@ mod Zklink {
         amountReceive: u128
     }
 
-    // Event emitted when set broker allowance
-    #[derive(Drop, PartialEq, starknet::Event)]
-    struct BrokerApprove {
-        #[key]
-        tokenId: u16,
-        #[key]
-        owner: ContractAddress,
-        #[key]
-        spender: ContractAddress,
-        amount: u128
-    }
-
     // Token added to ZkLink net
     // Log token decimals on this chain to let L2 know(token decimals maybe different on different chains)
     #[derive(Drop, PartialEq, starknet::Event)]
@@ -477,7 +454,6 @@ mod Zklink {
         ExodusMode: ExodusMode,
         NewPriorityRequest: NewPriorityRequest,
         Accept: Accept,
-        BrokerApprove: BrokerApprove,
         NewToken: NewToken,
         NewGovernor: NewGovernor,
         ValidatorStatusUpdate: ValidatorStatusUpdate,
@@ -588,20 +564,6 @@ mod Zklink {
             // Interactions
             let _ = IERC20CamelDispatcher { contract_address: tokenAddress }
                 .transferFrom(_acceptor, _receiver, amountReceive.into());
-
-            let sender = get_caller_address();
-            if sender != _acceptor {
-                assert(
-                    Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountReceive,
-                    'F1'
-                );
-                self
-                    .brokerAllowances
-                    .write(
-                        (_tokenId, _acceptor, sender),
-                        self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountReceive
-                    );
-            }
 
             self
                 .emit(
@@ -1151,28 +1113,6 @@ mod Zklink {
             self.end();
         }
 
-        // Give allowance to broker to call accept
-        // Parameters:
-        //  tokenId token that transfer to the receiver of accept request from acceptor or broker
-        //  broker who are allowed to do accept by acceptor(the msg.sender)
-        //  amount the accept allowance of broker
-        fn brokerApprove(
-            ref self: ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-        ) -> bool {
-            assert(_broker != Zeroable::zero(), 'G');
-            let sender = get_caller_address();
-            self.brokerAllowances.write((_tokenId, sender, _broker), _amount);
-            self
-                .emit(
-                    Event::BrokerApprove(
-                        BrokerApprove {
-                            tokenId: _tokenId, owner: sender, spender: _broker, amount: _amount
-                        }
-                    )
-                );
-            true
-        }
-
         // Change current governor
         // Parameters:
         //  _newGovernor Address of the new governor
@@ -1347,16 +1287,6 @@ mod Zklink {
                 }
             }
             progress
-        }
-
-        // Return the accept allowance of broker
-        fn brokerAllowance(
-            self: @ContractState,
-            _tokenId: u16,
-            _accepter: ContractAddress,
-            _broker: ContractAddress
-        ) -> u128 {
-            self.brokerAllowances.read((_tokenId, _accepter, _broker))
         }
 
         // Returns amount of tokens that can be withdrawn by `address` from zkLink contract

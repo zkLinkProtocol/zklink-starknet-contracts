@@ -47,12 +47,6 @@ trait IZklinkMock<TContractState> {
         self: @TContractState, _owner: ContractAddress, _tokenId: u16, _amount: u128
     ) -> u128;
     fn activateExodusMode(self: @TContractState);
-    fn brokerAllowance(
-        self: @TContractState, _tokenId: u16, _acceptor: ContractAddress, _broker: ContractAddress
-    ) -> u128;
-    fn brokerApprove(
-        self: @TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-    ) -> bool;
     fn addToken(
         self: @TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
     );
@@ -222,24 +216,6 @@ mod ZklinkMock {
         fn activateExodusMode(self: @ContractState) {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::Zklink::activateExodusMode(ref state);
-        }
-
-        fn brokerAllowance(
-            self: @ContractState,
-            _tokenId: u16,
-            _acceptor: ContractAddress,
-            _broker: ContractAddress
-        ) -> u128 {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::Zklink::brokerAllowance(@state, _tokenId, _acceptor, _broker)
-        }
-
-        fn brokerApprove(
-            self: @ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-        ) -> bool {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            set_caller_address(get_caller_address());
-            Zklink::Zklink::brokerApprove(ref state, _tokenId, _broker, _amount)
         }
 
         fn addToken(

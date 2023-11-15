@@ -73,24 +73,6 @@ fn drop_event(address: ContractAddress) {
     testing::pop_log_raw(address);
 }
 
-fn assert_event_BrokerApprove(
-    zklink: ContractAddress,
-    _tokenId: u16,
-    _owner: ContractAddress,
-    _spender: ContractAddress,
-    _amount: u128
-) {
-    assert_eq(
-        @testing::pop_log(zklink).unwrap(),
-        @Zklink::Event::BrokerApprove(
-            Zklink::BrokerApprove {
-                tokenId: _tokenId, owner: _owner, spender: _spender, amount: _amount
-            }
-        ),
-        'BrokerApprove Emit'
-    );
-}
-
 fn assert_event_Accept(
     zklink: ContractAddress,
     _acceptor: ContractAddress,
