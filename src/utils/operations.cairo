@@ -124,7 +124,7 @@ mod Operations {
         fn checkPriorityOperation(self: @T, priorityOperation: @PriorityOperation);
     }
 
-    // Deposit operation: 58 bytes(59 with opType)
+    // Deposit operation: 58 bytes(59 with ignored member)
     #[derive(Copy, Drop, Serde)]
     struct Deposit {
         chainId: u8, // 1 byte, deposit from which chain that identified by L2 chain id
@@ -188,7 +188,7 @@ mod Operations {
     }
 
 
-    // FullExit operation: 58 bytes(59 with opType)
+    // FullExit operation: 58 bytes(59 with ignored member)
     #[derive(Copy, Drop, Serde)]
     struct FullExit {
         chainId: u8, // 1 byte, withdraw to which chain that identified by L2 chain id
@@ -251,7 +251,7 @@ mod Operations {
         }
     }
 
-    // Withdraw operation: 63 bytes(68 with opType)
+    // Withdraw operation: 64 bytes(69 with ignored member)
     #[derive(Copy, Drop, Serde)]
     struct Withdraw {
         chainId: u8, // 1 byte, which chain the withdraw happened
@@ -263,6 +263,7 @@ mod Operations {
         nonce: u32, // 4 bytes, the sub account nonce
         fastWithdrawFeeRate: u16, // 2 bytes, fast withdraw fee rate taken by acceptor
         fastWithdraw: u8, // 1 byte, 0 means normal withdraw, 1 means fast withdraw
+        withdrawToL1: u8, // 1 byte, when this flag is 1, it means withdraw token to L1
     }
 
     impl WithdrawReadOperation of OperationReadTrait<Withdraw> {
@@ -294,6 +295,7 @@ mod Operations {
             let (offset, nonce) = pubData.read_u32(offset);
             let (offset, fastWithdrawFeeRate) = pubData.read_u16(offset);
             let (offset, fastWithdraw) = pubData.read_u8(offset);
+            let (offset, withdrawToL1) = pubData.read_u8(offset);
 
             let withdraw = Withdraw {
                 chainId: chainId,
@@ -304,13 +306,14 @@ mod Operations {
                 owner: owner,
                 nonce: nonce,
                 fastWithdrawFeeRate: fastWithdrawFeeRate,
-                fastWithdraw: fastWithdraw
+                fastWithdraw: fastWithdraw,
+                withdrawToL1: withdrawToL1
             };
             withdraw
         }
     }
 
-    // ForcedExit operation: 64 Bytes(68 with opType)
+    // ForcedExit operation: 65 Bytes(69 with ignored member)
     #[derive(Copy, Drop, Serde)]
     struct ForcedExit {
         chainId: u8, // 1 byte, which chain the force exit happened
@@ -320,6 +323,7 @@ mod Operations {
         targetAccountId: u32, // 4 bytes, the account id of target
         tokenId: u16, // 2 bytes, the token that to withdraw
         amount: u128, // 16 bytes, the token amount to withdraw
+        withdrawToL1: u8, // 1 byte, when this flag is 1, it means withdraw token to L1
         target: ContractAddress // 32 bytes, the address to receive token
     }
 
@@ -349,6 +353,7 @@ mod Operations {
             // srcTokenId, u16, ignored at serialization
             let offset = offset + TOKEN_BYTES;
             let (offset, amount) = pubData.read_u128(offset);
+            let (offset, withdrawToL1) = pubData.read_u8(offset);
             let (offset, target) = pubData.read_address(offset);
 
             let forcedExit = ForcedExit {
@@ -359,6 +364,7 @@ mod Operations {
                 targetAccountId: targetAccountId,
                 tokenId: tokenId,
                 amount: amount,
+                withdrawToL1: withdrawToL1,
                 target: target
             };
             forcedExit

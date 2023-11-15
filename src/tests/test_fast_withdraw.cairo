@@ -47,6 +47,7 @@ fn test_zklink_normal_withdraw_erc20_success() {
     let nonce: u32 = 0;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 0;
+    let withdrawToL1: u8 = 0;
     let op = Withdraw {
         chainId,
         accountId,
@@ -57,6 +58,7 @@ fn test_zklink_normal_withdraw_erc20_success() {
         nonce,
         fastWithdrawFeeRate,
         fastWithdraw,
+        withdrawToL1
     };
 
     token2_dispatcher.mintTo(zklink, amount.into());
@@ -98,6 +100,7 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
     let nonce: u32 = 2;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 1;
+    let withdrawToL1: u8 = 0;
 
     let op = Withdraw {
         chainId,
@@ -109,6 +112,7 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
         nonce,
         fastWithdrawFeeRate,
         fastWithdraw,
+        withdrawToL1
     };
 
     token2_dispatcher.mintTo(zklink, amount.into());
@@ -160,6 +164,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     let nonce: u32 = 1;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 1;
+    let withdrawToL1: u8 = 0;
     let MAX_WITHDRAW_FEE_RATE: u16 = 10000;
 
     let bobBalance0 = token5_dispatcher.balanceOf(bob);
@@ -198,6 +203,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
         nonce,
         fastWithdrawFeeRate,
         fastWithdraw,
+        withdrawToL1
     };
     zklink_dispatcher.testExecuteWithdraw(op);
 

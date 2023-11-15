@@ -1,4 +1,4 @@
-use starknet::{ContractAddress, ClassHash};
+use starknet::{ContractAddress, ClassHash, EthAddress};
 use zklink::utils::data_structures::DataStructures::{
     StoredBlockInfo, CommitBlockInfo, ProofInput, CompressedBlockExtraInfo, ExecuteBlockInfo,
     RegisteredToken, BridgeInfo
@@ -29,6 +29,16 @@ trait IZklink<TContractState> {
     );
     fn requestFullExit(
         ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
+    );
+    fn withdrawToL1(
+        ref self: TContractState,
+        _owner: EthAddress,
+        _tokenId: u16,
+        _amount: u128,
+        _fastWithdrawFeeRate: u16,
+        _accountIdOfNonce: u32,
+        _subAccountIdOfNonce: u8,
+        _nonce: u32,
     );
     fn activateExodusMode(ref self: TContractState);
     fn performExodus(
@@ -75,6 +85,7 @@ trait IZklink<TContractState> {
     fn updateBridge(
         ref self: TContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool
     );
+    fn setGateway(ref self: TContractState, _gateway: ContractAddress);
     fn getSynchronizedProgress(self: @TContractState, _block: StoredBlockInfo) -> u256;
     fn brokerAllowance(
         self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress
@@ -111,6 +122,7 @@ trait IZklink<TContractState> {
     fn getMaster(self: @TContractState) -> ContractAddress;
     fn transferMastership(ref self: TContractState, _newMaster: ContractAddress);
     fn upgrade(ref self: TContractState, impl_hash: ClassHash);
+    fn gateway(self: @TContractState) -> ContractAddress;
 }
 
 #[starknet::contract]
@@ -125,7 +137,7 @@ mod Zklink {
     use clone::Clone;
     use starknet::{
         ContractAddress, ClassHash, contract_address_const, Felt252TryIntoContractAddress,
-        get_contract_address, get_caller_address, get_block_info, get_block_timestamp
+        get_contract_address, get_caller_address, get_block_info, get_block_timestamp, EthAddress
     };
     use core::starknet::info::get_block_number;
 
@@ -133,6 +145,8 @@ mod Zklink {
     use super::IZklinkDispatcherTrait;
     use zklink::contracts::verifier::IVerifierDispatcher;
     use zklink::contracts::verifier::IVerifierDispatcherTrait;
+    use zklink::contracts::l2gateway::IL2GatewayDispatcher;
+    use zklink::contracts::l2gateway::IL2GatewayDispatcherTrait;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcherTrait;
     use openzeppelin::upgrades::interface::IUpgradeable;
@@ -173,6 +187,9 @@ mod Zklink {
         // Verifier contract. Used to verify block proof and exit proof
         verifier: ContractAddress,
         // public
+        // The gateway is used for communicating with L1
+        gateway: ContractAddress,
+        // public
         // Total number of executed blocks i.e. blocks[totalBlocksExecuted] points at the latest executed block (block 0 is genesis)
         totalBlocksExecuted: u64,
         // public
@@ -206,6 +223,11 @@ mod Zklink {
         // The type of owner is u256, which can both storing evm address and starknet address 
         // the amount of pending balance need to recovery decimals when withdraw
         pendingBalances: LegacyMap::<(u256, u16), u128>,
+        // internal
+        // Store withdraw data hash that need to be relayed to L1 by gateway
+        // The key is the withdraw data hash
+        // The value is a flag to indicating whether withdraw exists
+        pendingL1Withdraws: LegacyMap::<u256, bool>,
         // public
         // Flag indicates that a user has exited a certain token balance in the exodus mode
         // The struct of this map is (accountId ,subAccountId, withdrawTokenId, deductTokenId) => performed
@@ -423,6 +445,27 @@ mod Zklink {
         enableBridgeFrom: bool
     }
 
+    // Event emitted when user funds are withdrawn from the zkLink state to L1 and contract
+    #[derive(Drop, PartialEq, starknet::Event)]
+    struct WithdrawalL1 {
+        #[key]
+        withdrawHash: u256
+    }
+
+    // Event emitted when user funds are withdrawn from the zkLink state to L1 but not from contract
+    #[derive(Drop, PartialEq, starknet::Event)]
+    struct WithdrawalPendingL1 {
+        #[key]
+        withdrawHash: u256,
+    }
+
+    // Gateway address changed
+    #[derive(Drop, PartialEq, starknet::Event)]
+    struct SetGateway {
+        #[key]
+        newGateway: ContractAddress
+    }
+
     #[event]
     #[derive(Drop, PartialEq, starknet::Event)]
     enum Event {
@@ -443,7 +486,10 @@ mod Zklink {
         ValidatorStatusUpdate: ValidatorStatusUpdate,
         TokenPausedUpdate: TokenPausedUpdate,
         AddBridge: AddBridge,
-        UpdateBridge: UpdateBridge
+        UpdateBridge: UpdateBridge,
+        WithdrawalL1: WithdrawalL1,
+        WithdrawalPendingL1: WithdrawalPendingL1,
+        SetGateway: SetGateway
     }
 
     #[constructor]
@@ -631,6 +677,56 @@ mod Zklink {
             self.addPriorityRequest(OpType::FullExit(()), pubData);
 
             self.end();
+        }
+
+        // Withdraw token to L1 for user by gateway
+        // Parameters:
+        //  _owner User receive token on L1
+        //  _tokenId Token id
+        //  _amount The amount(recovered decimals) of withdraw operation
+        //  _fastWithdrawFeeRate Fast withdraw fee rate taken by acceptor
+        //  _accountIdOfNonce Account that supply nonce, may be different from accountId
+        //  _subAccountIdOfNonce SubAccount that supply nonce
+        //  _nonce SubAccount nonce, used to produce unique accept info
+        fn withdrawToL1(
+            ref self: ContractState,
+            _owner: EthAddress,
+            _tokenId: u16,
+            _amount: u128,
+            _fastWithdrawFeeRate: u16,
+            _accountIdOfNonce: u32,
+            _subAccountIdOfNonce: u8,
+            _nonce: u32,
+        ) { // TODO
+        // // Checks
+        // // ensure withdraw data is not executed
+        // let withdrawHash = getFastWithdrawHash(
+        //     _accountIdOfNonce,
+        //     _subAccountIdOfNonce,
+        //     _nonce,
+        //     _owner.into(),
+        //     _tokenId,
+        //     _amount,
+        //     _fastWithdrawFeeRate
+        // );
+        // assert(self.pendingL1Withdraws.read(withdrawHash) == true, 'M0');
+
+        // // token MUST be registered to ZkLink
+        // let rt = self.tokens.read(_tokenId);
+        // assert(rt.registered, 'M1');
+
+        // // Effects
+        // self.pendingL1Withdraws.write(withdrawHash, false);
+
+        // // Interactions
+        // // transfer token to gateway
+        // IERC20CamelDispatcher { contract_address: rt.tokenAddress }.approve(
+        //     self.gateway.read(),
+        //     _amount.into()
+        // );
+        // IL2GatewayDispatcher { contract_address: self.gateway.read() }.withdrawERC20(
+        //     _owner, rt.tokenAddress, _amount, withdrawHash
+        // );
         }
 
         // Checks if Exodus mode must be entered. If true - enters exodus mode and emits ExodusMode event.
@@ -1227,6 +1323,16 @@ mod Zklink {
                 );
         }
 
+        // Set gateway address
+        // Parameters:
+        //  _gateway gateway address
+        fn setGateway(ref self: ContractState, _gateway: ContractAddress) {
+            self.onlyGovernor();
+            // allow setting gateway to zero address to disable withdraw to L1
+            self.gateway.write(_gateway);
+            self.emit(Event::SetGateway(SetGateway { newGateway: _gateway }));
+        }
+
         // =============view functions=============
         // Get synchronized progress of current chain known
         fn getSynchronizedProgress(self: @ContractState, _block: StoredBlockInfo) -> u256 {
@@ -1387,6 +1493,10 @@ mod Zklink {
             self.requireMaster(get_caller_address());
             assert(!impl_hash.is_zero(), 'upg11');
             starknet::replace_class_syscall(impl_hash).unwrap();
+        }
+
+        fn gateway(self: @ContractState) -> ContractAddress {
+            self.gateway.read()
         }
     }
 
@@ -1752,43 +1862,48 @@ mod Zklink {
             let mut opPubData: Bytes = BytesTrait::new();
             // ignore check if ops are not part of the current chain
             if _opType == OpType::Deposit(()) {
-                let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
+                let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
                 if _chainId == CHAIN_ID {
-                    let op = DepositReadOperation::readFromPubdata(@opPubData_internal);
+                    let op = DepositReadOperation::readFromPubdata(@opPubData);
                     op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                     priorityOperationsProcessed = 1;
                 }
-                opPubData = opPubData_internal;
             } else if _opType == OpType::ChangePubKey(()) {
-                let (_, opPubData_internal) = _pubData
-                    .read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
+                let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
                 if _chainId == CHAIN_ID {
-                    let op = ChangePubKeyReadOperation::readFromPubdata(@opPubData_internal);
+                    let op = ChangePubKeyReadOperation::readFromPubdata(@opPubData);
                     // Now, starknet only support on-chain change pubkey
                     let valid: bool = self
                         .authFacts
                         .read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
                     assert(valid, 'k1');
                 }
-                opPubData = opPubData_internal;
             } else {
                 if _opType == OpType::Withdraw(()) {
-                    let (_, opPubData_internal) = _pubData
-                        .read_bytes(_pubdataOffset, WITHDRAW_BYTES);
-                    opPubData = opPubData_internal;
-                } else if _opType == OpType::ForcedExit(()) {
-                    let (_, opPubData_internal) = _pubData
-                        .read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
-                    opPubData = opPubData_internal;
-                } else if _opType == OpType::FullExit(()) {
-                    let (_, opPubData_internal) = _pubData
-                        .read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                    let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
                     if _chainId == CHAIN_ID {
-                        let op = FullExitReadOperation::readFromPubdata(@opPubData_internal);
+                        let op = WithdrawReadOperation::readFromPubdata(@opPubData);
+                        if op.withdrawToL1 == 1 {
+                            // local chain MUST support withdraw to L1
+                            assert(self.gateway.read().is_non_zero(), 'p0');
+                        }
+                    }
+                } else if _opType == OpType::ForcedExit(()) {
+                    let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
+                    if _chainId == CHAIN_ID {
+                        let op = ForcedExitReadOperation::readFromPubdata(@opPubData);
+                        if op.withdrawToL1 == 1 {
+                            // local chain MUST support withdraw to L1
+                            assert(self.gateway.read().is_non_zero(), 'p1');
+                        }
+                    }
+                } else if _opType == OpType::FullExit(()) {
+                    let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                    if _chainId == CHAIN_ID {
+                        let op = FullExitReadOperation::readFromPubdata(@opPubData);
                         op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                         priorityOperationsProcessed = 1;
                     }
-                    opPubData = opPubData_internal;
                 } else {
                     // revert("k2")
                     panic_with_felt252('k2');
@@ -1851,7 +1966,8 @@ mod Zklink {
                             op.tokenId,
                             op.amount,
                             op.fastWithdrawFeeRate,
-                            op.fastWithdraw
+                            op.fastWithdraw,
+                            op.withdrawToL1
                         );
                 } else if opType == OpType::ForcedExit(()) {
                     let op = ForcedExitReadOperation::readFromPubdata(pubData);
@@ -1867,7 +1983,8 @@ mod Zklink {
                             op.tokenId,
                             op.amount,
                             0,
-                            1
+                            1,
+                            op.withdrawToL1
                         );
                 } else if opType == OpType::FullExit(()) {
                     let op = FullExitReadOperation::readFromPubdata(pubData);
@@ -1900,17 +2017,18 @@ mod Zklink {
             _tokenId: u16,
             _amount: u128,
             _fastWithdrawFeeRate: u16,
-            _fastWithdraw: u8
+            _fastWithdraw: u8,
+            _withdrawToL1: u8
         ) {
             // token MUST be registered
             let rt: RegisteredToken = self.tokens.read(_tokenId);
             assert(rt.registered, 'o0');
 
-            if _fastWithdraw == 1 {
-                // recover withdraw amount
+            if _withdrawToL1 == 1 {
+                // store L1 withdraw data hash to wait relayer consuming it
+                // (accountIdOfNonce, subAccountIdOfNonce, nonce) ensures the uniqueness of withdraw hash
                 let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
-                let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
-                let fwHash = getFastWithdrawHash(
+                let withdrawHash: u256 = getFastWithdrawHash(
                     _accountIdOfNonce,
                     _subAccountIdOfNonce,
                     _nonce,
@@ -1919,22 +2037,44 @@ mod Zklink {
                     acceptAmount,
                     _fastWithdrawFeeRate
                 );
-                let acceptor: ContractAddress = self.accepts.read((_accountId, fwHash));
-
-                if acceptor == Zeroable::zero() {
-                    // receiver act as a acceptor
-                    self.accepts.write((_accountId, fwHash), _owner);
-                    self.increasePendingBalance(_tokenId, _owner, _amount);
-                } else {
-                    // just increase the pending balance of accepter
-                    self.increasePendingBalance(_tokenId, acceptor, _amount - dustAmount);
-                    // add dust to owner
-                    if dustAmount > 0 {
-                        self.increasePendingBalance(_tokenId, _owner, dustAmount);
-                    }
-                }
+                self.pendingL1Withdraws.write(withdrawHash, true);
+                self
+                    .emit(
+                        Event::WithdrawalPendingL1(
+                            WithdrawalPendingL1 { withdrawHash: withdrawHash }
+                        )
+                    )
             } else {
-                self.increasePendingBalance(_tokenId, _owner, _amount);
+                if _fastWithdraw == 1 {
+                    // recover withdraw amount
+                    let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
+                    let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
+                    let fwHash = getFastWithdrawHash(
+                        _accountIdOfNonce,
+                        _subAccountIdOfNonce,
+                        _nonce,
+                        _owner,
+                        _tokenId,
+                        acceptAmount,
+                        _fastWithdrawFeeRate
+                    );
+                    let acceptor: ContractAddress = self.accepts.read((_accountId, fwHash));
+
+                    if acceptor == Zeroable::zero() {
+                        // receiver act as a acceptor
+                        self.accepts.write((_accountId, fwHash), _owner);
+                        self.increasePendingBalance(_tokenId, _owner, _amount);
+                    } else {
+                        // just increase the pending balance of accepter
+                        self.increasePendingBalance(_tokenId, acceptor, _amount - dustAmount);
+                        // add dust to owner
+                        if dustAmount > 0 {
+                            self.increasePendingBalance(_tokenId, _owner, dustAmount);
+                        }
+                    }
+                } else {
+                    self.increasePendingBalance(_tokenId, _owner, _amount);
+                }
             }
         }
 
