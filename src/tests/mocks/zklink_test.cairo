@@ -17,7 +17,6 @@ trait IZklinkMock<TContractState> {
     );
     fn acceptERC20(
         self: @TContractState,
-        _acceptor: ContractAddress,
         _receiver: ContractAddress,
         _tokenId: u16,
         _amount: u128,
@@ -141,7 +140,6 @@ mod ZklinkMock {
 
         fn acceptERC20(
             self: @ContractState,
-            _acceptor: ContractAddress,
             _receiver: ContractAddress,
             _tokenId: u16,
             _amount: u128,
@@ -154,7 +152,6 @@ mod ZklinkMock {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::Zklink::acceptERC20(
                 ref state,
-                _acceptor,
                 _receiver,
                 _tokenId,
                 _amount,

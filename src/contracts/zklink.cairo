@@ -17,7 +17,6 @@ trait IZklink<TContractState> {
     );
     fn acceptERC20(
         ref self: TContractState,
-        _acceptor: ContractAddress,
         _receiver: ContractAddress,
         _tokenId: u16,
         _amount: u128,
@@ -537,7 +536,6 @@ mod Zklink {
         //  nonce SubAccount nonce, used to produce unique accept info
         fn acceptERC20(
             ref self: ContractState,
-            _acceptor: ContractAddress,
             _receiver: ContractAddress,
             _tokenId: u16,
             _amount: u128,
@@ -549,9 +547,10 @@ mod Zklink {
             self.start();
 
             // Checks
+            let sender = get_caller_address();
             let (amountReceive, tokenAddress) = self
                 ._checkAccept(
-                    _acceptor,
+                    sender,
                     _receiver,
                     _tokenId,
                     _amount,
@@ -563,12 +562,12 @@ mod Zklink {
 
             // Interactions
             let _ = IERC20CamelDispatcher { contract_address: tokenAddress }
-                .transferFrom(_acceptor, _receiver, amountReceive.into());
+                .transferFrom(sender, _receiver, amountReceive.into());
 
             self
                 .emit(
                     Accept {
-                        acceptor: _acceptor,
+                        acceptor: sender,
                         receiver: _receiver,
                         tokenId: _tokenId,
                         amount: _amount,

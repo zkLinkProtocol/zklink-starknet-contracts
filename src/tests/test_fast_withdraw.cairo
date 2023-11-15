@@ -176,9 +176,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     set_contract_address(bob);
     token5_dispatcher.approve(zklink, amountTransfer.into());
     zklink_dispatcher
-        .acceptERC20(
-            bob, owner, tokenId, l1Amount, fastWithdrawFeeRate, accountId, subAccountId, nonce
-        );
+        .acceptERC20(owner, tokenId, l1Amount, fastWithdrawFeeRate, accountId, subAccountId, nonce);
 
     let op = Withdraw {
         chainId,

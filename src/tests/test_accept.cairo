@@ -25,22 +25,6 @@ use zklink::utils::bytes::{Bytes, BytesTrait};
 
 #[test]
 #[available_gas(20000000000)]
-#[should_panic(expected: ('H0', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_accept_acceptor_zero() {
-    let (addrs, tokens) = utils::prepare_test_deploy();
-    let alice = *addrs[utils::ADDR_ALICE];
-    let bob = *addrs[utils::ADDR_BOB];
-    let zklink = *addrs[utils::ADDR_ZKLINK];
-    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let eth: Token = *tokens[utils::TOKEN_ETH];
-
-    let ZERO: ContractAddress = contract_address_const::<0>();
-    set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(ZERO, bob, eth.tokenId, 100, 20, 10, 0, 1);
-}
-
-#[test]
-#[available_gas(20000000000)]
 #[should_panic(expected: ('H1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_accept_receiver_zero() {
     let (addrs, tokens) = utils::prepare_test_deploy();
@@ -52,7 +36,7 @@ fn test_zklink_accept_receiver_zero() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(alice, ZERO, eth.tokenId, 100, 20, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(ZERO, eth.tokenId, 100, 20, 10, 0, 1);
 }
 
 #[test]
@@ -68,7 +52,7 @@ fn test_zklink_accept_same_acceptor_receiver() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(alice, alice, eth.tokenId, 100, 20, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(alice, eth.tokenId, 100, 20, 10, 0, 1);
 }
 
 #[test]
@@ -83,7 +67,7 @@ fn test_zklink_accept_token_unregisted() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(alice, bob, 10000, 100, 20, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, 10000, 100, 20, 10, 0, 1);
 }
 
 #[test]
@@ -99,7 +83,7 @@ fn test_zklink_accept_feerate_too_large() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(alice, bob, eth.tokenId, 100, 10000, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, eth.tokenId, 100, 10000, 10, 0, 1);
 }
 
 // calculate pubData from Python
@@ -137,7 +121,7 @@ fn test_zklink_accept_has_acceptor() {
     let hash = pubData.keccak();
     zklink_dispatcher.setAcceptor(hash, alice);
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(alice, bob, eth.tokenId, 100, 100, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, eth.tokenId, 100, 100, 10, 0, 1);
 }
 
 #[test]
@@ -153,7 +137,7 @@ fn test_zklink_accept_exodus() {
 
     set_contract_address(alice);
     zklink_dispatcher.setExodus(true);
-    zklink_dispatcher.acceptERC20(alice, bob, eth.tokenId, 10000, 100, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, eth.tokenId, 10000, 100, 10, 0, 1);
 }
 
 #[test]
@@ -179,14 +163,7 @@ fn test_zklink_accept_standard_erc20_success() {
     token2_dispatcher.approve(zklink, amount.into());
     zklink_dispatcher
         .acceptERC20(
-            bob,
-            alice,
-            token2.tokenId,
-            amount,
-            feeRate,
-            accountIdOfNonce,
-            subAccountIdOfNonce,
-            nonce
+            alice, token2.tokenId, amount, feeRate, accountIdOfNonce, subAccountIdOfNonce, nonce
         );
     utils::assert_event_Accept(
         zklink,
@@ -246,13 +223,6 @@ fn test_zklink_accept_erc20_approve_not_enough() {
     token2_dispatcher.approve(zklink, amountReceive.into()); // 0.98 Ether
     zklink_dispatcher
         .acceptERC20(
-            bob,
-            alice,
-            token2.tokenId,
-            amount,
-            feeRate,
-            accountIdOfNonce,
-            subAccountIdOfNonce,
-            nonce
+            alice, token2.tokenId, amount, feeRate, accountIdOfNonce, subAccountIdOfNonce, nonce
         );
 }
