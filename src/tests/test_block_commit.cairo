@@ -114,9 +114,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset1() {
     publicData.append_u8(0x00);
     utils::paddingChunk(ref publicData, utils::OP_NOOP_CHUNKS);
 
-    let onchainOperation = OnchainOperationData { // ethWitness: BytesTrait::new(),
-        publicDataOffset: publicData.size()
-    };
+    let onchainOperation = OnchainOperationData { publicDataOffset: publicData.size() };
     let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
 
     let mut block = CommitBlockInfo {
@@ -143,9 +141,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset2() {
     publicData.append_u8(0x00);
     utils::paddingChunk(ref publicData, utils::OP_NOOP_CHUNKS);
 
-    let onchainOperation = OnchainOperationData { // ethWitness: BytesTrait::new(),
-        publicDataOffset: 1
-    };
+    let onchainOperation = OnchainOperationData { publicDataOffset: 1 };
     let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
 
     let mut block = CommitBlockInfo {
@@ -172,9 +168,7 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset3() {
     publicData.append_u8(0x00);
     utils::paddingChunk(ref publicData, utils::OP_NOOP_CHUNKS);
 
-    let onchainOperation = OnchainOperationData { // ethWitness: BytesTrait::new(),
-        publicDataOffset: CHUNK_BYTES - 2
-    };
+    let onchainOperation = OnchainOperationData { publicDataOffset: CHUNK_BYTES - 2 };
     let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
 
     let mut block = CommitBlockInfo {
@@ -201,9 +195,7 @@ fn test_zklink_collectOnchainOps_invalid_op_type() {
     publicData.append_u16(0x0001);
     utils::paddingChunk(ref publicData, utils::OP_NOOP_CHUNKS);
 
-    let onchainOperation = OnchainOperationData { // ethWitness: BytesTrait::new(),
-        publicDataOffset: 0
-    };
+    let onchainOperation = OnchainOperationData { publicDataOffset: 0 };
     let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
 
     let mut block = CommitBlockInfo {
@@ -255,9 +247,7 @@ fn test_zklink_collectOnchainOps_invalid_chain_id1() {
 
     utils::paddingChunk(ref publicData, utils::OP_DEPOSIT_CHUNKS);
 
-    let onchainOperation = OnchainOperationData { // ethWitness: BytesTrait::new(),
-        publicDataOffset: 0
-    };
+    let onchainOperation = OnchainOperationData { publicDataOffset: 0 };
     let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
 
     let mut block = CommitBlockInfo {
@@ -298,9 +288,7 @@ fn test_zklink_collectOnchainOps_invalid_chain_id2() {
     };
     utils::paddingChunk(ref publicData, utils::OP_DEPOSIT_CHUNKS);
 
-    let onchainOperation = OnchainOperationData { // ethWitness: BytesTrait::new(),
-        publicDataOffset: 0
-    };
+    let onchainOperation = OnchainOperationData { publicDataOffset: 0 };
     let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
 
     let mut block = CommitBlockInfo {
@@ -368,18 +356,8 @@ fn test_zklink_collectOnchainOps_success() {
     pubdatas.concat(@op);
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     publicDataOffsetOfChain1 += op.size();
     priorityOperationsProcessed += 1;
@@ -406,18 +384,8 @@ fn test_zklink_collectOnchainOps_success() {
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     publicDataOffsetOfChain1 += op.size();
 
@@ -458,18 +426,8 @@ fn test_zklink_collectOnchainOps_success() {
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     publicDataOffsetOfChain1 += op.size();
     priorityOperationsProcessed += 1;
@@ -496,18 +454,8 @@ fn test_zklink_collectOnchainOps_success() {
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
 
     let mut block = CommitBlockInfo {
@@ -660,18 +608,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     pubdatas.concat(@op);
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     publicDataOffsetOfChain1 += op.size();
     priorityOperationsProcessed += 1;
@@ -699,18 +637,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     publicDataOffsetOfChain1 += op.size();
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
@@ -752,18 +680,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     publicDataOffsetOfChain1 += op.size();
     priorityOperationsProcessed += 1;
@@ -791,18 +709,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     pubdatasOfChain1.concat(@op);
     onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    ops
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffset
-            }
-        );
-    opsOfChain1
-        .append(
-            OnchainOperationData { // ethWitness: BytesTrait::new(),
-                publicDataOffset: publicDataOffsetOfChain1
-            }
-        );
+    ops.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
     publicDataOffset += op.size();
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 

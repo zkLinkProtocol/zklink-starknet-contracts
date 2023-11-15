@@ -1863,8 +1863,7 @@ mod Zklink {
             _chainId: u8,
             _pubData: @Bytes,
             _pubdataOffset: usize,
-            _nextPriorityOpIdx: u64,
-        // _ethWitness: @Bytes
+            _nextPriorityOpIdx: u64
         ) -> (u64, Bytes, Bytes) {
             let mut priorityOperationsProcessed: u64 = 0;
             let mut processablePubData: Bytes = BytesTrait::new();
