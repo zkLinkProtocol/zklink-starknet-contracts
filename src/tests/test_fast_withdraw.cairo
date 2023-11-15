@@ -156,28 +156,23 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     let accountId: u32 = 1;
     let subAccountId: u8 = 1;
     let tokenId: u16 = token5.tokenId;
-    let l2Amount: u128 = 10000000500000000000; // 10.0000005 Ether
     let l1Amount: u128 = 10000000; // 10 Ether
-    let l2AmountOfAcceptor: u128 = 10000000000000000000; // 10 Ether
-    let l2DustAmountOfOwner: u128 = 500000000000; // 0.0000005 Ether
+    let l2Amount: u128 = 10000000000000000000; // 10 Ether
     let owner: ContractAddress = alice;
     let nonce: u32 = 1;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 1;
     let withdrawToL1: u8 = 0;
-    let MAX_WITHDRAW_FEE_RATE: u16 = 10000;
 
     let bobBalance0 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance0 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(bob), tokenId);
     let aliceBalance0 = token5_dispatcher.balanceOf(alice);
-    let alicePendingBalance0 = zklink_dispatcher
-        .getPendingBalance(utils::extendAddress(alice), tokenId);
 
     token5_dispatcher.mintTo(bob, l1Amount.into());
     let amountTransfer = l1Amount
-        * (MAX_WITHDRAW_FEE_RATE - fastWithdrawFeeRate).into()
-        / MAX_WITHDRAW_FEE_RATE.into();
+        * (utils::MAX_ACCEPT_FEE_RATE - fastWithdrawFeeRate).into()
+        / utils::MAX_ACCEPT_FEE_RATE.into();
     set_contract_address(bob);
     token5_dispatcher.approve(zklink, amountTransfer.into());
     zklink_dispatcher
@@ -208,8 +203,6 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     zklink_dispatcher.testExecuteWithdraw(op);
 
     let aliceBalance1 = token5_dispatcher.balanceOf(alice);
-    let alicePendingBalance1 = zklink_dispatcher
-        .getPendingBalance(utils::extendAddress(alice), tokenId);
     let bobBalance1 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance1 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(bob), tokenId);
@@ -218,13 +211,9 @@ fn test_zklink_fast_withdraw_and_accept_success() {
         aliceBalance1 - aliceBalance0 == amountTransfer.into(), 'alice balance'
     ); // owner receive amountTransfer = l1Amount - fee
     assert(
-        alicePendingBalance1 - alicePendingBalance0 == l2DustAmountOfOwner.into(),
-        'alice pending balance'
-    ); //  owner pending balance increase dust amount
-    assert(
         bobBalance1 - bobBalance0 == (l1Amount - amountTransfer).into(), 'bob balance'
     ); // l1Amount - amountTransfer is the profit of acceptor
     assert(
-        bobPendingBalance1 - bobPendingBalance0 == l2AmountOfAcceptor.into(), 'bob pending balance'
+        bobPendingBalance1 - bobPendingBalance0 == l2Amount.into(), 'bob pending balance'
     ); // acceptor pending balance increase
 }

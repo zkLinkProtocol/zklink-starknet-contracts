@@ -1883,19 +1883,13 @@ mod Zklink {
                     let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
                     if _chainId == CHAIN_ID {
                         let op = WithdrawReadOperation::readFromPubdata(@opPubData);
-                        if op.withdrawToL1 == 1 {
-                            // local chain MUST support withdraw to L1
-                            assert(self.gateway.read().is_non_zero(), 'p0');
-                        }
+                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
                     }
                 } else if _opType == OpType::ForcedExit(()) {
                     let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
                         let op = ForcedExitReadOperation::readFromPubdata(@opPubData);
-                        if op.withdrawToL1 == 1 {
-                            // local chain MUST support withdraw to L1
-                            assert(self.gateway.read().is_non_zero(), 'p1');
-                        }
+                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
                     }
                 } else if _opType == OpType::FullExit(()) {
                     let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
@@ -1966,7 +1960,6 @@ mod Zklink {
                             op.tokenId,
                             op.amount,
                             op.fastWithdrawFeeRate,
-                            op.fastWithdraw,
                             op.withdrawToL1
                         );
                 } else if opType == OpType::ForcedExit(()) {
@@ -1983,7 +1976,6 @@ mod Zklink {
                             op.tokenId,
                             op.amount,
                             0,
-                            1,
                             op.withdrawToL1
                         );
                 } else if opType == OpType::FullExit(()) {
@@ -2017,26 +2009,27 @@ mod Zklink {
             _tokenId: u16,
             _amount: u128,
             _fastWithdrawFeeRate: u16,
-            _fastWithdraw: u8,
             _withdrawToL1: u8
         ) {
             // token MUST be registered
             let rt: RegisteredToken = self.tokens.read(_tokenId);
             assert(rt.registered, 'o0');
 
+            // recover withdraw amount
+            let recoverAmount = recoveryDecimals(_amount, rt.decimals);
+            let withdrawHash = getWithdrawHash(
+                _accountIdOfNonce,
+                _subAccountIdOfNonce,
+                _nonce,
+                _owner,
+                _tokenId,
+                recoverAmount,
+                _fastWithdrawFeeRate
+            );
+
             if _withdrawToL1 == 1 {
                 // store L1 withdraw data hash to wait relayer consuming it
                 // (accountIdOfNonce, subAccountIdOfNonce, nonce) ensures the uniqueness of withdraw hash
-                let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
-                let withdrawHash: u256 = getFastWithdrawHash(
-                    _accountIdOfNonce,
-                    _subAccountIdOfNonce,
-                    _nonce,
-                    _owner,
-                    _tokenId,
-                    acceptAmount,
-                    _fastWithdrawFeeRate
-                );
                 self.pendingL1Withdraws.write(withdrawHash, true);
                 self
                     .emit(
@@ -2045,35 +2038,13 @@ mod Zklink {
                         )
                     )
             } else {
-                if _fastWithdraw == 1 {
-                    // recover withdraw amount
-                    let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
-                    let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
-                    let fwHash = getFastWithdrawHash(
-                        _accountIdOfNonce,
-                        _subAccountIdOfNonce,
-                        _nonce,
-                        _owner,
-                        _tokenId,
-                        acceptAmount,
-                        _fastWithdrawFeeRate
-                    );
-                    let acceptor: ContractAddress = self.accepts.read((_accountId, fwHash));
-
-                    if acceptor == Zeroable::zero() {
-                        // receiver act as a acceptor
-                        self.accepts.write((_accountId, fwHash), _owner);
-                        self.increasePendingBalance(_tokenId, _owner, _amount);
-                    } else {
-                        // just increase the pending balance of accepter
-                        self.increasePendingBalance(_tokenId, acceptor, _amount - dustAmount);
-                        // add dust to owner
-                        if dustAmount > 0 {
-                            self.increasePendingBalance(_tokenId, _owner, dustAmount);
-                        }
-                    }
-                } else {
+                let acceptor: ContractAddress = self.accepts.read((_accountId, withdrawHash));
+                if acceptor == Zeroable::zero() {
+                    // receiver act as a acceptor
+                    self.accepts.write((_accountId, withdrawHash), _owner);
                     self.increasePendingBalance(_tokenId, _owner, _amount);
+                } else {
+                    self.increasePendingBalance(_tokenId, acceptor, _amount);
                 }
             }
         }
@@ -2138,7 +2109,7 @@ mod Zklink {
                 / MAX_ACCEPT_FEE_RATE.into();
 
             // accept tx may be later than block exec tx(with user withdraw op)
-            let hash = getFastWithdrawHash(
+            let hash = getWithdrawHash(
                 _accountIdOfNonce,
                 _subAccountIdOfNonce,
                 _nonce,
@@ -2153,6 +2124,20 @@ mod Zklink {
             self.accepts.write((_accountId, hash), _acceptor);
 
             (amountReceive, tokenAddress)
+        }
+
+        // Checks that withdraw params is correct
+        fn verifyWithdraw(self: @ContractState, _tokenId: u16, _amount: u128, withdrawToL1: u8) {
+            // token MUST be registered to ZkLink
+            let rt: RegisteredToken = self.tokens.read(_tokenId);
+            assert(rt.registered, 'p0');
+
+            // withdraw amount MUST without dust
+            let recoverAmount = recoveryDecimals(_amount, rt.decimals);
+            assert(_amount == improveDecimals(recoverAmount, rt.decimals), 'p1');
+
+            // local chain MUST support withdraw to L1
+            assert(withdrawToL1 == 0 || self.gateway.read().is_non_zero(), 'p2');
         }
     }
 
@@ -2173,7 +2158,8 @@ mod Zklink {
     }
 
     // Return accept record hash for fast withdraw
-    fn getFastWithdrawHash(
+    // (accountIdOfNonce, subAccountIdOfNonce, nonce) ensures the uniqueness of withdraw hash
+    fn getWithdrawHash(
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
         _nonce: u32,

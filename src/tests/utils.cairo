@@ -54,6 +54,7 @@ const EMPTY_STRING_KECCAK: u256 =
     0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
 const MAX_SUB_ACCOUNT_ID: u8 = 31;
 const MAX_ACCOUNT_ID: u32 = 16777215;
+const MAX_ACCEPT_FEE_RATE: u16 = 10000;
 
 
 fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAddress {

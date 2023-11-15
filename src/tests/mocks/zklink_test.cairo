@@ -336,7 +336,6 @@ mod ZklinkMock {
                 _op.tokenId,
                 _op.amount,
                 _op.fastWithdrawFeeRate,
-                _op.fastWithdraw,
                 _op.withdrawToL1
             );
         }
