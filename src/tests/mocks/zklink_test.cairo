@@ -80,13 +80,12 @@ trait IZklinkMock<TContractState> {
     fn mockExecBlock(self: @TContractState, _storedBlockInfo: StoredBlockInfo);
     fn testCollectOnchainOps(
         self: @TContractState, _newBlockData: CommitBlockInfo
-    ) -> (u256, u64, Bytes, Array<u256>);
+    ) -> (u256, u64, u256);
     fn testAddPriorityRequest(self: @TContractState, _opType: OpType, _opData: Bytes);
     fn testCommitOneBlock(
         self: @TContractState,
         _previousBlock: StoredBlockInfo,
         _newBlock: CommitBlockInfo,
-        _compressed: bool,
         _newBlockExtra: CompressedBlockExtraInfo
     ) -> StoredBlockInfo;
     fn testExecuteWithdraw(self: @TContractState, _op: Withdraw);
@@ -335,7 +334,7 @@ mod ZklinkMock {
 
         fn testCollectOnchainOps(
             self: @ContractState, _newBlockData: CommitBlockInfo
-        ) -> (u256, u64, Bytes, Array<u256>) {
+        ) -> (u256, u64, u256) {
             let state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
         }
@@ -349,12 +348,11 @@ mod ZklinkMock {
             self: @ContractState,
             _previousBlock: StoredBlockInfo,
             _newBlock: CommitBlockInfo,
-            _compressed: bool,
             _newBlockExtra: CompressedBlockExtraInfo
         ) -> StoredBlockInfo {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::InternalFunctions::commitOneBlock(
-                ref state, @_previousBlock, @_newBlock, _compressed, @_newBlockExtra
+                ref state, @_previousBlock, @_newBlock, @_newBlockExtra
             )
         }
 

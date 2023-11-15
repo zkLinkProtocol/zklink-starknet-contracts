@@ -7,25 +7,6 @@ use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_data_structures::array_ext::ArrayTraitExt;
 
-fn update_u256_array_at(arr: @Array<u256>, index: usize, value: u256) -> Array<u256> {
-    assert(index < arr.len(), 'index out of range');
-    let mut new_arr: Array<u256> = array![];
-    let mut i = 0;
-
-    loop {
-        if i == arr.len() {
-            break ();
-        }
-        if i == index {
-            new_arr.append(value);
-        } else {
-            new_arr.append(*arr[i]);
-        }
-        i += 1;
-    };
-    new_arr
-}
-
 // Convert sha256 result(Array<u8>) to u256
 // result length MUST be 32
 fn u8_array_to_u256(arr: Span<u8>) -> u256 {
