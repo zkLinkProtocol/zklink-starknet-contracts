@@ -302,31 +302,31 @@ fn test_bytes_read_bytes() {
     bytes.append_u128(0x01855d7796176b05d160196ff92381eb);
     bytes.append_u128_packed(0x7910f5446c2e0e04e13db2194a4f, 14);
 
-    let (new_offset, sub_bytes) = bytes.read_bytes(4, 37);
+    let sub_bytes = bytes.read_bytes(4, 37);
     let sub_bytes_data = @sub_bytes.data;
-    assert(new_offset == 41, 'read_bytes_offset');
+    // assert(new_offset == 41, 'read_bytes_offset');
     assert(sub_bytes.size() == 37, 'read_bytes_size');
     assert(*sub_bytes_data[0] == 0x05060708091011121314015401855d77, 'read_bytes_value_1');
     assert(*sub_bytes_data[1] == 0x96176b05d160196ff92381eb7910f544, 'read_bytes_value_2');
     assert(sub_bytes.pending_data == 0x6c2e0e04e1, 'read_bytes_value_3');
 
-    let (new_offset, sub_bytes) = bytes.read_bytes(0, 14);
+    let sub_bytes = bytes.read_bytes(0, 14);
     let sub_bytes_data = @sub_bytes.data;
-    assert(new_offset == 14, 'read_bytes_offset');
+    // assert(new_offset == 14, 'read_bytes_offset');
     assert(sub_bytes.size() == 14, 'read_bytes_size');
     assert(sub_bytes.pending_data == 0x0102030405060708091011121314, 'read_bytes_value_4');
 
     // read first byte
-    let (new_offset, sub_bytes) = bytes.read_bytes(0, 1);
+    let sub_bytes = bytes.read_bytes(0, 1);
     let sub_bytes_data = @sub_bytes.data;
-    assert(new_offset == 1, 'read_bytes_offset');
+    // assert(new_offset == 1, 'read_bytes_offset');
     assert(sub_bytes.size() == 1, 'read_bytes_size');
     assert(sub_bytes.pending_data == 0x01, 'read_bytes_value_5');
 
     // read last byte
-    let (new_offset, sub_bytes) = bytes.read_bytes(45, 1);
+    let sub_bytes = bytes.read_bytes(45, 1);
     let sub_bytes_data = @sub_bytes.data;
-    assert(new_offset == 46, 'read_bytes_offset');
+    // assert(new_offset == 46, 'read_bytes_offset');
     assert(sub_bytes.size() == 1, 'read_bytes_size');
     assert(sub_bytes.pending_data == 0x4f, 'read_bytes_value_6');
 }

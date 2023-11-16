@@ -103,15 +103,16 @@ fn test_zklink_read_withdraw_pubdata() {
         owner: owner,
         nonce: 45,
         fastWithdrawFeeRate: 45,
-        fastWithdraw: 1
+        fastWithdraw: 1,
+        withdrawToL1: 0
     };
 
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
-    // example = [3, 1, 32, 4, 34, 34, 32, 14, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 45, 45, 1]
+    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8","uint8"]
+    // example = [3, 1, 32, 4, 34, 34, 32, 14, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 45, 45, 1, 0]
     //
     // data = [3992876284251986964483546870026600448, 35184607447564, 20678471039984701855585286363423409824, 149216281713636543258803496807561166848]
-    // pending_data = 754986241
-    // pending_data_size = 4
+    // pending_data = 193276477696
+    // pending_data_size = 5
 
     let mut _pubData = Bytes {
         data: array![
@@ -120,8 +121,8 @@ fn test_zklink_read_withdraw_pubdata() {
             20678471039984701855585286363423409824,
             149216281713636543258803496807561166848
         ],
-        pending_data: 754986241,
-        pending_data_size: 4
+        pending_data: 193276477696,
+        pending_data_size: 5
     };
 
     dispatcher.testWithdrawPubdata(_example, _pubData);
@@ -202,25 +203,26 @@ fn test_zklink_read_forceexit_pubdata() {
         targetAccountId: 3,
         tokenId: 5,
         amount: 6,
+        withdrawToL1: 0,
         target: target
     };
 
-    // encode_format = ["uint8","uint8","uint32","uint8","uint32","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [7, 1, 2, 1, 5, 3, 4, 5, 5, 6, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
+    // encode_format = ["uint8","uint8","uint32","uint8","uint32","uint32","uint8","uint16","uint16","uint128","uint8","uint256"]
+    // example = [7, 1, 2, 1, 5, 3, 4, 5, 5, 6, 0, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
     //
-    // data = [9309788267355368511960897543844397828, 25961880433486709464340449365852160, 477624887620356151319952016089, 227142569737839188506614686513323349732]
-    // pending_data = 1646442285
-    // pending_data_size = 4
+    // data = [9309788267355368511960897543844397828, 25961880433486709464340449365852160, 475377787243924971365008578242, 289329750748365178750230095700027442326]
+    // pending_data = 980898985773
+    // pending_data_size = 5
 
     let mut _pubData = Bytes {
         data: array![
             9309788267355368511960897543844397828,
             25961880433486709464340449365852160,
-            477624887620356151319952016089,
-            227142569737839188506614686513323349732
+            475377787243924971365008578242,
+            289329750748365178750230095700027442326
         ],
-        pending_data: 1646442285,
-        pending_data_size: 4
+        pending_data: 980898985773,
+        pending_data_size: 5
     };
 
     dispatcher.testForcedExitPubdata(_example, _pubData);

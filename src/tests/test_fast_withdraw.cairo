@@ -16,9 +16,6 @@ use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcher;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcherTrait;
-use zklink::tests::mocks::non_standard_token::NonStandardToken;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcher;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
@@ -35,10 +32,10 @@ use zklink::utils::operations::Operations::Withdraw;
 #[available_gas(20000000000)]
 fn test_zklink_normal_withdraw_erc20_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let bob = *addrs[5];
-    let zklink = *addrs[6];
+    let bob = *addrs[utils::ADDR_BOB];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token2: Token = *tokens[1];
+    let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
 
     let chainId: u8 = 1;
@@ -50,6 +47,7 @@ fn test_zklink_normal_withdraw_erc20_success() {
     let nonce: u32 = 0;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 0;
+    let withdrawToL1: u8 = 0;
     let op = Withdraw {
         chainId,
         accountId,
@@ -60,6 +58,7 @@ fn test_zklink_normal_withdraw_erc20_success() {
         nonce,
         fastWithdrawFeeRate,
         fastWithdraw,
+        withdrawToL1
     };
 
     token2_dispatcher.mintTo(zklink, amount.into());
@@ -86,10 +85,10 @@ fn test_zklink_normal_withdraw_erc20_success() {
 fn test_zklink_fast_withdraw_and_not_accept_success() {
     // fast withdraw but accept not finish, token should be sent to owner as normal
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token2: Token = *tokens[1];
+    let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
 
     let chainId: u8 = 1;
@@ -101,6 +100,7 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
     let nonce: u32 = 2;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 1;
+    let withdrawToL1: u8 = 0;
 
     let op = Withdraw {
         chainId,
@@ -112,6 +112,7 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
         nonce,
         fastWithdrawFeeRate,
         fastWithdraw,
+        withdrawToL1
     };
 
     token2_dispatcher.mintTo(zklink, amount.into());
@@ -134,7 +135,7 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
         pending_data_size: 13
     };
     let hash = pubdata.keccak();
-    let address = zklink_dispatcher.getAcceptor(accountId, hash);
+    let address = zklink_dispatcher.getAcceptor(hash);
     assert(address == owner, 'acceptor');
 }
 
@@ -142,11 +143,11 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
 #[available_gas(20000000000)]
 fn test_zklink_fast_withdraw_and_accept_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let alice = *addrs[4];
-    let bob = *addrs[5];
-    let zklink = *addrs[6];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let bob = *addrs[utils::ADDR_BOB];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token5: Token = *tokens[4];
+    let token5: Token = *tokens[utils::TOKEN_T5];
     let token5_dispatcher = IStandardDecimalsTokenDispatcher {
         contract_address: token5.tokenAddress
     };
@@ -155,42 +156,27 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     let accountId: u32 = 1;
     let subAccountId: u8 = 1;
     let tokenId: u16 = token5.tokenId;
-    let l2Amount: u128 = 10000000500000000000; // 10.0000005 Ether
     let l1Amount: u128 = 10000000; // 10 Ether
-    let l2AmountOfAcceptor: u128 = 10000000000000000000; // 10 Ether
-    let l2DustAmountOfOwner: u128 = 500000000000; // 0.0000005 Ether
+    let l2Amount: u128 = 10000000000000000000; // 10 Ether
     let owner: ContractAddress = alice;
     let nonce: u32 = 1;
     let fastWithdrawFeeRate: u16 = 50;
     let fastWithdraw: u8 = 1;
-    let MAX_WITHDRAW_FEE_RATE: u16 = 10000;
+    let withdrawToL1: u8 = 0;
 
     let bobBalance0 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance0 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(bob), tokenId);
     let aliceBalance0 = token5_dispatcher.balanceOf(alice);
-    let alicePendingBalance0 = zklink_dispatcher
-        .getPendingBalance(utils::extendAddress(alice), tokenId);
 
     token5_dispatcher.mintTo(bob, l1Amount.into());
     let amountTransfer = l1Amount
-        * (MAX_WITHDRAW_FEE_RATE - fastWithdrawFeeRate).into()
-        / MAX_WITHDRAW_FEE_RATE.into();
+        * (utils::MAX_ACCEPT_FEE_RATE - fastWithdrawFeeRate).into()
+        / utils::MAX_ACCEPT_FEE_RATE.into();
     set_contract_address(bob);
     token5_dispatcher.approve(zklink, amountTransfer.into());
     zklink_dispatcher
-        .acceptERC20(
-            bob,
-            accountId,
-            owner,
-            tokenId,
-            l1Amount,
-            fastWithdrawFeeRate,
-            accountId,
-            subAccountId,
-            nonce,
-            amountTransfer
-        );
+        .acceptERC20(owner, tokenId, l1Amount, fastWithdrawFeeRate, accountId, subAccountId, nonce);
 
     let op = Withdraw {
         chainId,
@@ -202,12 +188,11 @@ fn test_zklink_fast_withdraw_and_accept_success() {
         nonce,
         fastWithdrawFeeRate,
         fastWithdraw,
+        withdrawToL1
     };
     zklink_dispatcher.testExecuteWithdraw(op);
 
     let aliceBalance1 = token5_dispatcher.balanceOf(alice);
-    let alicePendingBalance1 = zklink_dispatcher
-        .getPendingBalance(utils::extendAddress(alice), tokenId);
     let bobBalance1 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance1 = zklink_dispatcher
         .getPendingBalance(utils::extendAddress(bob), tokenId);
@@ -216,13 +201,9 @@ fn test_zklink_fast_withdraw_and_accept_success() {
         aliceBalance1 - aliceBalance0 == amountTransfer.into(), 'alice balance'
     ); // owner receive amountTransfer = l1Amount - fee
     assert(
-        alicePendingBalance1 - alicePendingBalance0 == l2DustAmountOfOwner.into(),
-        'alice pending balance'
-    ); //  owner pending balance increase dust amount
-    assert(
         bobBalance1 - bobBalance0 == (l1Amount - amountTransfer).into(), 'bob balance'
     ); // l1Amount - amountTransfer is the profit of acceptor
     assert(
-        bobPendingBalance1 - bobPendingBalance0 == l2AmountOfAcceptor.into(), 'bob pending balance'
+        bobPendingBalance1 - bobPendingBalance0 == l2Amount.into(), 'bob pending balance'
     ); // acceptor pending balance increase
 }

@@ -15,9 +15,6 @@ use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
 use zklink::tests::mocks::standard_token::StandardToken;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcher;
 use zklink::tests::mocks::standard_token::IStandardTokenDispatcherTrait;
-use zklink::tests::mocks::non_standard_token::NonStandardToken;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcher;
-use zklink::tests::mocks::non_standard_token::INonStandardTokenDispatcherTrait;
 use zklink::tests::mocks::standard_decimals_token::StandardDecimalsToken;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcher;
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
@@ -47,8 +44,8 @@ fn getStoredBlockTemplate() -> StoredBlockInfo {
 #[should_panic(expected: ('1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_performExodus_when_active() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let owner = defaultSender;
@@ -78,8 +75,8 @@ fn test_zklink_performExodus_when_active() {
 #[should_panic(expected: ('1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_cancelOutstandingDepositsForExodusMode_when_active() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     let owner = defaultSender;
@@ -99,11 +96,11 @@ fn test_zklink_cancelOutstandingDepositsForExodusMode_when_active() {
 #[should_panic(expected: ('0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_activateExodusMode_twice() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let eth: Token = *tokens[0];
+    let eth: Token = *tokens[utils::TOKEN_ETH];
     let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
 
     let to = alice;
@@ -132,11 +129,11 @@ fn test_zklink_activateExodusMode_twice() {
 #[should_panic(expected: ('y1', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_performExodus_not_last_block() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let eth: Token = *tokens[0];
+    let eth: Token = *tokens[utils::TOKEN_ETH];
     let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
 
     let block5 = getStoredBlockTemplate();
@@ -177,13 +174,13 @@ fn test_zklink_performExodus_not_last_block() {
 #[should_panic(expected: ('y2', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_performExodus_verify_failed() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let verifier = *addrs[7];
+    let verifier = *addrs[utils::ADDR_VERIFIER];
     let verifier_dispatcher = IVerifierMockDispatcher { contract_address: verifier };
-    let eth: Token = *tokens[0];
+    let eth: Token = *tokens[utils::TOKEN_ETH];
     let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
 
     let block5 = getStoredBlockTemplate();
@@ -227,13 +224,13 @@ fn test_zklink_performExodus_verify_failed() {
 #[should_panic(expected: ('y0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_performExodus_twice() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let verifier = *addrs[7];
     let verifier_dispatcher = IVerifierMockDispatcher { contract_address: verifier };
-    let eth: Token = *tokens[0];
+    let eth: Token = *tokens[utils::TOKEN_ETH];
     let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
 
     let block5 = getStoredBlockTemplate();
@@ -284,13 +281,13 @@ fn test_zklink_performExodus_twice() {
 #[available_gas(20000000000)]
 fn test_zklink_performExodus_diff_subaccountId_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let verifier = *addrs[7];
     let verifier_dispatcher = IVerifierMockDispatcher { contract_address: verifier };
-    let eth: Token = *tokens[0];
+    let eth: Token = *tokens[utils::TOKEN_ETH];
     let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
 
     let block5 = getStoredBlockTemplate();
@@ -346,11 +343,11 @@ fn test_zklink_performExodus_diff_subaccountId_success() {
 #[should_panic(expected: ('A0', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_cancelOutstandingDepositsForExodusMode_no_priority_request() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let eth: Token = *tokens[0];
+    let eth: Token = *tokens[utils::TOKEN_ETH];
     let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
 
     // active exodus mode
@@ -386,13 +383,12 @@ fn test_zklink_cancelOutstandingDepositsForExodusMode_no_priority_request() {
 #[available_gas(20000000000)]
 fn test_zklink_cancelOutstandingDepositsForExodusMode_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
-    let defaultSender = *addrs[0];
-    let alice = *addrs[4];
-    let zklink = *addrs[6];
+    let defaultSender = *addrs[utils::ADDR_DEFAULT];
+    let alice = *addrs[utils::ADDR_ALICE];
+    let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    let token2: Token = *tokens[1];
+    let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
-    let token3: Token = *tokens[2];
 
     set_contract_address(defaultSender);
     token2_dispatcher.mint(1000000000000000000000); // 1000 Ether
@@ -403,7 +399,7 @@ fn test_zklink_cancelOutstandingDepositsForExodusMode_success() {
         .depositERC20(token2.tokenAddress, amount0, utils::extendAddress(defaultSender), 0, false);
 
     set_contract_address(alice);
-    zklink_dispatcher.requestFullExit(14, 2, token3.tokenId, false);
+    zklink_dispatcher.requestFullExit(14, 2, token2.tokenId, false);
 
     set_contract_address(defaultSender);
     zklink_dispatcher

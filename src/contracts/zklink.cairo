@@ -1,6 +1,6 @@
-use starknet::{ContractAddress, ClassHash};
+use starknet::{ContractAddress, ClassHash, EthAddress};
 use zklink::utils::data_structures::DataStructures::{
-    StoredBlockInfo, CommitBlockInfo, ProofInput, Token, CompressedBlockExtraInfo, ExecuteBlockInfo,
+    StoredBlockInfo, CommitBlockInfo, ProofInput, CompressedBlockExtraInfo, ExecuteBlockInfo,
     RegisteredToken, BridgeInfo
 };
 use zklink::utils::bytes::Bytes;
@@ -15,29 +15,28 @@ trait IZklink<TContractState> {
         _subAccountId: u8,
         _mapping: bool
     );
-    fn transferERC20(
-        ref self: TContractState,
-        _token: ContractAddress,
-        _to: ContractAddress,
-        _amount: u128,
-        _maxAmount: u128,
-        _isStandard: bool
-    ) -> u128;
     fn acceptERC20(
         ref self: TContractState,
-        _acceptor: ContractAddress,
-        _accountId: u32,
         _receiver: ContractAddress,
         _tokenId: u16,
         _amount: u128,
         _withdrawFeeRate: u16,
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
-        _nonce: u32,
-        _amountTransfer: u128
+        _nonce: u32
     );
     fn requestFullExit(
         ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
+    );
+    fn withdrawToL1(
+        ref self: TContractState,
+        _owner: EthAddress,
+        _tokenId: u16,
+        _amount: u128,
+        _fastWithdrawFeeRate: u16,
+        _accountIdOfNonce: u32,
+        _subAccountIdOfNonce: u8,
+        _nonce: u32,
     );
     fn activateExodusMode(ref self: TContractState);
     fn performExodus(
@@ -71,28 +70,18 @@ trait IZklink<TContractState> {
     fn revertBlocks(ref self: TContractState, _blocksToRevert: Array<StoredBlockInfo>);
     fn receiveSynchronizationProgress(ref self: TContractState, _syncHash: u256, _progress: u256);
     fn syncBlocks(ref self: TContractState, _block: StoredBlockInfo);
-    fn brokerApprove(
-        ref self: TContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-    ) -> bool;
     fn changeGovernor(ref self: TContractState, _newGovernor: ContractAddress);
     fn addToken(
-        ref self: TContractState,
-        _tokenId: u16,
-        _tokenAddress: ContractAddress,
-        _decimals: u8,
-        _standard: bool
+        ref self: TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
     );
-    fn addTokens(ref self: TContractState, _tokenList: Array<Token>);
     fn setTokenPaused(ref self: TContractState, _tokenId: u16, _tokenPaused: bool);
     fn setValidator(ref self: TContractState, _validator: ContractAddress, _active: bool);
     fn addBridge(ref self: TContractState, _bridge: ContractAddress) -> usize;
     fn updateBridge(
         ref self: TContractState, _index: usize, _enableBridgeTo: bool, _enableBridgeFrom: bool
     );
+    fn setGateway(ref self: TContractState, _gateway: ContractAddress);
     fn getSynchronizedProgress(self: @TContractState, _block: StoredBlockInfo) -> u256;
-    fn brokerAllowance(
-        self: @TContractState, _tokenId: u16, _accepter: ContractAddress, _broker: ContractAddress
-    ) -> u128;
     fn getPendingBalance(self: @TContractState, _address: u256, _tokenId: u16) -> u128;
     fn isBridgeToEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
     fn isBridgeFromEnabled(self: @TContractState, _bridge: ContractAddress) -> bool;
@@ -114,7 +103,7 @@ trait IZklink<TContractState> {
         _deductTokenId: u16
     ) -> bool;
     fn authFacts(self: @TContractState, _owner: ContractAddress, _nonce: u32) -> u256;
-    fn accepts(self: @TContractState, _accountId: u32, _hash: u256) -> ContractAddress;
+    fn accepts(self: @TContractState, _hash: u256) -> ContractAddress;
     fn validators(self: @TContractState, _validator: ContractAddress) -> bool;
     fn tokens(self: @TContractState, _tokenId: u16) -> RegisteredToken;
     fn tokenIds(self: @TContractState, _tokenAddress: ContractAddress) -> u16;
@@ -125,6 +114,7 @@ trait IZklink<TContractState> {
     fn getMaster(self: @TContractState) -> ContractAddress;
     fn transferMastership(ref self: TContractState, _newMaster: ContractAddress);
     fn upgrade(ref self: TContractState, impl_hash: ClassHash);
+    fn gateway(self: @TContractState) -> ContractAddress;
 }
 
 #[starknet::contract]
@@ -139,7 +129,7 @@ mod Zklink {
     use clone::Clone;
     use starknet::{
         ContractAddress, ClassHash, contract_address_const, Felt252TryIntoContractAddress,
-        get_contract_address, get_caller_address, get_block_info, get_block_timestamp
+        get_contract_address, get_caller_address, get_block_info, get_block_timestamp, EthAddress
     };
     use core::starknet::info::get_block_number;
 
@@ -147,6 +137,8 @@ mod Zklink {
     use super::IZklinkDispatcherTrait;
     use zklink::contracts::verifier::IVerifierDispatcher;
     use zklink::contracts::verifier::IVerifierDispatcherTrait;
+    use zklink::contracts::l2gateway::IL2GatewayDispatcher;
+    use zklink::contracts::l2gateway::IL2GatewayDispatcherTrait;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcherTrait;
     use openzeppelin::upgrades::interface::IUpgradeable;
@@ -160,7 +152,7 @@ mod Zklink {
     };
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken, BridgeInfo, StoredBlockInfo, CommitBlockInfo, CompressedBlockExtraInfo,
-        ExecuteBlockInfo, OnchainOperationData, Token, ProofInput,
+        ExecuteBlockInfo, OnchainOperationData, ProofInput,
     };
     use zklink::utils::math::{fast_power10, u256_fast_pow2, uint_min};
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash};
@@ -186,6 +178,9 @@ mod Zklink {
         // public
         // Verifier contract. Used to verify block proof and exit proof
         verifier: ContractAddress,
+        // public
+        // The gateway is used for communicating with L1
+        gateway: ContractAddress,
         // public
         // Total number of executed blocks i.e. blocks[totalBlocksExecuted] points at the latest executed block (block 0 is genesis)
         totalBlocksExecuted: u64,
@@ -220,6 +215,11 @@ mod Zklink {
         // The type of owner is u256, which can both storing evm address and starknet address 
         // the amount of pending balance need to recovery decimals when withdraw
         pendingBalances: LegacyMap::<(u256, u16), u128>,
+        // internal
+        // Store withdraw data hash that need to be relayed to L1 by gateway
+        // The key is the withdraw data hash
+        // The value is a flag to indicating whether withdraw exists
+        pendingL1Withdraws: LegacyMap::<u256, bool>,
         // public
         // Flag indicates that a user has exited a certain token balance in the exodus mode
         // The struct of this map is (accountId ,subAccountId, withdrawTokenId, deductTokenId) => performed
@@ -250,13 +250,8 @@ mod Zklink {
         synchronizedChains: LegacyMap::<u256, u256>,
         // public
         // Accept infos of fast withdraw of account
-        // (accountId, keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate)) => acceptor address
-        accepts: LegacyMap::<(u32, u256), ContractAddress>,
-        // internal
-        // Broker allowance used in accept, acceptor can authorize broker to do accept
-        // Similar to the allowance of transfer in ERC20
-        // (tokenId, acceptor, broker) => allowance
-        brokerAllowances: LegacyMap::<(u16, ContractAddress, ContractAddress), u128>,
+        // keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate) => acceptor address
+        accepts: LegacyMap::<u256, ContractAddress>,
         // public
         // A set of permitted validators
         validators: LegacyMap::<ContractAddress, bool>,
@@ -363,8 +358,6 @@ mod Zklink {
         #[key]
         acceptor: ContractAddress,
         #[key]
-        accountId: u32,
-        #[key]
         receiver: ContractAddress,
         tokenId: u16,
         amount: u128,
@@ -372,20 +365,7 @@ mod Zklink {
         accountIdOfNonce: u32,
         subAccountIdOfNonce: u8,
         nonce: u32,
-        amountSent: u128,
         amountReceive: u128
-    }
-
-    // Event emitted when set broker allowance
-    #[derive(Drop, PartialEq, starknet::Event)]
-    struct BrokerApprove {
-        #[key]
-        tokenId: u16,
-        #[key]
-        owner: ContractAddress,
-        #[key]
-        spender: ContractAddress,
-        amount: u128
     }
 
     // Token added to ZkLink net
@@ -438,6 +418,27 @@ mod Zklink {
         enableBridgeFrom: bool
     }
 
+    // Event emitted when user funds are withdrawn from the zkLink state to L1 and contract
+    #[derive(Drop, PartialEq, starknet::Event)]
+    struct WithdrawalL1 {
+        #[key]
+        withdrawHash: u256
+    }
+
+    // Event emitted when user funds are withdrawn from the zkLink state to L1 but not from contract
+    #[derive(Drop, PartialEq, starknet::Event)]
+    struct WithdrawalPendingL1 {
+        #[key]
+        withdrawHash: u256,
+    }
+
+    // Gateway address changed
+    #[derive(Drop, PartialEq, starknet::Event)]
+    struct SetGateway {
+        #[key]
+        newGateway: ContractAddress
+    }
+
     #[event]
     #[derive(Drop, PartialEq, starknet::Event)]
     enum Event {
@@ -452,13 +453,15 @@ mod Zklink {
         ExodusMode: ExodusMode,
         NewPriorityRequest: NewPriorityRequest,
         Accept: Accept,
-        BrokerApprove: BrokerApprove,
         NewToken: NewToken,
         NewGovernor: NewGovernor,
         ValidatorStatusUpdate: ValidatorStatusUpdate,
         TokenPausedUpdate: TokenPausedUpdate,
         AddBridge: AddBridge,
-        UpdateBridge: UpdateBridge
+        UpdateBridge: UpdateBridge,
+        WithdrawalL1: WithdrawalL1,
+        WithdrawalPendingL1: WithdrawalPendingL1,
+        SetGateway: SetGateway
     }
 
     #[constructor]
@@ -521,53 +524,9 @@ mod Zklink {
             self.end();
         }
 
-        // Sends tokens
-        // NOTE: will revert if transfer call fails or rollup balance difference (before and after transfer) is bigger than _maxAmount
-        // This function is used to allow tokens to spend zkLink contract balance up to amount that is requested
-        // Parameters:
-        //  _token Token address
-        //  _to Address of recipient
-        //  _amount Amount of tokens to transfer
-        //  _maxAmount Maximum possible amount of tokens to transfer to this account
-        //  _isStandard If token is a standard erc20
-        //  withdrawnAmount The really amount than will be debited from user
-        fn transferERC20(
-            ref self: ContractState,
-            _token: ContractAddress,
-            _to: ContractAddress,
-            _amount: u128,
-            _maxAmount: u128,
-            _isStandard: bool
-        ) -> u128 {
-            let sender = get_caller_address();
-            let contract_address = get_contract_address();
-            assert(sender == contract_address, 'n0');
-
-            // most tokens are standard, fewer query token balance can save gas
-            if _isStandard {
-                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                return _amount;
-            } else {
-                let balanceBefore = IERC20CamelDispatcher { contract_address: _token }
-                    .balanceOf(contract_address);
-                IERC20CamelDispatcher { contract_address: _token }.transfer(_to, _amount.into());
-                let balanceAfter = IERC20CamelDispatcher { contract_address: _token }
-                    .balanceOf(contract_address);
-                let balanceDiff: u128 = (balanceBefore - balanceAfter).try_into().unwrap();
-                assert(
-                    balanceDiff > 0, 'n1'
-                ); // transfer is considered successful only if the balance of the contract decreased after transfer
-                assert(
-                    balanceDiff <= _maxAmount, 'n2'
-                ); // rollup balance difference (before and after transfer) is bigger than `_maxAmount`
-                return balanceDiff;
-            }
-        }
-
         // Acceptor accept a erc20 token fast withdraw, acceptor will get a fee for profit
         // Parameters:
         //  acceptor Acceptor who accept a fast withdraw
-        //  accountId Account that request fast withdraw
         //  receiver User receive token from acceptor (the owner of withdraw operation)
         //  tokenId Token id
         //  amount The amount of withdraw operation
@@ -575,28 +534,23 @@ mod Zklink {
         //  nonceFromAccountId Account that supply nonce, may be different from accountId
         //  nonceFromSubAccountId SubAccount that supply nonce
         //  nonce SubAccount nonce, used to produce unique accept info
-        //  amountTransfer Amount that transfer from acceptor to receiver
-        // may be a litter larger than the amount receiver received
         fn acceptERC20(
             ref self: ContractState,
-            _acceptor: ContractAddress,
-            _accountId: u32,
             _receiver: ContractAddress,
             _tokenId: u16,
             _amount: u128,
             _withdrawFeeRate: u16,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
-            _nonce: u32,
-            _amountTransfer: u128
+            _nonce: u32
         ) {
             self.start();
 
             // Checks
-            let (mut amountReceive, tokenAddress) = self
+            let sender = get_caller_address();
+            let (amountReceive, tokenAddress) = self
                 ._checkAccept(
-                    _acceptor,
-                    _accountId,
+                    sender,
                     _receiver,
                     _tokenId,
                     _amount,
@@ -607,51 +561,13 @@ mod Zklink {
                 );
 
             // Interactions
-            let receiverBalanceBefore: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_receiver);
-            let acceptorBalanceBefore: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_acceptor);
             let _ = IERC20CamelDispatcher { contract_address: tokenAddress }
-                .transferFrom(_acceptor, _receiver, _amountTransfer.into());
-            let receiverBalanceAfter: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_receiver);
-            let acceptorBalanceAfter: u256 = IERC20CamelDispatcher {
-                contract_address: tokenAddress
-            }
-                .balanceOf(_acceptor);
-            let receiverBalanceDiff: u128 = (receiverBalanceAfter - receiverBalanceBefore)
-                .try_into()
-                .unwrap();
-            assert(receiverBalanceDiff >= amountReceive, 'F0');
-            amountReceive = receiverBalanceDiff;
-            let amountSent: u128 = (acceptorBalanceBefore - acceptorBalanceAfter)
-                .try_into()
-                .unwrap();
-
-            let sender = get_caller_address();
-            if sender != _acceptor {
-                assert(
-                    Zklink::brokerAllowance(@self, _tokenId, _acceptor, sender) >= amountSent, 'F1'
-                );
-                self
-                    .brokerAllowances
-                    .write(
-                        (_tokenId, _acceptor, sender),
-                        self.brokerAllowances.read((_tokenId, _acceptor, sender)) - amountSent
-                    );
-            }
+                .transferFrom(sender, _receiver, amountReceive.into());
 
             self
                 .emit(
                     Accept {
-                        acceptor: _acceptor,
-                        accountId: _accountId,
+                        acceptor: sender,
                         receiver: _receiver,
                         tokenId: _tokenId,
                         amount: _amount,
@@ -659,7 +575,6 @@ mod Zklink {
                         accountIdOfNonce: _accountIdOfNonce,
                         subAccountIdOfNonce: _subAccountIdOfNonce,
                         nonce: _nonce,
-                        amountSent: amountSent,
                         amountReceive: amountReceive,
                     }
                 );
@@ -716,6 +631,56 @@ mod Zklink {
             self.addPriorityRequest(OpType::FullExit(()), pubData);
 
             self.end();
+        }
+
+        // Withdraw token to L1 for user by gateway
+        // Parameters:
+        //  _owner User receive token on L1
+        //  _tokenId Token id
+        //  _amount The amount(recovered decimals) of withdraw operation
+        //  _fastWithdrawFeeRate Fast withdraw fee rate taken by acceptor
+        //  _accountIdOfNonce Account that supply nonce, may be different from accountId
+        //  _subAccountIdOfNonce SubAccount that supply nonce
+        //  _nonce SubAccount nonce, used to produce unique accept info
+        fn withdrawToL1(
+            ref self: ContractState,
+            _owner: EthAddress,
+            _tokenId: u16,
+            _amount: u128,
+            _fastWithdrawFeeRate: u16,
+            _accountIdOfNonce: u32,
+            _subAccountIdOfNonce: u8,
+            _nonce: u32,
+        ) { // TODO
+        // // Checks
+        // // ensure withdraw data is not executed
+        // let withdrawHash = getFastWithdrawHash(
+        //     _accountIdOfNonce,
+        //     _subAccountIdOfNonce,
+        //     _nonce,
+        //     _owner.into(),
+        //     _tokenId,
+        //     _amount,
+        //     _fastWithdrawFeeRate
+        // );
+        // assert(self.pendingL1Withdraws.read(withdrawHash) == true, 'M0');
+
+        // // token MUST be registered to ZkLink
+        // let rt = self.tokens.read(_tokenId);
+        // assert(rt.registered, 'M1');
+
+        // // Effects
+        // self.pendingL1Withdraws.write(withdrawHash, false);
+
+        // // Interactions
+        // // transfer token to gateway
+        // IERC20CamelDispatcher { contract_address: rt.tokenAddress }.approve(
+        //     self.gateway.read(),
+        //     _amount.into()
+        // );
+        // IL2GatewayDispatcher { contract_address: self.gateway.read() }.withdrawERC20(
+        //     _owner, rt.tokenAddress, _amount, withdrawHash
+        // );
         }
 
         // Checks if Exodus mode must be entered. If true - enters exodus mode and emits ExodusMode event.
@@ -933,14 +898,12 @@ mod Zklink {
             let owner: u256 = extendAddress(_owner);
             let balance: u128 = self.pendingBalances.read((owner, _tokenId));
             let withdrawBalance = recoveryDecimals(balance, rt.decimals);
-            let mut amount = uint_min(_amount, withdrawBalance);
+            let amount = uint_min(_amount, withdrawBalance);
             assert(amount > 0, 'b1');
 
             // Interactions
-            let tokenAddress: ContractAddress = rt.tokenAddress;
-            let contract_address = get_contract_address();
-            amount = IZklinkDispatcher { contract_address }
-                .transferERC20(tokenAddress, _owner, amount, withdrawBalance, rt.standard);
+            IERC20CamelDispatcher { contract_address: rt.tokenAddress }
+                .transfer(_owner, amount.into());
 
             self
                 .pendingBalances
@@ -1149,28 +1112,6 @@ mod Zklink {
             self.end();
         }
 
-        // Give allowance to broker to call accept
-        // Parameters:
-        //  tokenId token that transfer to the receiver of accept request from acceptor or broker
-        //  broker who are allowed to do accept by acceptor(the msg.sender)
-        //  amount the accept allowance of broker
-        fn brokerApprove(
-            ref self: ContractState, _tokenId: u16, _broker: ContractAddress, _amount: u128
-        ) -> bool {
-            assert(_broker != Zeroable::zero(), 'G');
-            let sender = get_caller_address();
-            self.brokerAllowances.write((_tokenId, sender, _broker), _amount);
-            self
-                .emit(
-                    Event::BrokerApprove(
-                        BrokerApprove {
-                            tokenId: _tokenId, owner: sender, spender: _broker, amount: _amount
-                        }
-                    )
-                );
-            true
-        }
-
         // Change current governor
         // Parameters:
         //  _newGovernor Address of the new governor
@@ -1191,11 +1132,7 @@ mod Zklink {
         //  _decimals Token decimals of layer one
         //  _standard If token is a standard erc20
         fn addToken(
-            ref self: ContractState,
-            _tokenId: u16,
-            _tokenAddress: ContractAddress,
-            _decimals: u8,
-            _standard: bool
+            ref self: ContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
         ) {
             self.onlyGovernor();
 
@@ -1214,27 +1151,9 @@ mod Zklink {
             rt.registered = true;
             rt.tokenAddress = _tokenAddress;
             rt.decimals = _decimals;
-            rt.standard = _standard;
             self.tokens.write(_tokenId, rt);
             self.tokenIds.write(_tokenAddress, _tokenId);
             self.emit(NewToken { tokenId: _tokenId, token: _tokenAddress, decimals: _decimals });
-        }
-
-        // Add tokens to the list of networks tokens
-        // Parameters:
-        //  _tokenList Token list
-        fn addTokens(ref self: ContractState, _tokenList: Array<Token>) {
-            let mut i: usize = 0;
-            loop {
-                if i == _tokenList.len() {
-                    break ();
-                }
-                let _token: Token = *_tokenList[i];
-                Zklink::addToken(
-                    ref self, _token.tokenId, _token.tokenAddress, _token.decimals, _token.standard
-                );
-                i += 1;
-            };
         }
 
         // Pause token deposits for the given token
@@ -1336,6 +1255,16 @@ mod Zklink {
                 );
         }
 
+        // Set gateway address
+        // Parameters:
+        //  _gateway gateway address
+        fn setGateway(ref self: ContractState, _gateway: ContractAddress) {
+            self.onlyGovernor();
+            // allow setting gateway to zero address to disable withdraw to L1
+            self.gateway.write(_gateway);
+            self.emit(Event::SetGateway(SetGateway { newGateway: _gateway }));
+        }
+
         // =============view functions=============
         // Get synchronized progress of current chain known
         fn getSynchronizedProgress(self: @ContractState, _block: StoredBlockInfo) -> u256 {
@@ -1357,16 +1286,6 @@ mod Zklink {
                 }
             }
             progress
-        }
-
-        // Return the accept allowance of broker
-        fn brokerAllowance(
-            self: @ContractState,
-            _tokenId: u16,
-            _accepter: ContractAddress,
-            _broker: ContractAddress
-        ) -> u128 {
-            self.brokerAllowances.read((_tokenId, _accepter, _broker))
         }
 
         // Returns amount of tokens that can be withdrawn by `address` from zkLink contract
@@ -1446,8 +1365,8 @@ mod Zklink {
             self.authFacts.read((_owner, _nonce))
         }
 
-        fn accepts(self: @ContractState, _accountId: u32, _hash: u256) -> ContractAddress {
-            self.accepts.read((_accountId, _hash))
+        fn accepts(self: @ContractState, _hash: u256) -> ContractAddress {
+            self.accepts.read(_hash)
         }
 
         fn validators(self: @ContractState, _validator: ContractAddress) -> bool {
@@ -1496,6 +1415,10 @@ mod Zklink {
             self.requireMaster(get_caller_address());
             assert(!impl_hash.is_zero(), 'upg11');
             starknet::replace_class_syscall(impl_hash).unwrap();
+        }
+
+        fn gateway(self: @ContractState) -> ContractAddress {
+            self.gateway.read()
         }
     }
 
@@ -1582,26 +1505,17 @@ mod Zklink {
             // transfer erc20 token from sender to zkLink contract
             let sender = get_caller_address();
             let this = get_contract_address();
-            let mut _amount = _amount;
-            if rt.standard {
-                IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .transferFrom(sender, this, _amount.into());
-            } else {
-                // support non-standard tokens
-                let balanceBefore = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .balanceOf(this);
-                // NOTE, the balance of this contract will be increased
-                // if the token is not a pure erc20 token, it could do anything within the transferFrom
-                // we MUST NOT use `token.balanceOf(address(this))` in any control structures
-                IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .transferFrom(sender, this, _amount.into());
-                let balanceAfter = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                    .balanceOf(this);
-                _amount = (balanceAfter - balanceBefore).try_into().unwrap();
-            }
+            let balanceBefore = IERC20CamelDispatcher { contract_address: _tokenAddress }
+                .balanceOf(this);
+            IERC20CamelDispatcher { contract_address: _tokenAddress }
+                .transferFrom(sender, this, _amount.into());
+            let balanceAfter = IERC20CamelDispatcher { contract_address: _tokenAddress }
+                .balanceOf(this);
+            // only support pure erc20
+            assert(_amount.into() == balanceAfter - balanceBefore, 'e6');
 
             // improve decimals before send to layer two
-            _amount = improveDecimals(_amount, rt.decimals);
+            let _amount = improveDecimals(_amount, rt.decimals);
             // disable deposit with zero amount
             assert(_amount > 0 && _amount <= MAX_DEPOSIT_AMOUNT, 'e0');
 
@@ -1870,43 +1784,42 @@ mod Zklink {
             let mut opPubData: Bytes = BytesTrait::new();
             // ignore check if ops are not part of the current chain
             if _opType == OpType::Deposit(()) {
-                let (_, opPubData_internal) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
+                opPubData = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
                 if _chainId == CHAIN_ID {
-                    let op = DepositReadOperation::readFromPubdata(@opPubData_internal);
+                    let op = DepositReadOperation::readFromPubdata(@opPubData);
                     op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                     priorityOperationsProcessed = 1;
                 }
-                opPubData = opPubData_internal;
             } else if _opType == OpType::ChangePubKey(()) {
-                let (_, opPubData_internal) = _pubData
-                    .read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
+                opPubData = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
                 if _chainId == CHAIN_ID {
-                    let op = ChangePubKeyReadOperation::readFromPubdata(@opPubData_internal);
+                    let op = ChangePubKeyReadOperation::readFromPubdata(@opPubData);
                     // Now, starknet only support on-chain change pubkey
                     let valid: bool = self
                         .authFacts
                         .read((op.owner, op.nonce)) == pubKeyHash(op.pubKeyHash);
                     assert(valid, 'k1');
                 }
-                opPubData = opPubData_internal;
             } else {
                 if _opType == OpType::Withdraw(()) {
-                    let (_, opPubData_internal) = _pubData
-                        .read_bytes(_pubdataOffset, WITHDRAW_BYTES);
-                    opPubData = opPubData_internal;
-                } else if _opType == OpType::ForcedExit(()) {
-                    let (_, opPubData_internal) = _pubData
-                        .read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
-                    opPubData = opPubData_internal;
-                } else if _opType == OpType::FullExit(()) {
-                    let (_, opPubData_internal) = _pubData
-                        .read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                    opPubData = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
                     if _chainId == CHAIN_ID {
-                        let op = FullExitReadOperation::readFromPubdata(@opPubData_internal);
+                        let op = WithdrawReadOperation::readFromPubdata(@opPubData);
+                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
+                    }
+                } else if _opType == OpType::ForcedExit(()) {
+                    opPubData = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
+                    if _chainId == CHAIN_ID {
+                        let op = ForcedExitReadOperation::readFromPubdata(@opPubData);
+                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
+                    }
+                } else if _opType == OpType::FullExit(()) {
+                    opPubData = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                    if _chainId == CHAIN_ID {
+                        let op = FullExitReadOperation::readFromPubdata(@opPubData);
                         op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                         priorityOperationsProcessed = 1;
                     }
-                    opPubData = opPubData_internal;
                 } else {
                     // revert("k2")
                     panic_with_felt252('k2');
@@ -1962,14 +1875,13 @@ mod Zklink {
                     self
                         ._executeWithdraw(
                             op.accountId,
-                            op.accountId,
                             op.subAccountId,
                             op.nonce,
                             op.owner,
                             op.tokenId,
                             op.amount,
                             op.fastWithdrawFeeRate,
-                            op.fastWithdraw
+                            op.withdrawToL1
                         );
                 } else if opType == OpType::ForcedExit(()) {
                     let op = ForcedExitReadOperation::readFromPubdata(pubData);
@@ -1977,7 +1889,6 @@ mod Zklink {
                     // forced exit require fast withdraw default and take no fee for fast withdraw
                     self
                         ._executeWithdraw(
-                            op.targetAccountId,
                             op.initiatorAccountId,
                             op.initiatorSubAccountId,
                             op.initiatorNonce,
@@ -1985,7 +1896,7 @@ mod Zklink {
                             op.tokenId,
                             op.amount,
                             0,
-                            1
+                            op.withdrawToL1
                         );
                 } else if opType == OpType::FullExit(()) {
                     let op = FullExitReadOperation::readFromPubdata(pubData);
@@ -2010,7 +1921,6 @@ mod Zklink {
         // Execute fast withdraw or normal withdraw according by fastWithdraw flag
         fn _executeWithdraw(
             ref self: ContractState,
-            _accountId: u32,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
             _nonce: u32,
@@ -2018,41 +1928,43 @@ mod Zklink {
             _tokenId: u16,
             _amount: u128,
             _fastWithdrawFeeRate: u16,
-            _fastWithdraw: u8
+            _withdrawToL1: u8
         ) {
             // token MUST be registered
             let rt: RegisteredToken = self.tokens.read(_tokenId);
             assert(rt.registered, 'o0');
 
-            if _fastWithdraw == 1 {
-                // recover withdraw amount
-                let acceptAmount: u128 = recoveryDecimals(_amount, rt.decimals);
-                let dustAmount: u128 = _amount - improveDecimals(acceptAmount, rt.decimals);
-                let fwHash = getFastWithdrawHash(
-                    _accountIdOfNonce,
-                    _subAccountIdOfNonce,
-                    _nonce,
-                    _owner,
-                    _tokenId,
-                    acceptAmount,
-                    _fastWithdrawFeeRate
-                );
-                let acceptor: ContractAddress = self.accepts.read((_accountId, fwHash));
+            // recover withdraw amount
+            let recoverAmount = recoveryDecimals(_amount, rt.decimals);
+            let withdrawHash = getWithdrawHash(
+                _accountIdOfNonce,
+                _subAccountIdOfNonce,
+                _nonce,
+                _owner,
+                _tokenId,
+                recoverAmount,
+                _fastWithdrawFeeRate
+            );
 
+            if _withdrawToL1 == 1 {
+                // store L1 withdraw data hash to wait relayer consuming it
+                // (accountIdOfNonce, subAccountIdOfNonce, nonce) ensures the uniqueness of withdraw hash
+                self.pendingL1Withdraws.write(withdrawHash, true);
+                self
+                    .emit(
+                        Event::WithdrawalPendingL1(
+                            WithdrawalPendingL1 { withdrawHash: withdrawHash }
+                        )
+                    )
+            } else {
+                let acceptor: ContractAddress = self.accepts.read(withdrawHash);
                 if acceptor == Zeroable::zero() {
                     // receiver act as a acceptor
-                    self.accepts.write((_accountId, fwHash), _owner);
+                    self.accepts.write(withdrawHash, _owner);
                     self.increasePendingBalance(_tokenId, _owner, _amount);
                 } else {
-                    // just increase the pending balance of accepter
-                    self.increasePendingBalance(_tokenId, acceptor, _amount - dustAmount);
-                    // add dust to owner
-                    if dustAmount > 0 {
-                        self.increasePendingBalance(_tokenId, _owner, dustAmount);
-                    }
+                    self.increasePendingBalance(_tokenId, acceptor, _amount);
                 }
-            } else {
-                self.increasePendingBalance(_tokenId, _owner, _amount);
             }
         }
 
@@ -2088,7 +2000,6 @@ mod Zklink {
         fn _checkAccept(
             ref self: ContractState,
             _acceptor: ContractAddress,
-            _accountId: u32,
             _receiver: ContractAddress,
             _tokenId: u16,
             _amount: u128,
@@ -2116,7 +2027,7 @@ mod Zklink {
                 / MAX_ACCEPT_FEE_RATE.into();
 
             // accept tx may be later than block exec tx(with user withdraw op)
-            let hash = getFastWithdrawHash(
+            let hash = getWithdrawHash(
                 _accountIdOfNonce,
                 _subAccountIdOfNonce,
                 _nonce,
@@ -2125,12 +2036,26 @@ mod Zklink {
                 _amount,
                 _withdrawFeeRate
             );
-            assert(self.accepts.read((_accountId, hash)) == Zeroable::zero(), 'H6');
+            assert(self.accepts.read(hash) == Zeroable::zero(), 'H6');
 
             // ===Effects===
-            self.accepts.write((_accountId, hash), _acceptor);
+            self.accepts.write(hash, _acceptor);
 
             (amountReceive, tokenAddress)
+        }
+
+        // Checks that withdraw params is correct
+        fn verifyWithdraw(self: @ContractState, _tokenId: u16, _amount: u128, withdrawToL1: u8) {
+            // token MUST be registered to ZkLink
+            let rt: RegisteredToken = self.tokens.read(_tokenId);
+            assert(rt.registered, 'p0');
+
+            // withdraw amount MUST without dust
+            let recoverAmount = recoveryDecimals(_amount, rt.decimals);
+            assert(_amount == improveDecimals(recoverAmount, rt.decimals), 'p1');
+
+            // local chain MUST support withdraw to L1
+            assert(withdrawToL1 == 0 || self.gateway.read().is_non_zero(), 'p2');
         }
     }
 
@@ -2151,7 +2076,8 @@ mod Zklink {
     }
 
     // Return accept record hash for fast withdraw
-    fn getFastWithdrawHash(
+    // (accountIdOfNonce, subAccountIdOfNonce, nonce) ensures the uniqueness of withdraw hash
+    fn getWithdrawHash(
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
         _nonce: u32,

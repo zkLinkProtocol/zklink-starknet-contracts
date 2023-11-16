@@ -15,8 +15,7 @@ mod DataStructures {
         registered: bool, // whether token registered to ZkLink or not, default is false
         paused: bool, // whether token can deposit to ZkLink or not, default is false
         tokenAddress: ContractAddress, // the token address
-        decimals: u8, // the token decimals of layer one
-        standard: bool // we will not check the balance different of zkLink contract after transfer when a token comply with erc20 standard
+        decimals: u8 // the token decimals of layer one
     }
 
     // We can set `enableBridgeTo` and `enableBridgeTo` to false
@@ -102,15 +101,6 @@ mod DataStructures {
     struct ExecuteBlockInfo {
         storedBlock: StoredBlockInfo, // the block info that will be executed
         pendingOnchainOpsPubdata: Array<Bytes> // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
-    }
-
-    // Token info stored in zkLink
-    #[derive(Drop, Copy, Serde)]
-    struct Token {
-        tokenId: u16, // token id defined by zkLink
-        tokenAddress: ContractAddress, // token address in l1
-        decimals: u8, // token decimals in l1
-        standard: bool // if token a pure erc20 or not
     }
 
     // Recursive proof input data (individual commitments are constructed onchain)
