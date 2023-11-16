@@ -73,7 +73,7 @@ trait BytesTrait {
     /// Read a u256 array from Bytes
     fn read_u256_array(self: @Bytes, offset: usize, array_length: usize) -> (usize, Array<u256>);
     /// Read sub Bytes with size bytes from Bytes
-    fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes);
+    fn read_bytes(self: @Bytes, offset: usize, size: usize) -> Bytes;
     /// Read felt252 from Bytes, which stored as u256
     fn read_felt252(self: @Bytes, offset: usize) -> (usize, felt252);
     /// Read a ContractAddress from Bytes
@@ -160,14 +160,14 @@ impl BytesImpl of BytesTrait {
 
         // if update first bytes, ignore
         if offset > 0 {
-            let (_, left) = self.read_bytes(0, offset);
+            let left = self.read_bytes(0, offset);
             new_bytes.concat(@left);
         }
         new_bytes.append_u8(value);
 
         // if update last bytes, ignore
         if offset < self.size() - 1 {
-            let (_, right) = self.read_bytes(offset + 1, self.size() - offset - 1);
+            let right = self.read_bytes(offset + 1, self.size() - offset - 1);
             new_bytes.concat(@right);
         }
         self = new_bytes;
@@ -355,12 +355,12 @@ impl BytesImpl of BytesTrait {
     }
 
     /// read sub Bytes from Bytes
-    fn read_bytes(self: @Bytes, offset: usize, size: usize) -> (usize, Bytes) {
+    fn read_bytes(self: @Bytes, offset: usize, size: usize) -> Bytes {
         // check
         assert(offset + size <= self.size(), 'out of bound');
 
         if size == 0 {
-            return (offset, BytesTrait::new());
+            return BytesTrait::new();
         }
 
         let mut sub_bytes = BytesTrait::new();
@@ -389,7 +389,7 @@ impl BytesImpl of BytesTrait {
             offset = new_offset;
         }
 
-        return (offset, sub_bytes);
+        return sub_bytes;
     }
 
     /// read felt252 from Bytes

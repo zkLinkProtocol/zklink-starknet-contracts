@@ -279,6 +279,8 @@ mod Operations {
         //  owner,
         //  nonce,
         //  fastWithdrawFeeRate
+        //  fastWithdraw
+        //  withdrawToL1
         fn readFromPubdata(pubData: @Bytes) -> Withdraw {
             // uint8 opType, present in pubdata, ignored at serialization
             let offset = OP_TYPE_BYTES;
@@ -339,6 +341,7 @@ mod Operations {
         //  tokenId,
         //  srcTokenId, u16, ignored at serialization
         //  amount,
+        //  withdrawToL1,
         //  target
         fn readFromPubdata(pubData: @Bytes) -> ForcedExit {
             let offset = OP_TYPE_BYTES;

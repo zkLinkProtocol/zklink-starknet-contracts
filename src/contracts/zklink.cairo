@@ -1784,14 +1784,14 @@ mod Zklink {
             let mut opPubData: Bytes = BytesTrait::new();
             // ignore check if ops are not part of the current chain
             if _opType == OpType::Deposit(()) {
-                let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
+                opPubData = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
                 if _chainId == CHAIN_ID {
                     let op = DepositReadOperation::readFromPubdata(@opPubData);
                     op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
                     priorityOperationsProcessed = 1;
                 }
             } else if _opType == OpType::ChangePubKey(()) {
-                let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
+                opPubData = _pubData.read_bytes(_pubdataOffset, CHANGE_PUBKEY_BYTES);
                 if _chainId == CHAIN_ID {
                     let op = ChangePubKeyReadOperation::readFromPubdata(@opPubData);
                     // Now, starknet only support on-chain change pubkey
@@ -1802,19 +1802,19 @@ mod Zklink {
                 }
             } else {
                 if _opType == OpType::Withdraw(()) {
-                    let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
+                    opPubData = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
                     if _chainId == CHAIN_ID {
                         let op = WithdrawReadOperation::readFromPubdata(@opPubData);
                         self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
                     }
                 } else if _opType == OpType::ForcedExit(()) {
-                    let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
+                    opPubData = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
                         let op = ForcedExitReadOperation::readFromPubdata(@opPubData);
                         self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
                     }
                 } else if _opType == OpType::FullExit(()) {
-                    let (_, opPubData) = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
+                    opPubData = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
                         let op = FullExitReadOperation::readFromPubdata(@opPubData);
                         op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
