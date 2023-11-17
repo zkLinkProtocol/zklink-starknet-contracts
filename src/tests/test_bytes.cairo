@@ -415,8 +415,9 @@ fn test_bytes_append() {
     assert(bytes.pending_data == 0x0304050607, 'append_u256_value_6');
 
     // append_address
-    let address =
-        contract_address_const::<0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f>();
+    let address = contract_address_const::<
+        0x015401855d7796176b05d160196ff92381eb7910f5446c2e0e04e13db2194a4f
+    >();
     bytes.append_address(address);
     assert(bytes.size() == 117, 'append_address_size_1');
     assert(bytes.pending_data_size == 5, 'append_address_size_2');

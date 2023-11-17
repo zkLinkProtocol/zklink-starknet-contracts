@@ -118,7 +118,7 @@ fn test_zklink_activateExodusMode_twice() {
     utils::drop_event(zklink);
 
     zklink_dispatcher.activateExodusMode();
-    utils::assert_event_ExodusMode(zklink);
+    utils::assert_event_ExodusMode(zklink, true);
 
     // active agian should failed
     zklink_dispatcher.activateExodusMode();

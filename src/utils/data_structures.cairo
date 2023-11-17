@@ -83,7 +83,9 @@ mod DataStructures {
     struct CompressedBlockExtraInfo {
         publicDataHash: u256, // pubdata hash of all chains
         offsetCommitmentHash: u256, // all chains pubdata offset commitment hash
-        onchainOperationPubdataHashs: Array<u256> // onchain operation pubdata hash of the all other chains
+        onchainOperationPubdataHashs: Array<
+            u256
+        > // onchain operation pubdata hash of the all other chains
     }
 
     impl CompressedBlockExtraInfoDefault of Default<CompressedBlockExtraInfo> {
@@ -100,7 +102,9 @@ mod DataStructures {
     #[derive(Drop, Serde)]
     struct ExecuteBlockInfo {
         storedBlock: StoredBlockInfo, // the block info that will be executed
-        pendingOnchainOpsPubdata: Array<Bytes> // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
+        pendingOnchainOpsPubdata: Array<
+            Bytes
+        > // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
     }
 
     // Recursive proof input data (individual commitments are constructed onchain)

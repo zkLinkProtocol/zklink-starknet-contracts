@@ -37,8 +37,9 @@ fn test_zklink_deposit_eth_exodus() {
 
     // exodus
     zklink_dispatcher.setExodus(true);
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 1000000000000000000;
     set_contract_address(defaultSender);
@@ -60,8 +61,9 @@ fn test_zklink_deposit_erc20_exodus() {
 
     // exodus
     zklink_dispatcher.setExodus(true);
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 1000000000000000000;
     set_contract_address(defaultSender);
@@ -84,8 +86,9 @@ fn test_zklink_deposit_token_unregisted() {
         StandardToken::TEST_CLASS_HASH, array!['Token not registered', 'TNR']
     );
     let token_dispatcher = IStandardTokenDispatcher { contract_address: token_address };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
 
     set_contract_address(defaultSender);
@@ -106,8 +109,9 @@ fn test_zklink_deposit_token_paused() {
     let eth: Token = *tokens[utils::TOKEN_ETH];
     let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 1000000000000000000;
 
@@ -130,8 +134,9 @@ fn test_zklink_deposit_token_unspupported_mapping() {
     let eth: Token = *tokens[utils::TOKEN_ETH];
     let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 1000000000000000000;
 
@@ -151,8 +156,9 @@ fn test_zklink_deposit_zero_amount() {
     let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let eth: Token = *tokens[utils::TOKEN_ETH];
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 0;
 
@@ -188,8 +194,9 @@ fn test_zklink_deposit_subaccountid_too_large() {
     let zklink = *addrs[utils::ADDR_ZKLINK];
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let eth: Token = *tokens[utils::TOKEN_ETH];
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = utils::MAX_SUB_ACCOUNT_ID + 1;
     let amount: u128 = 1000000000000000000;
 
@@ -217,8 +224,9 @@ fn test_zklink_deposit_standard_erc20_success() {
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let token2: Token = *tokens[utils::TOKEN_T2];
     let token2_dispatcher = IStandardTokenDispatcher { contract_address: token2.tokenAddress };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 30;
 
@@ -262,8 +270,9 @@ fn test_zklink_deposit_camel_standard_erc20_success() {
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let token6: Token = *tokens[utils::TOKEN_T6];
     let token6_dispatcher = ICamelStandardTokenDispatcher { contract_address: token6.tokenAddress };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 30;
 
@@ -307,8 +316,9 @@ fn test_zklink_deposit_erc20_mapping_success() {
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let token4: Token = *tokens[utils::TOKEN_T4];
     let token4_dispatcher = IStandardTokenDispatcher { contract_address: token4.tokenAddress };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 30;
 
@@ -354,8 +364,9 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
     let token5_dispatcher = IStandardDecimalsTokenDispatcher {
         contract_address: token5.tokenAddress
     };
-    let to: ContractAddress =
-        contract_address_const::<0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0>();
+    let to: ContractAddress = contract_address_const::<
+        0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0
+    >();
     let subAccountId: u8 = 0;
     let amount: u128 = 30000000; // 30 * 10^6
 

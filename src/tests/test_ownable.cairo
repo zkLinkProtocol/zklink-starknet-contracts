@@ -10,8 +10,9 @@ use zklink::contracts::verifier::IVerifierDispatcherTrait;
 use zklink::tests::utils;
 
 fn deploy_zklink() -> (ContractAddress, ContractAddress) {
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
     set_contract_address(deployer);
 
     let verifier: ContractAddress = utils::deploy(
@@ -41,8 +42,9 @@ fn test_zklink_ownable_check_mastership_in_constructor() {
     let (verifier, zklink) = deploy_zklink();
     let verifier_dispatcher = IVerifierDispatcher { contract_address: verifier };
     let zklink_dispatcher = IZklinkDispatcher { contract_address: zklink, };
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
 
     assert(verifier_dispatcher.getMaster() == deployer, 'mastership1');
     assert(zklink_dispatcher.getMaster() == deployer, 'mastership2');
@@ -55,8 +57,9 @@ fn test_zklink_ownable_zklink_transfer_mastership_zero() {
     let (verifier, zklink) = deploy_zklink();
     let verifier_dispatcher = IVerifierDispatcher { contract_address: verifier };
     let zklink_dispatcher = IZklinkDispatcher { contract_address: zklink, };
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
 
     zklink_dispatcher.transferMastership(contract_address_const::<0>());
 }
@@ -68,8 +71,9 @@ fn test_zklink_ownable_verifier_transfer_mastership_zero() {
     let (verifier, zklink) = deploy_zklink();
     let verifier_dispatcher = IVerifierDispatcher { contract_address: verifier };
     let zklink_dispatcher = IZklinkDispatcher { contract_address: zklink, };
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
 
     verifier_dispatcher.transferMastership(contract_address_const::<0>());
 }
@@ -81,8 +85,9 @@ fn test_zklink_ownable_zklink_transfer_mastership_invalid_sender() {
     let (verifier, zklink) = deploy_zklink();
     let verifier_dispatcher = IVerifierDispatcher { contract_address: verifier };
     let zklink_dispatcher = IZklinkDispatcher { contract_address: zklink, };
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
     let newMaster: ContractAddress = contract_address_const::<0x64656661756c7453656e646572>();
 
     zklink_dispatcher.transferMastership(newMaster);
@@ -98,8 +103,9 @@ fn test_zklink_ownable_verifier_transfer_mastership_invalid_sender() {
     let (verifier, zklink) = deploy_zklink();
     let verifier_dispatcher = IVerifierDispatcher { contract_address: verifier };
     let zklink_dispatcher = IZklinkDispatcher { contract_address: zklink, };
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
     let newMaster: ContractAddress = contract_address_const::<0x64656661756c7453656e646572>();
 
     verifier_dispatcher.transferMastership(newMaster);
@@ -114,8 +120,9 @@ fn test_zklink_ownable_transfer_mastership_back_success() {
     let (verifier, zklink) = deploy_zklink();
     let verifier_dispatcher = IVerifierDispatcher { contract_address: verifier };
     let zklink_dispatcher = IZklinkDispatcher { contract_address: zklink, };
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
     let newMaster: ContractAddress = contract_address_const::<0x64656661756c7453656e646572>();
 
     // zklink

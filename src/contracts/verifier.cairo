@@ -30,7 +30,6 @@ trait IVerifier<TContractState> {
 #[starknet::contract]
 mod Verifier {
     use starknet::{ContractAddress, ClassHash, get_caller_address};
-    use openzeppelin::upgrades::interface::IUpgradeable;
 
     #[storage]
     struct Storage {
