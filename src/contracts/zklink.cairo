@@ -141,7 +141,6 @@ mod Zklink {
     use zklink::contracts::l2gateway::IL2GatewayDispatcherTrait;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcherTrait;
-    use openzeppelin::upgrades::interface::IUpgradeable;
 
     use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
     use zklink::utils::operations::Operations::{
@@ -275,28 +274,28 @@ mod Zklink {
 
     /// Events
     // Event emitted when a block is committed
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct BlockCommit {
         #[key]
         blockNumber: u64
     }
 
     // Event emitted when a block is proven
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct BlockProven {
         #[key]
         blockNumber: u64
     }
 
     // Event emitted when a block is executed
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct BlockExecuted {
         #[key]
         blockNumber: u64
     }
 
     // Event emitted when user funds are withdrawn from the zkLink state and contract
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct Withdrawal {
         #[key]
         tokenId: u16,
@@ -304,7 +303,7 @@ mod Zklink {
     }
 
     // Event emitted when user funds are withdrawn from the zkLink state but not from contract
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct WithdrawalPending {
         #[key]
         tokenId: u16,
@@ -314,7 +313,7 @@ mod Zklink {
     }
 
     // Event emitted when user sends a authentication fact (e.g. pub-key hash)
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct FactAuth {
         #[key]
         sender: ContractAddress,
@@ -323,7 +322,7 @@ mod Zklink {
     }
 
     // Event emitted when authentication fact reset clock start
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct FactAuthResetTime {
         #[key]
         sender: ContractAddress,
@@ -332,18 +331,20 @@ mod Zklink {
     }
 
     // Event emitted when blocks are reverted
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct BlocksRevert {
         totalBlocksVerified: u64,
         totalBlocksCommitted: u64
     }
 
     // Exodus mode entered event
-    #[derive(Drop, PartialEq, starknet::Event)]
-    struct ExodusMode {}
+    #[derive(Drop, starknet::Event)]
+    struct ExodusMode {
+        exodusMode: bool
+    }
 
     // New priority request event. Emitted when a request is placed into mapping
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct NewPriorityRequest {
         sender: ContractAddress,
         serialId: u64,
@@ -353,7 +354,7 @@ mod Zklink {
     }
 
     // Event emitted when acceptor accept a fast withdraw
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct Accept {
         #[key]
         acceptor: ContractAddress,
@@ -370,7 +371,7 @@ mod Zklink {
 
     // Token added to ZkLink net
     // Log token decimals on this chain to let L2 know(token decimals maybe different on different chains)
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct NewToken {
         #[key]
         tokenId: u16,
@@ -380,13 +381,13 @@ mod Zklink {
     }
 
     // Governor changed
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct NewGovernor {
         governor: ContractAddress
     }
 
     // Validator's status updated
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct ValidatorStatusUpdate {
         #[key]
         validatorAddress: ContractAddress,
@@ -394,7 +395,7 @@ mod Zklink {
     }
 
     // Token pause status update
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct TokenPausedUpdate {
         #[key]
         tokenId: u16,
@@ -402,7 +403,7 @@ mod Zklink {
     }
 
     // New bridge added
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct AddBridge {
         #[key]
         bridge: ContractAddress,
@@ -410,7 +411,7 @@ mod Zklink {
     }
 
     // Bridge update
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct UpdateBridge {
         #[key]
         bridgeIndex: usize,
@@ -419,28 +420,28 @@ mod Zklink {
     }
 
     // Event emitted when user funds are withdrawn from the zkLink state to L1 and contract
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct WithdrawalL1 {
         #[key]
         withdrawHash: u256
     }
 
     // Event emitted when user funds are withdrawn from the zkLink state to L1 but not from contract
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct WithdrawalPendingL1 {
         #[key]
         withdrawHash: u256,
     }
 
     // Gateway address changed
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     struct SetGateway {
         #[key]
         newGateway: ContractAddress
     }
 
     #[event]
-    #[derive(Drop, PartialEq, starknet::Event)]
+    #[derive(Drop, starknet::Event)]
     enum Event {
         BlockCommit: BlockCommit,
         BlockProven: BlockProven,
@@ -698,7 +699,7 @@ mod Zklink {
 
             if trigger {
                 self.exodusMode.write(true);
-                self.emit(Event::ExodusMode(ExodusMode {}));
+                self.emit(Event::ExodusMode(ExodusMode { exodusMode: true }));
             }
 
             self.end();

@@ -106,7 +106,7 @@ mod Operations {
     }
 
     impl PriorityOperationDefault of Default<PriorityOperation> {
-        #[always_inline]
+        #[inline(always)]
         fn default() -> PriorityOperation {
             PriorityOperation { hashedPubData: 0, expirationBlock: 0, opType: OpType::Noop(()) }
         }

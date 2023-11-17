@@ -17,8 +17,9 @@ use zklink::tests::mocks::zklink_upgrade_v2::IZklinkUpgradeV2DispatcherTrait;
 use zklink::tests::utils;
 
 fn deploy_zklink() -> (ContractAddress, ContractAddress, ContractAddress) {
-    let deployer: ContractAddress =
-        contract_address_const::<0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d>();
+    let deployer: ContractAddress = contract_address_const::<
+        0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d
+    >();
     set_contract_address(deployer);
 
     let calldata = array![

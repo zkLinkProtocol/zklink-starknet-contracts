@@ -1,3 +1,4 @@
+use core::traits::Destruct;
 use array::ArrayTrait;
 use array::SpanTrait;
 use core::result::ResultTrait;
@@ -65,6 +66,20 @@ fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAdd
     address
 }
 
+fn pop_log<T, impl TDrop: Drop<T>, impl TEvent: starknet::Event<T>>(
+    address: ContractAddress
+) -> Option<T> {
+    let (mut keys, mut data) = testing::pop_log_raw(address)?;
+
+    // Remove the event ID from the keys
+    keys.pop_front();
+
+    let ret = starknet::Event::deserialize(ref keys, ref data);
+    assert(data.is_empty(), 'Event has extra data');
+    assert(keys.is_empty(), 'Event has extra keys');
+    ret
+}
+
 fn assert_no_events_left(address: ContractAddress) {
     assert(testing::pop_log_raw(address).is_none(), 'Events remaining on queue');
 }
@@ -85,51 +100,39 @@ fn assert_event_Accept(
     _nonce: u32,
     _amountReceive: u128
 ) {
-    assert_eq(
-        @testing::pop_log(zklink).unwrap(),
-        @Zklink::Event::Accept(
-            Zklink::Accept {
-                acceptor: _acceptor,
-                receiver: _receiver,
-                tokenId: _tokenId,
-                amount: _amount,
-                withdrawFeeRate: _withdrawFeeRate,
-                accountIdOfNonce: _accountIdOfNonce,
-                subAccountIdOfNonce: _subAccountIdOfNonce,
-                nonce: _nonce,
-                amountReceive: _amountReceive
-            }
-        ),
-        'Accept Emit'
-    )
+    let event = pop_log::<Zklink::Accept>(zklink).unwrap();
+    assert(event.acceptor == _acceptor, 'acceptor');
+    assert(event.receiver == _receiver, 'receiver');
+    assert(event.tokenId == _tokenId, 'tokenId');
+    assert(event.amount == _amount, 'amount');
+    assert(event.withdrawFeeRate == _withdrawFeeRate, 'withdrawFeeRate');
+    assert(event.accountIdOfNonce == _accountIdOfNonce, 'accountIdOfNonce');
+    assert(event.subAccountIdOfNonce == _subAccountIdOfNonce, 'subAccountIdOfNonce');
+    assert(event.nonce == _nonce, 'nonce');
+    assert(event.amountReceive == _amountReceive, 'amountReceive');
+    assert_no_events_left(zklink);
 }
 
-fn assert_event_ExodusMode(zklink: ContractAddress) {
-    assert_eq(
-        @testing::pop_log(zklink).unwrap(),
-        @Zklink::Event::ExodusMode(Zklink::ExodusMode {}),
-        'ExodusMode Emit'
-    )
+fn assert_event_ExodusMode(zklink: ContractAddress, exodusMode: bool) {
+    let event = pop_log::<Zklink::ExodusMode>(zklink).unwrap();
+    assert(event.exodusMode == exodusMode, 'ExodusMode Emit');
+    assert_no_events_left(zklink);
 }
 
 fn assert_event_WithdrawalPending(
     zklink: ContractAddress, _tokenId: u16, _recepient: u256, _amount: u128
 ) {
-    assert_eq(
-        @testing::pop_log(zklink).unwrap(),
-        @Zklink::Event::WithdrawalPending(
-            Zklink::WithdrawalPending { tokenId: _tokenId, recepient: _recepient, amount: _amount }
-        ),
-        'WithdrawalPending Emit'
-    )
+    let event = pop_log::<Zklink::WithdrawalPending>(zklink).unwrap();
+    assert(event.tokenId == _tokenId, 'tokenId');
+    assert(event.recepient == _recepient, 'recepient');
+    assert(event.amount == _amount, 'amount');
 }
 
 fn assert_event_Withdrawal(zklink: ContractAddress, _tokenId: u16, _amount: u128) {
-    assert_eq(
-        @testing::pop_log(zklink).unwrap(),
-        @Zklink::Event::Withdrawal(Zklink::Withdrawal { tokenId: _tokenId, amount: _amount }),
-        'Withdrawal Emit'
-    )
+    let event = pop_log::<Zklink::Withdrawal>(zklink).unwrap();
+    assert(event.tokenId == _tokenId, 'tokenId');
+    assert(event.amount == _amount, 'amount');
+    assert_no_events_left(zklink);
 }
 
 #[derive(Clone, Copy, Serde, Drop)]
