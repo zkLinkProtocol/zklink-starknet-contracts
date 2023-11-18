@@ -1679,7 +1679,7 @@ mod Zklink {
                 _previousBlock, _newBlock, _newBlockExtra
             );
 
-            // Create synchronization hash for cross chain block verify
+            // Create synchronization hash for cross chain block sync
             let onchainOpPubdataHashs: Array<u256> = buildOnchainOperationPubdataHashs(
                 currentOnchainOpPubdataHash, _newBlockExtra.onchainOperationPubdataHashs
             );
@@ -2101,33 +2101,26 @@ mod Zklink {
     fn buildOnchainOperationPubdataHashs(
         _currentChainHash: u256, onchainOperationPubdataHashs: @Array<u256>
     ) -> Array<u256> {
-        assert(onchainOperationPubdataHashs.len() == MAX_CHAIN_ID.into() + 1, 'g3');
-        // overflow is impossible, max(MAX_CHAIN_ID + 1) = 256
-        // use index of onchainOperationPubdataHashs as chain id
-        // index start from [0, MIN_CHAIN_ID - 1] left unused
+        // Fill other chain pubdata hash
         let mut onchainOpPubdataHashs: Array<u256> = ArrayTrait::new();
-        let mut i: u8 = 0;
-        loop {
-            if i == MIN_CHAIN_ID {
-                break ();
-            }
-            onchainOpPubdataHashs.append(0);
-            i += 1;
-        };
+        let mut i: u8 = MIN_CHAIN_ID;
+        let mut nextPubdataHashIndex: usize = 0;
         // here, i start from MIN_CHAIN_ID
         loop {
             if i > MAX_CHAIN_ID {
                 break ();
             }
-            let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
-            if (chainIndex & ALL_CHAINS) == chainIndex {
-                if i == CHAIN_ID {
-                    onchainOpPubdataHashs.append(_currentChainHash);
-                } else {
-                    onchainOpPubdataHashs.append(*onchainOperationPubdataHashs[i.into()]);
-                }
+            if i == CHAIN_ID {
+                onchainOpPubdataHashs.append(_currentChainHash);
             } else {
-                onchainOpPubdataHashs.append(0);
+                // overflow is impossible, min(i) = MIN_CHAIN_ID = 1
+                let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
+                if (chainIndex & ALL_CHAINS) == chainIndex {
+                    assert(nextPubdataHashIndex < onchainOperationPubdataHashs.len(), 'g3');
+                    onchainOpPubdataHashs
+                        .append(*onchainOperationPubdataHashs[nextPubdataHashIndex]);
+                    nextPubdataHashIndex += 1;
+                }
             }
             i += 1;
         };
@@ -2171,16 +2164,12 @@ mod Zklink {
         _preBlockSyncHash: u256, _commitment: u256, _onchainOpPubdataHashs: @Array<u256>
     ) -> u256 {
         let mut syncHash = concatTwoHash(_preBlockSyncHash, _commitment);
-        let mut i = MIN_CHAIN_ID;
+        let mut i: usize = 0;
         loop {
-            if i > MAX_CHAIN_ID {
-                break ();
+            if i >= _onchainOpPubdataHashs.len() {
+                break;
             }
-            let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
-            if (chainIndex & ALL_CHAINS) == chainIndex {
-                let onchainOperationPubdataHash = *_onchainOpPubdataHashs[i.into()];
-                syncHash = concatTwoHash(syncHash, onchainOperationPubdataHash);
-            }
+            syncHash = concatTwoHash(syncHash, *_onchainOpPubdataHashs[i]);
             i += 1;
         };
         syncHash

@@ -717,7 +717,9 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         publicDataHash: pubdatas.keccak(),
         offsetCommitmentHash: offsetsCommitment.keccak(),
         onchainOperationPubdataHashs: array![
-            0, onchainOpPubdataHash1, EMPTY_STRING_KECCAK, EMPTY_STRING_KECCAK, EMPTY_STRING_KECCAK
+            EMPTY_STRING_KECCAK,
+            EMPTY_STRING_KECCAK,
+            EMPTY_STRING_KECCAK // only need to commit onchain pubdata hash of chain [2,3,4]
         ]
     };
 
