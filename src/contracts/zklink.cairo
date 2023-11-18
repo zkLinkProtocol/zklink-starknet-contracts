@@ -1504,16 +1504,8 @@ mod Zklink {
             assert(!rt.paused, 'e4');
 
             // transfer erc20 token from sender to zkLink contract
-            let sender = get_caller_address();
-            let this = get_contract_address();
-            let balanceBefore = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                .balanceOf(this);
             IERC20CamelDispatcher { contract_address: _tokenAddress }
-                .transferFrom(sender, this, _amount.into());
-            let balanceAfter = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                .balanceOf(this);
-            // only support pure erc20
-            assert(_amount.into() == balanceAfter - balanceBefore, 'e6');
+                .transferFrom(get_caller_address(), get_contract_address(), _amount.into());
 
             // improve decimals before send to layer two
             let _amount = improveDecimals(_amount, rt.decimals);
