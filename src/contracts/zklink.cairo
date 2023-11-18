@@ -1745,16 +1745,15 @@ mod Zklink {
                 let nextPriorityOpIndex: u64 = uncommittedPriorityRequestsOffset
                     + priorityOperationsProcessed;
 
-                let (newPriorityProceeded, opPubData, processablePubData) = self
+                let (newPriorityProceeded, opPubData, opPubDataProcessable) = self
                     .checkOnchainOp(opType, chainId, pubData, pubdataOffset, nextPriorityOpIndex);
 
                 priorityOperationsProcessed += newPriorityProceeded;
                 // group onchain operations pubdata hash by chain id
                 currentOnchainOpPubdataHash = concatHash(currentOnchainOpPubdataHash, @opPubData);
 
-                if processablePubData.size() > 0 {
-                    processableOperationsHash =
-                        concatHash(processableOperationsHash, @processablePubData);
+                if opPubDataProcessable {
+                    processableOperationsHash = concatHash(processableOperationsHash, @opPubData);
                 }
 
                 i += 1;
@@ -1771,9 +1770,9 @@ mod Zklink {
             _pubData: @Bytes,
             _pubdataOffset: usize,
             _nextPriorityOpIdx: u64
-        ) -> (u64, Bytes, Bytes) {
+        ) -> (u64, Bytes, bool) {
             let mut priorityOperationsProcessed: u64 = 0;
-            let mut processablePubData: Bytes = BytesTrait::new();
+            let mut opPubDataProcessable: bool = false;
             let mut opPubData: Bytes = BytesTrait::new();
             // ignore check if ops are not part of the current chain
             if _opType == OpType::Deposit(()) {
@@ -1811,13 +1810,11 @@ mod Zklink {
                 }
 
                 if (_chainId == CHAIN_ID) {
-                    // clone opPubData here instead of return its reference
-                    // because opPubData and processablePubData will be consumed in later concatHash
-                    processablePubData = opPubData.clone();
+                    opPubDataProcessable = true;
                 }
             }
 
-            (priorityOperationsProcessed, opPubData, processablePubData)
+            (priorityOperationsProcessed, opPubData, opPubDataProcessable)
         }
 
         // Executes one block
