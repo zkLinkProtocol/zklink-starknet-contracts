@@ -251,7 +251,7 @@ mod Operations {
         }
     }
 
-    // Withdraw operation: 64 bytes(69 with ignored member)
+    // Withdraw operation: 63 bytes(68 with ignored member)
     #[derive(Copy, Drop, Serde)]
     struct Withdraw {
         chainId: u8, // 1 byte, which chain the withdraw happened
@@ -262,7 +262,6 @@ mod Operations {
         owner: ContractAddress, // 32 bytes, the address to receive token
         nonce: u32, // 4 bytes, the sub account nonce
         fastWithdrawFeeRate: u16, // 2 bytes, fast withdraw fee rate taken by acceptor
-        fastWithdraw: u8, // 1 byte, 0 means normal withdraw, 1 means fast withdraw
         withdrawToL1: u8, // 1 byte, when this flag is 1, it means withdraw token to L1
     }
 
@@ -279,7 +278,6 @@ mod Operations {
         //  owner,
         //  nonce,
         //  fastWithdrawFeeRate
-        //  fastWithdraw
         //  withdrawToL1
         fn readFromPubdata(pubData: @Bytes) -> Withdraw {
             // uint8 opType, present in pubdata, ignored at serialization
@@ -296,7 +294,6 @@ mod Operations {
             let (offset, owner) = pubData.read_address(offset);
             let (offset, nonce) = pubData.read_u32(offset);
             let (offset, fastWithdrawFeeRate) = pubData.read_u16(offset);
-            let (offset, fastWithdraw) = pubData.read_u8(offset);
             let (offset, withdrawToL1) = pubData.read_u8(offset);
 
             let withdraw = Withdraw {
@@ -308,7 +305,6 @@ mod Operations {
                 owner: owner,
                 nonce: nonce,
                 fastWithdrawFeeRate: fastWithdrawFeeRate,
-                fastWithdraw: fastWithdraw,
                 withdrawToL1: withdrawToL1
             };
             withdraw

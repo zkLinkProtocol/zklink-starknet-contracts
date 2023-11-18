@@ -103,16 +103,15 @@ fn test_zklink_read_withdraw_pubdata() {
         owner: owner,
         nonce: 45,
         fastWithdrawFeeRate: 45,
-        fastWithdraw: 1,
         withdrawToL1: 0
     };
 
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8","uint8"]
-    // example = [3, 1, 32, 4, 34, 34, 32, 14, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 45, 45, 1, 0]
+    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
+    // example = [3, 1, 32, 4, 34, 34, 32, 14, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 45, 45, 0]
     //
     // data = [3992876284251986964483546870026600448, 35184607447564, 20678471039984701855585286363423409824, 149216281713636543258803496807561166848]
-    // pending_data = 193276477696
-    // pending_data_size = 5
+    // pending_data = 754986240
+    // pending_data_size = 4
 
     let mut _pubData = Bytes {
         data: array![
@@ -121,8 +120,8 @@ fn test_zklink_read_withdraw_pubdata() {
             20678471039984701855585286363423409824,
             149216281713636543258803496807561166848
         ],
-        pending_data: 193276477696,
-        pending_data_size: 5
+        pending_data: 754986240,
+        pending_data_size: 4
     };
 
     dispatcher.testWithdrawPubdata(_example, _pubData);

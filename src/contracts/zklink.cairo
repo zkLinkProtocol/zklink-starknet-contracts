@@ -1504,16 +1504,8 @@ mod Zklink {
             assert(!rt.paused, 'e4');
 
             // transfer erc20 token from sender to zkLink contract
-            let sender = get_caller_address();
-            let this = get_contract_address();
-            let balanceBefore = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                .balanceOf(this);
             IERC20CamelDispatcher { contract_address: _tokenAddress }
-                .transferFrom(sender, this, _amount.into());
-            let balanceAfter = IERC20CamelDispatcher { contract_address: _tokenAddress }
-                .balanceOf(this);
-            // only support pure erc20
-            assert(_amount.into() == balanceAfter - balanceBefore, 'e6');
+                .transferFrom(get_caller_address(), get_contract_address(), _amount.into());
 
             // improve decimals before send to layer two
             let _amount = improveDecimals(_amount, rt.decimals);
@@ -1687,7 +1679,7 @@ mod Zklink {
                 _previousBlock, _newBlock, _newBlockExtra
             );
 
-            // Create synchronization hash for cross chain block verify
+            // Create synchronization hash for cross chain block sync
             let onchainOpPubdataHashs: Array<u256> = buildOnchainOperationPubdataHashs(
                 currentOnchainOpPubdataHash, _newBlockExtra.onchainOperationPubdataHashs
             );
@@ -1753,16 +1745,15 @@ mod Zklink {
                 let nextPriorityOpIndex: u64 = uncommittedPriorityRequestsOffset
                     + priorityOperationsProcessed;
 
-                let (newPriorityProceeded, opPubData, processablePubData) = self
+                let (newPriorityProceeded, opPubData, opPubDataProcessable) = self
                     .checkOnchainOp(opType, chainId, pubData, pubdataOffset, nextPriorityOpIndex);
 
                 priorityOperationsProcessed += newPriorityProceeded;
                 // group onchain operations pubdata hash by chain id
                 currentOnchainOpPubdataHash = concatHash(currentOnchainOpPubdataHash, @opPubData);
 
-                if processablePubData.size() > 0 {
-                    processableOperationsHash =
-                        concatHash(processableOperationsHash, @processablePubData);
+                if opPubDataProcessable {
+                    processableOperationsHash = concatHash(processableOperationsHash, @opPubData);
                 }
 
                 i += 1;
@@ -1779,9 +1770,9 @@ mod Zklink {
             _pubData: @Bytes,
             _pubdataOffset: usize,
             _nextPriorityOpIdx: u64
-        ) -> (u64, Bytes, Bytes) {
+        ) -> (u64, Bytes, bool) {
             let mut priorityOperationsProcessed: u64 = 0;
-            let mut processablePubData: Bytes = BytesTrait::new();
+            let mut opPubDataProcessable: bool = false;
             let mut opPubData: Bytes = BytesTrait::new();
             // ignore check if ops are not part of the current chain
             if _opType == OpType::Deposit(()) {
@@ -1804,16 +1795,8 @@ mod Zklink {
             } else {
                 if _opType == OpType::Withdraw(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
-                    if _chainId == CHAIN_ID {
-                        let op = WithdrawReadOperation::readFromPubdata(@opPubData);
-                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
-                    }
                 } else if _opType == OpType::ForcedExit(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
-                    if _chainId == CHAIN_ID {
-                        let op = ForcedExitReadOperation::readFromPubdata(@opPubData);
-                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
-                    }
                 } else if _opType == OpType::FullExit(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
@@ -1827,13 +1810,11 @@ mod Zklink {
                 }
 
                 if (_chainId == CHAIN_ID) {
-                    // clone opPubData here instead of return its reference
-                    // because opPubData and processablePubData will be consumed in later concatHash
-                    processablePubData = opPubData.clone();
+                    opPubDataProcessable = true;
                 }
             }
 
-            (priorityOperationsProcessed, opPubData, processablePubData)
+            (priorityOperationsProcessed, opPubData, opPubDataProcessable)
         }
 
         // Executes one block
@@ -1919,7 +1900,7 @@ mod Zklink {
             );
         }
 
-        // Execute fast withdraw or normal withdraw according by fastWithdraw flag
+        // The circuit will check whether there is dust in the amount
         fn _executeWithdraw(
             ref self: ContractState,
             _accountIdOfNonce: u32,
@@ -2044,20 +2025,6 @@ mod Zklink {
 
             (amountReceive, tokenAddress)
         }
-
-        // Checks that withdraw params is correct
-        fn verifyWithdraw(self: @ContractState, _tokenId: u16, _amount: u128, withdrawToL1: u8) {
-            // token MUST be registered to ZkLink
-            let rt: RegisteredToken = self.tokens.read(_tokenId);
-            assert(rt.registered, 'p0');
-
-            // withdraw amount MUST without dust
-            let recoverAmount = recoveryDecimals(_amount, rt.decimals);
-            assert(_amount == improveDecimals(recoverAmount, rt.decimals), 'p1');
-
-            // local chain MUST support withdraw to L1
-            assert(withdrawToL1 == 0 || self.gateway.read().is_non_zero(), 'p2');
-        }
     }
 
     // =========================utils functions=========================
@@ -2109,33 +2076,26 @@ mod Zklink {
     fn buildOnchainOperationPubdataHashs(
         _currentChainHash: u256, onchainOperationPubdataHashs: @Array<u256>
     ) -> Array<u256> {
-        assert(onchainOperationPubdataHashs.len() == MAX_CHAIN_ID.into() + 1, 'g3');
-        // overflow is impossible, max(MAX_CHAIN_ID + 1) = 256
-        // use index of onchainOperationPubdataHashs as chain id
-        // index start from [0, MIN_CHAIN_ID - 1] left unused
+        // Fill other chain pubdata hash
         let mut onchainOpPubdataHashs: Array<u256> = ArrayTrait::new();
-        let mut i: u8 = 0;
-        loop {
-            if i == MIN_CHAIN_ID {
-                break ();
-            }
-            onchainOpPubdataHashs.append(0);
-            i += 1;
-        };
+        let mut i: u8 = MIN_CHAIN_ID;
+        let mut nextPubdataHashIndex: usize = 0;
         // here, i start from MIN_CHAIN_ID
         loop {
             if i > MAX_CHAIN_ID {
                 break ();
             }
-            let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
-            if (chainIndex & ALL_CHAINS) == chainIndex {
-                if i == CHAIN_ID {
-                    onchainOpPubdataHashs.append(_currentChainHash);
-                } else {
-                    onchainOpPubdataHashs.append(*onchainOperationPubdataHashs[i.into()]);
-                }
+            if i == CHAIN_ID {
+                onchainOpPubdataHashs.append(_currentChainHash);
             } else {
-                onchainOpPubdataHashs.append(0);
+                // overflow is impossible, min(i) = MIN_CHAIN_ID = 1
+                let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
+                if (chainIndex & ALL_CHAINS) == chainIndex {
+                    assert(nextPubdataHashIndex < onchainOperationPubdataHashs.len(), 'g3');
+                    onchainOpPubdataHashs
+                        .append(*onchainOperationPubdataHashs[nextPubdataHashIndex]);
+                    nextPubdataHashIndex += 1;
+                }
             }
             i += 1;
         };
@@ -2179,16 +2139,12 @@ mod Zklink {
         _preBlockSyncHash: u256, _commitment: u256, _onchainOpPubdataHashs: @Array<u256>
     ) -> u256 {
         let mut syncHash = concatTwoHash(_preBlockSyncHash, _commitment);
-        let mut i = MIN_CHAIN_ID;
+        let mut i: usize = 0;
         loop {
-            if i > MAX_CHAIN_ID {
-                break ();
+            if i >= _onchainOpPubdataHashs.len() {
+                break;
             }
-            let chainIndex: u256 = u256_fast_pow2(i.into() - 1);
-            if (chainIndex & ALL_CHAINS) == chainIndex {
-                let onchainOperationPubdataHash = *_onchainOpPubdataHashs[i.into()];
-                syncHash = concatTwoHash(syncHash, onchainOperationPubdataHash);
-            }
+            syncHash = concatTwoHash(syncHash, *_onchainOpPubdataHashs[i]);
             i += 1;
         };
         syncHash
