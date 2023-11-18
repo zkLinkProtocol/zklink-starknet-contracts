@@ -60,7 +60,7 @@ mod OperationsMock {
             assert(_example.owner == parsed.owner, 'own');
             assert(_example.nonce == parsed.nonce, 'nonce');
             assert(_example.fastWithdrawFeeRate == parsed.fastWithdrawFeeRate, 'fr');
-            assert(_example.fastWithdraw == parsed.fastWithdraw, 'fw');
+            assert(_example.withdrawToL1 == parsed.withdrawToL1, 'l1');
         }
 
         fn testFullExitPubdata(self: @ContractState, _example: FullExit, _pubData: Bytes) {
@@ -93,6 +93,7 @@ mod OperationsMock {
             assert(_example.targetAccountId == parsed.targetAccountId, 'taid');
             assert(_example.tokenId == parsed.tokenId, 'tcc');
             assert(_example.amount == parsed.amount, 'amn');
+            assert(_example.withdrawToL1 == parsed.withdrawToL1, 'l1');
             assert(_example.target == parsed.target, 'tar');
         }
 

@@ -1796,16 +1796,8 @@ mod Zklink {
             } else {
                 if _opType == OpType::Withdraw(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, WITHDRAW_BYTES);
-                    if _chainId == CHAIN_ID {
-                        let op = WithdrawReadOperation::readFromPubdata(@opPubData);
-                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
-                    }
                 } else if _opType == OpType::ForcedExit(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, FORCED_EXIT_BYTES);
-                    if _chainId == CHAIN_ID {
-                        let op = ForcedExitReadOperation::readFromPubdata(@opPubData);
-                        self.verifyWithdraw(op.tokenId, op.amount, op.withdrawToL1);
-                    }
                 } else if _opType == OpType::FullExit(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
@@ -1911,7 +1903,7 @@ mod Zklink {
             );
         }
 
-        // Execute fast withdraw or normal withdraw according by fastWithdraw flag
+        // The circuit will check whether there is dust in the amount
         fn _executeWithdraw(
             ref self: ContractState,
             _accountIdOfNonce: u32,
@@ -2035,20 +2027,6 @@ mod Zklink {
             self.accepts.write(hash, _acceptor);
 
             (amountReceive, tokenAddress)
-        }
-
-        // Checks that withdraw params is correct
-        fn verifyWithdraw(self: @ContractState, _tokenId: u16, _amount: u128, withdrawToL1: u8) {
-            // token MUST be registered to ZkLink
-            let rt: RegisteredToken = self.tokens.read(_tokenId);
-            assert(rt.registered, 'p0');
-
-            // withdraw amount MUST without dust
-            let recoverAmount = recoveryDecimals(_amount, rt.decimals);
-            assert(_amount == improveDecimals(recoverAmount, rt.decimals), 'p1');
-
-            // local chain MUST support withdraw to L1
-            assert(withdrawToL1 == 0 || self.gateway.read().is_non_zero(), 'p2');
         }
     }
 

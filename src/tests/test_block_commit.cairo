@@ -359,12 +359,12 @@ fn test_zklink_collectOnchainOps_success() {
     priorityOperationsProcessed += 1;
 
     // withdraw of current chain(chain 1)
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8","uint8"]
-    // example = [3, 1, 5, 0, 34, 34, 900, 33, 0x5D8E9F533DA8993FC200826F21D0b88F33f53c2a2a151016FD18dA7a77eEb0c, 14, 50, 1, 0]
+    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
+    // example = [3, 1, 5, 0, 34, 34, 900, 33, 0x5D8E9F533DA8993FC200826F21D0b88F33f53c2a2a151016FD18dA7a77eEb0c, 14, 50, 0]
     //
     // data = [3992876284219327077888020403728678912, 989561019029737, 325930098572440622605242809423852945235, 258714655159228338356975277813679521792]
-    // pending_data = 60132819200
-    // pending_data_size = 5
+    // pending_data = 234893824
+    // pending_data_size = 4
     let mut op = Bytes {
         data: array![
             3992876284219327077888020403728678912,
@@ -372,8 +372,8 @@ fn test_zklink_collectOnchainOps_success() {
             325930098572440622605242809423852945235,
             258714655159228338356975277813679521792
         ],
-        pending_data: 60132819200,
-        pending_data_size: 5
+        pending_data: 234893824,
+        pending_data_size: 4
     };
     utils::paddingChunk(ref op, utils::OP_WITHDRAW_CHUNKS);
     pubdatas.concat(@op);
@@ -599,12 +599,12 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // withdraw of current chain(chain 1)
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8","uint8"]
-    // example = [3, 1, 5, 0, 34, 34, 900, 33, 0x5D8E9F533DA8993FC200826F21D0b88F33f53c2a2a151016FD18dA7a77eEb0c, 14, 50, 1, 0]
+    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint16","uint256","uint32","uint16","uint8"]
+    // example = [3, 1, 5, 0, 34, 34, 900, 33, 0x5D8E9F533DA8993FC200826F21D0b88F33f53c2a2a151016FD18dA7a77eEb0c, 14, 50, 0]
     //
     // data = [3992876284219327077888020403728678912, 989561019029737, 325930098572440622605242809423852945235, 258714655159228338356975277813679521792]
-    // pending_data = 60132819200
-    // pending_data_size = 5
+    // pending_data = 234893824
+    // pending_data_size = 4
     let mut op = Bytes {
         data: array![
             3992876284219327077888020403728678912,
@@ -612,8 +612,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
             325930098572440622605242809423852945235,
             258714655159228338356975277813679521792
         ],
-        pending_data: 60132819200,
-        pending_data_size: 5
+        pending_data: 234893824,
+        pending_data_size: 4
     };
     utils::paddingChunk(ref op, utils::OP_WITHDRAW_CHUNKS);
     pubdatas.concat(@op);
