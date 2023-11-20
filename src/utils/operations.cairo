@@ -120,20 +120,18 @@ mod Operations {
     trait OperationWriteTrait<T> {
         // Serialize operation to Bytes
         fn writeForPriorityQueue(self: @T) -> Bytes;
-        // Checks the peration is same as operation in priority queue
-        fn checkPriorityOperation(self: @T, priorityOperation: @PriorityOperation);
     }
 
     // Deposit operation: 58 bytes(59 with ignored member)
     #[derive(Copy, Drop, Serde)]
     struct Deposit {
         chainId: u8, // 1 byte, deposit from which chain that identified by L2 chain id
-        accountId: u32, // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
         subAccountId: u8, // 1 byte, the sub account is bound to account, default value is 0(the global public sub account)
         tokenId: u16, // 2 bytes, the token that registered to L2
         targetTokenId: u16, // 2 bytes, the token that user increased in L2
         amount: u128, // 16 bytes, the token amount deposited to L2
         owner: u256, // 32 bytes, the address that receive deposited token at L2
+        accountId: u32, // 4 bytes, the account id bound to the owner address, ignored at serialization and will be set when the block is submitted
     }
 
     impl DepositReadOperation of OperationReadTrait<Deposit> {
@@ -141,21 +139,21 @@ mod Operations {
             // uint8 opType, present in pubdata, ignored at serialization
             let mut offset = OP_TYPE_BYTES;
             let (offset, chainId) = pubData.read_u8(offset);
-            let (offset, accountId) = pubData.read_u32(offset);
             let (offset, subAccountId) = pubData.read_u8(offset);
             let (offset, tokenId) = pubData.read_u16(offset);
             let (offset, targetTokenId) = pubData.read_u16(offset);
             let (offset, amount) = pubData.read_u128(offset);
             let (offset, owner) = pubData.read_u256(offset);
+            let (offset, accountId) = pubData.read_u32(offset);
 
             let deposit = Deposit {
                 chainId: chainId,
-                accountId: accountId,
                 subAccountId: subAccountId,
                 tokenId: tokenId,
                 targetTokenId: targetTokenId,
                 amount: amount,
-                owner: owner
+                owner: owner,
+                accountId: accountId,
             };
             deposit
         }
@@ -167,23 +165,14 @@ mod Operations {
             let mut pubData = BytesTrait::new();
             pubData.append_u8(opType.into());
             pubData.append_u8(*self.chainId);
-            pubData.append_u32(0); // accountId (ignored during hash calculation)
             pubData.append_u8(*self.subAccountId);
             pubData.append_u16(*self.tokenId);
             pubData.append_u16(*self.targetTokenId);
             pubData.append_u128(*self.amount);
             pubData.append_u256(*self.owner);
+            pubData.append_u32(0); // accountId (ignored during hash calculation)
 
             pubData
-        }
-
-        // Checks the peration is same as operation in priority queue
-        fn checkPriorityOperation(self: @Deposit, priorityOperation: @PriorityOperation) {
-            assert(*priorityOperation.opType == OpType::Deposit(()), 'OP: not deposit');
-            assert(
-                self.writeForPriorityQueue().keccak() == *priorityOperation.hashedPubData,
-                'OP: invalid deposit hash'
-            );
         }
     }
 
@@ -239,15 +228,6 @@ mod Operations {
             pubData.append_u128(0); // amount (ignored during hash calculation)
 
             pubData
-        }
-
-        // Checks the peration is same as operation in priority queue
-        fn checkPriorityOperation(self: @FullExit, priorityOperation: @PriorityOperation) {
-            assert(*priorityOperation.opType == OpType::FullExit(()), 'OP: not fullExit');
-            assert(
-                self.writeForPriorityQueue().keccak() == *priorityOperation.hashedPubData,
-                'OP: invalid fullExit hash'
-            );
         }
     }
 

@@ -23,6 +23,7 @@ use zklink::tests::mocks::camel_standard_token::ICamelStandardTokenDispatcherTra
 use zklink::tests::utils;
 use zklink::tests::utils::Token;
 use zklink::utils::bytes::{Bytes, BytesTrait};
+use zklink::utils::constants::{DEPOSIT_CHECK_BYTES, FULL_EXIT_CHECK_BYTES};
 
 
 #[test]
@@ -247,18 +248,22 @@ fn test_zklink_deposit_standard_erc20_success() {
     );
 
     let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 34, 34, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 34, 34, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0, 0]
     //
-    // data = [1334420292643450702982333137294458880, 32985348833280, 2112475483491437590759]
-    // pending_data = 163456079180379788815085536
+    // data = [1334420303166101594918487461189386240, 141670994486089356410880, 9073013115197512348337205226446]
+    // pending_data = 236022272872492080104996864
     // pending_data_size = 11
     let pubData = Bytes {
-        data: array![1334420292643450702982333137294458880, 32985348833280, 2112475483491437590759],
-        pending_data: 163456079180379788815085536,
+        data: array![
+            1334420303166101594918487461189386240,
+            141670994486089356410880,
+            9073013115197512348337205226446
+        ],
+        pending_data: 236022272872492080104996864,
         pending_data_size: 11
     };
-    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+    assert(hashedPubdata == pubData.keccak_for_check(DEPOSIT_CHECK_BYTES), 'invalid pubdata hash');
 }
 
 #[test]
@@ -293,18 +298,22 @@ fn test_zklink_deposit_camel_standard_erc20_success() {
     );
 
     let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 37, 37, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 37, 37, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0, 0]
     //
-    // data = [1334420292643450703198509217943126016, 32985348833280, 2112475483491437590759]
-    // pending_data = 163456079180379788815085536
+    // data = [1334420304094570791481971276299370496, 141670994486089356410880, 9073013115197512348337205226446]
+    // pending_data = 236022272872492080104996864
     // pending_data_size = 11
     let pubData = Bytes {
-        data: array![1334420292643450703198509217943126016, 32985348833280, 2112475483491437590759],
-        pending_data: 163456079180379788815085536,
+        data: array![
+            1334420304094570791481971276299370496,
+            141670994486089356410880,
+            9073013115197512348337205226446
+        ],
+        pending_data: 236022272872492080104996864,
         pending_data_size: 11
     };
-    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+    assert(hashedPubdata == pubData.keccak_for_check(DEPOSIT_CHECK_BYTES), 'invalid pubdata hash');
 }
 
 #[test]
@@ -339,18 +348,22 @@ fn test_zklink_deposit_erc20_mapping_success() {
     );
 
     let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 17, 1, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 17, 1, 30, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0, 0]
     //
-    // data = [1334420292643450701757317754765967360, 32985348833280, 2112475483491437590759]
-    // pending_data = 163456079180379788815085536
+    // data = [1334420297904700589861686594576056320, 141670994486089356410880, 9073013115197512348337205226446]
+    // pending_data = 236022272872492080104996864
     // pending_data_size = 11
     let pubData = Bytes {
-        data: array![1334420292643450701757317754765967360, 32985348833280, 2112475483491437590759],
-        pending_data: 163456079180379788815085536,
+        data: array![
+            1334420297904700589861686594576056320,
+            141670994486089356410880,
+            9073013115197512348337205226446
+        ],
+        pending_data: 236022272872492080104996864,
         pending_data_size: 11
     };
-    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+    assert(hashedPubdata == pubData.keccak_for_check(DEPOSIT_CHECK_BYTES), 'invalid pubdata hash');
 }
 
 #[test]
@@ -387,22 +400,22 @@ fn test_zklink_deposit_standard_decimals_erc20_success() {
     );
 
     let hashedPubdata = zklink_dispatcher.getPriorityHash(0);
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 36, 36, 30000000000000000000, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 36, 36, 30000000000000000000, 0x72847C8Bdc54b338E787352bceC33ba90cD7aFe0, 0]
     //
-    // data = [1334420292643450703126450524393570304, 32985348833280000000000000000000, 2112475483491437590759]
-    // pending_data = 163456079180379788815085536
+    // data = [1334420303785081059294143337929376160, 113529846978955610116163308384424034304, 9073013115197512348337205226446]
+    // pending_data = 236022272872492080104996864
     // pending_data_size = 11
     let pubData = Bytes {
         data: array![
-            1334420292643450703126450524393570304,
-            32985348833280000000000000000000,
-            2112475483491437590759
+            1334420303785081059294143337929376160,
+            113529846978955610116163308384424034304,
+            9073013115197512348337205226446
         ],
-        pending_data: 163456079180379788815085536,
+        pending_data: 236022272872492080104996864,
         pending_data_size: 11
     };
-    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+    assert(hashedPubdata == pubData.keccak_for_check(DEPOSIT_CHECK_BYTES), 'invalid pubdata hash');
 }
 
 #[test]
@@ -516,7 +529,9 @@ fn test_zklink_fullexit_success() {
         pending_data: 0,
         pending_data_size: 11
     };
-    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+    assert(
+        hashedPubdata == pubData.keccak_for_check(FULL_EXIT_CHECK_BYTES), 'invalid pubdata hash'
+    );
 }
 
 #[test]
@@ -549,5 +564,7 @@ fn test_zklink_fullexit_mapping_success() {
         pending_data: 0,
         pending_data_size: 11
     };
-    assert(hashedPubdata == pubData.keccak(), 'invalid pubdata hash');
+    assert(
+        hashedPubdata == pubData.keccak_for_check(FULL_EXIT_CHECK_BYTES), 'invalid pubdata hash'
+    );
 }

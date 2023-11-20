@@ -49,6 +49,8 @@ const FULL_EXIT_BYTES: usize = 69;
 const WITHDRAW_BYTES: usize = 69;
 const FORCED_EXIT_BYTES: usize = 69;
 const CHANGE_PUBKEY_BYTES: usize = 69;
+const DEPOSIT_CHECK_BYTES: usize = 55;
+const FULL_EXIT_CHECK_BYTES: usize = 43;
 
 // Expiration delta for priority request to be satisfied (in ETH blocks)
 // PRIORITY_EXPIRATION(default 80640) = PRIORITY_EXPIRATION_PERIOD / BLOCK_PERIOD, 

@@ -100,15 +100,17 @@ fn test_zklink_withdrawPendingBalance_standard_erc20_success() {
         .depositERC20(token2.tokenAddress, depositAmount, utils::extendAddress(alice), 0, false);
     utils::drop_event(zklink);
 
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 34, 34, 1000000000000000000, 0x616c696365]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 34, 34, 1000000000000000000, 0x616c696365, 0]
     //
-    // data = [1334420292643450702982333137294458880, 1099511627776000000000000000000, 0]
-    // pending_data = 418430673765
+    // data = [1334420303166101594918487461189386253, 298695712897445188672130103387013251072, 0]
+    // pending_data = 1797146059463920189440
     // pending_data_size = 11
     let pubdata = Bytes {
-        data: array![1334420292643450702982333137294458880, 1099511627776000000000000000000, 0],
-        pending_data: 418430673765,
+        data: array![
+            1334420303166101594918487461189386253, 298695712897445188672130103387013251072, 0
+        ],
+        pending_data: 1797146059463920189440,
         pending_data_size: 11
     };
 

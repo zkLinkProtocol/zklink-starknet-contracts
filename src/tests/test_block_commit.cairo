@@ -15,7 +15,9 @@ use zklink::contracts::zklink::Zklink::{
 use zklink::utils::data_structures::DataStructures::{
     CommitBlockInfo, OnchainOperationData, StoredBlockInfo, CompressedBlockExtraInfo
 };
-use zklink::utils::constants::{EMPTY_STRING_KECCAK, CHUNK_BYTES};
+use zklink::utils::constants::{
+    EMPTY_STRING_KECCAK, CHUNK_BYTES, DEPOSIT_CHECK_BYTES, FULL_EXIT_CHECK_BYTES
+};
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::operations::Operations::{OpType, U8TryIntoOpType};
 use zklink::utils::utils::concatHash;
@@ -320,37 +322,25 @@ fn test_zklink_collectOnchainOps_success() {
     let mut processableOpPubdataHash: u256 = EMPTY_STRING_KECCAK;
 
     // deposit of current chain(chain 1)
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 0]
     //
-    // data = [1334420292644659628729889072919609344, 549787120963470, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
+    // data = [1334420302856611862730659522819391488, 2361317704300101931245962, 200395919779929312501285245198324010931]
+    // pending_data = 5548271179953538085158912
     // pending_data_size = 11
     let mut op = Bytes {
         data: array![
-            1334420292644659628729889072919609344,
-            549787120963470,
-            179892997260459296479640320015568236610
+            1334420302856611862730659522819391488,
+            2361317704300101931245962,
+            200395919779929312501285245198324010931
         ],
-        pending_data: 3254000107459431534606125,
+        pending_data: 5548271179953538085158912,
         pending_data_size: 11
     };
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
-    //
-    // data = [1334420292643450702910274443744903168, 549787120963470, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
-    // pending_data_size = 11
-    let opOfWrite = Bytes {
-        data: array![
-            1334420292643450702910274443744903168,
-            549787120963470,
-            179892997260459296479640320015568236610
-        ],
-        pending_data: 3254000107459431534606125,
-        pending_data_size: 11
-    };
-    dispatcher.testAddPriorityRequest(utils::OP_DEPOSIT.try_into().unwrap(), opOfWrite);
+    dispatcher
+        .testAddPriorityRequest(
+            utils::OP_DEPOSIT.try_into().unwrap(), op.clone(), DEPOSIT_CHECK_BYTES
+        );
     utils::paddingChunk(ref op, utils::OP_DEPOSIT_CHUNKS);
     pubdatas.concat(@op);
     onchainOpPubdataHash = concatHash(onchainOpPubdataHash, @op);
@@ -398,22 +388,10 @@ fn test_zklink_collectOnchainOps_success() {
         pending_data: 14,
         pending_data_size: 11
     };
-    // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
-    // example = [5, 1, 15, 2, 0x5D8E9F533DA8993FC200826F21D0b88F33f53c2a2a151016FD18dA7a77eEb0c, 33, 33, 0]
-    //
-    // data = [6651332275801257632038764928014324732, 42577624153754863967194330481103536495, 278544165408887043319498300732072787968]
-    // pending_data = 0
-    // pending_data_size = 11
-    let opOfWrite = Bytes {
-        data: array![
-            6651332275801257632038764928014324732,
-            42577624153754863967194330481103536495,
-            278544165408887043319498300732072787968
-        ],
-        pending_data: 0,
-        pending_data_size: 11
-    };
-    dispatcher.testAddPriorityRequest(utils::OP_FULL_EXIT.try_into().unwrap(), opOfWrite);
+    dispatcher
+        .testAddPriorityRequest(
+            utils::OP_FULL_EXIT.try_into().unwrap(), op.clone(), FULL_EXIT_CHECK_BYTES
+        );
     utils::paddingChunk(ref op, utils::OP_FULL_EXIT_CHUNKS);
     pubdatas.concat(@op);
     onchainOpPubdataHash = concatHash(onchainOpPubdataHash, @op);
@@ -464,7 +442,7 @@ fn test_zklink_collectOnchainOps_success() {
         .testCollectOnchainOps(block);
     assert(actual_processableOperationsHash == processableOpPubdataHash, 'invaid value1');
     assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invaid value2');
-    assert(actual_currentOnchainOperationPubdataHashs == onchainOpPubdataHash, 'invaid value7');
+    assert(actual_currentOnchainOperationPubdataHashs == onchainOpPubdataHash, 'invaid value3');
 }
 
 
@@ -558,37 +536,25 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     let mut offsetsCommitment: Bytes = BytesTrait::new();
 
     // deposit of current chain(chain 1)
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256","uint32"]
+    // example = [1, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 0]
     //
-    // data = [1334420292644659628729889072919609344, 549787120963470, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
+    // data = [1334420302856611862730659522819391488, 2361317704300101931245962, 200395919779929312501285245198324010931]
+    // pending_data = 5548271179953538085158912
     // pending_data_size = 11
     let mut op = Bytes {
         data: array![
-            1334420292644659628729889072919609344,
-            549787120963470,
-            179892997260459296479640320015568236610
+            1334420302856611862730659522819391488,
+            2361317704300101931245962,
+            200395919779929312501285245198324010931
         ],
-        pending_data: 3254000107459431534606125,
+        pending_data: 5548271179953538085158912,
         pending_data_size: 11
     };
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 0, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
-    //
-    // data = [1334420292643450702910274443744903168, 549787120963470, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
-    // pending_data_size = 11
-    let opOfWrite = Bytes {
-        data: array![
-            1334420292643450702910274443744903168,
-            549787120963470,
-            179892997260459296479640320015568236610
-        ],
-        pending_data: 3254000107459431534606125,
-        pending_data_size: 11
-    };
-    dispatcher.testAddPriorityRequest(utils::OP_DEPOSIT.try_into().unwrap(), opOfWrite);
+    dispatcher
+        .testAddPriorityRequest(
+            utils::OP_DEPOSIT.try_into().unwrap(), op.clone(), DEPOSIT_CHECK_BYTES
+        );
     utils::paddingChunk(ref op, utils::OP_DEPOSIT_CHUNKS);
     pubdatas.concat(@op);
     pubdatasOfChain1.concat(@op);
@@ -640,22 +606,10 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         pending_data: 14,
         pending_data_size: 11
     };
-    // encode_format = ["uint8","uint8","uint32","uint8","uint256","uint16","uint16","uint128"]
-    // example = [5, 1, 15, 2, 0x5D8E9F533DA8993FC200826F21D0b88F33f53c2a2a151016FD18dA7a77eEb0c, 33, 33, 0]
-    //
-    // data = [6651332275801257632038764928014324732, 42577624153754863967194330481103536495, 278544165408887043319498300732072787968]
-    // pending_data = 0
-    // pending_data_size = 11
-    let opOfWrite = Bytes {
-        data: array![
-            6651332275801257632038764928014324732,
-            42577624153754863967194330481103536495,
-            278544165408887043319498300732072787968
-        ],
-        pending_data: 0,
-        pending_data_size: 11
-    };
-    dispatcher.testAddPriorityRequest(utils::OP_FULL_EXIT.try_into().unwrap(), opOfWrite);
+    dispatcher
+        .testAddPriorityRequest(
+            utils::OP_FULL_EXIT.try_into().unwrap(), op.clone(), FULL_EXIT_CHECK_BYTES
+        );
     utils::paddingChunk(ref op, utils::OP_FULL_EXIT_CHUNKS);
     pubdatas.concat(@op);
     pubdatasOfChain1.concat(@op);
