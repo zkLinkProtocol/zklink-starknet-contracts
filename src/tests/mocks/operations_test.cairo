@@ -30,12 +30,12 @@ mod OperationsMock {
         fn testDepositPubdata(self: @ContractState, _example: Deposit, _pubData: Bytes) {
             let parsed = DepositReadOperation::readFromPubdata(@_pubData);
             assert(_example.chainId == parsed.chainId, 'cok');
-            assert(_example.accountId == parsed.accountId, 'aok');
             assert(_example.subAccountId == parsed.subAccountId, 'sok');
             assert(_example.tokenId == parsed.tokenId, 'tok');
             assert(_example.targetTokenId == parsed.targetTokenId, 't1ok');
             assert(_example.amount == parsed.amount, 'amn');
             assert(_example.owner == parsed.owner, 'own');
+            assert(_example.accountId == parsed.accountId, 'aok');
         }
 
         fn testWriteDepositPubdata(self: @ContractState, _example: Deposit) {

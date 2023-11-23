@@ -10,7 +10,6 @@ use starknet::SyscallResultTrait;
 use traits::{TryInto, Into};
 use starknet::testing;
 use test::test_utils::assert_eq;
-use debug::PrintTrait;
 use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::constants::CHUNK_BYTES;
 use zklink::utils::math::u128_join;

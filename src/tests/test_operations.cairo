@@ -39,28 +39,28 @@ fn test_zklink_read_deposit_pubdata() {
 
     let _example: Deposit = Deposit {
         chainId: 1,
-        accountId: 13,
         subAccountId: 0,
         tokenId: 25,
         targetTokenId: 23,
         amount: 100,
-        owner: owner.into()
+        owner: owner.into(),
+        accountId: 13,
     };
 
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 1, 13, 0, 25, 23, 100, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
+    // encode_format = ["uint8","uint8","uint8","uint16","uint16","uint128","uint256", "uint32"]
+    // example = [1, 1, 0, 25, 23, 100, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d, 13]
     //
-    // data = [1334420292659166737988792875596382208, 109982469853070, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
+    // data = [1334420300380684560495070276569006080, 472371111152243845767562, 200395919779929312501285245198324010931]
+    // pending_data = 5548271179953538085158925
     // pending_data_size = 11
 
     let mut _pubData = Bytes {
         data: array![
-            1334420292659166737988792875596382208,
-            109982469853070,
-            179892997260459296479640320015568236610
+            1334420300380684560495070276569006080,
+            472371111152243845767562,
+            200395919779929312501285245198324010931
         ],
-        pending_data: 3254000107459431534606125,
+        pending_data: 5548271179953538085158925,
         pending_data_size: 11
     };
 
@@ -75,12 +75,12 @@ fn test_zklink_write_deposit_pubdata() {
 
     let _example: Deposit = Deposit {
         chainId: 1,
-        accountId: 13,
         subAccountId: 0,
         tokenId: 25,
         targetTokenId: 23,
         amount: 100,
-        owner: owner.into()
+        owner: owner.into(),
+        accountId: 13
     };
 
     dispatcher.testWriteDepositPubdata(_example);

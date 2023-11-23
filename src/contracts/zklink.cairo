@@ -158,11 +158,12 @@ mod Zklink {
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,
         CHUNK_BYTES, DEPOSIT_BYTES, CHANGE_PUBKEY_BYTES, WITHDRAW_BYTES, FORCED_EXIT_BYTES,
-        FULL_EXIT_BYTES, PRIORITY_EXPIRATION, UPGRADE_NOTICE_PERIOD, MAX_DEPOSIT_AMOUNT,
-        MAX_PROOF_COMMITMENT, INPUT_MASK, AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID,
-        MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX, ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE,
-        TOKEN_DECIMALS_OF_LAYER2, GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS,
-        USD_TOKEN_ID, MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
+        FULL_EXIT_BYTES, DEPOSIT_CHECK_BYTES, FULL_EXIT_CHECK_BYTES, PRIORITY_EXPIRATION,
+        UPGRADE_NOTICE_PERIOD, MAX_DEPOSIT_AMOUNT, MAX_PROOF_COMMITMENT, INPUT_MASK,
+        AUTH_FACT_RESET_TIMELOCK, CHAIN_ID, MIN_CHAIN_ID, MAX_CHAIN_ID, ALL_CHAINS, CHAIN_INDEX,
+        ENABLE_COMMIT_COMPRESSED_BLOCK, MAX_ACCEPT_FEE_RATE, TOKEN_DECIMALS_OF_LAYER2,
+        GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS, USD_TOKEN_ID,
+        MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
     };
 
     /// Storage
@@ -629,7 +630,7 @@ mod Zklink {
             };
 
             let pubData = op.writeForPriorityQueue();
-            self.addPriorityRequest(OpType::FullExit(()), pubData);
+            self.addPriorityRequest(OpType::FullExit(()), pubData, FULL_EXIT_CHECK_BYTES);
 
             self.end();
         }
@@ -806,7 +807,8 @@ mod Zklink {
                 let pr: PriorityOperation = self.priorityRequests.read(id);
                 if pr.opType == OpType::Deposit(()) {
                     let depositPubdata = _depositsPubdata[currentDepositIdx];
-                    let depositPubdataHash: u256 = depositPubdata.keccak();
+                    let depositPubdataHash: u256 = depositPubdata
+                        .keccak_for_check(DEPOSIT_CHECK_BYTES);
                     assert(depositPubdataHash == pr.hashedPubData, 'A1');
                     currentDepositIdx += 1;
 
@@ -1525,16 +1527,16 @@ mod Zklink {
             // Priority Queue request
             let op = Deposit {
                 chainId: CHAIN_ID,
-                accountId: 0, // unknown at this point
                 subAccountId: _subAccountId,
                 tokenId: tokenId,
                 targetTokenId: targetTokenId,
                 amount: _amount,
-                owner: _zkLinkAddress
+                owner: _zkLinkAddress,
+                accountId: 0, // unknown at this point
             };
 
             let pubData = op.writeForPriorityQueue();
-            self.addPriorityRequest(OpType::Deposit(()), pubData);
+            self.addPriorityRequest(OpType::Deposit(()), pubData, DEPOSIT_CHECK_BYTES);
         }
 
         // Saves priority request in storage
@@ -1542,13 +1544,14 @@ mod Zklink {
         // Parameters:
         //  _opType Rollup operation type
         //  _pubData Operation pubdata
-        fn addPriorityRequest(ref self: ContractState, _opType: OpType, _pubData: Bytes) {
+        fn addPriorityRequest(
+            ref self: ContractState, _opType: OpType, _pubData: Bytes, _hashInputSize: usize
+        ) {
             // Expiration block is: current block number + priority expiration delta
             let expirationBlock = get_block_number() + PRIORITY_EXPIRATION;
             let toprs = self.totalOpenPriorityRequests.read();
             let nextPriorityRequestId = self.firstPriorityRequestId.read() + toprs;
-            let hashedPubData = _pubData.keccak();
-
+            let hashedPubData = _pubData.keccak_for_check(_hashInputSize);
             let priorityRequest = PriorityOperation {
                 hashedPubData: hashedPubData, expirationBlock: expirationBlock, opType: _opType
             };
@@ -1778,8 +1781,11 @@ mod Zklink {
             if _opType == OpType::Deposit(()) {
                 opPubData = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
                 if _chainId == CHAIN_ID {
-                    let op = DepositReadOperation::readFromPubdata(@opPubData);
-                    op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
+                    checkPriorityOperation(
+                        @opPubData,
+                        @self.priorityRequests.read(_nextPriorityOpIdx),
+                        DEPOSIT_CHECK_BYTES
+                    );
                     priorityOperationsProcessed = 1;
                 }
             } else if _opType == OpType::ChangePubKey(()) {
@@ -1800,8 +1806,11 @@ mod Zklink {
                 } else if _opType == OpType::FullExit(()) {
                     opPubData = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
-                        let op = FullExitReadOperation::readFromPubdata(@opPubData);
-                        op.checkPriorityOperation(@self.priorityRequests.read(_nextPriorityOpIdx));
+                        checkPriorityOperation(
+                            @opPubData,
+                            @self.priorityRequests.read(_nextPriorityOpIdx),
+                            FULL_EXIT_CHECK_BYTES
+                        );
                         priorityOperationsProcessed = 1;
                     }
                 } else {
@@ -2100,6 +2109,17 @@ mod Zklink {
             i += 1;
         };
         onchainOpPubdataHashs
+    }
+
+    // Checks the peration is same as operation in priority queue
+    #[inline(always)]
+    fn checkPriorityOperation(
+        op: @Bytes, _priorityOperation: @PriorityOperation, _checkSize: usize
+    ) {
+        assert(
+            op.keccak_for_check(_checkSize) == *_priorityOperation.hashedPubData,
+            'OP: invalid op hash'
+        );
     }
 
     #[inline(always)]

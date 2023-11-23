@@ -10,6 +10,7 @@ use zklink::utils::utils::{u128_array_slice, u8_array_to_u256};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_math::sha256::sha256;
 
+
 // You can impl this trait for your own type.
 // To make it able to read type T from Bytes.
 // Call: ReadBytes::<T>::read(@bytes, offset);
@@ -102,6 +103,8 @@ trait BytesTrait {
     fn concat(ref self: Bytes, other: @Bytes);
     /// keccak hash
     fn keccak(self: @Bytes) -> u256;
+    /// keccak for op check
+    fn keccak_for_check(self: @Bytes, checkSize: usize) -> u256;
     /// sha256 hash
     fn sha256(self: @Bytes) -> u256;
     /// append pending data
@@ -546,6 +549,23 @@ impl BytesImpl of BytesTrait {
             hash_data.append(*self.pending_data);
             return keccak_u128s_be(hash_data.span(), self.size());
         }
+    }
+
+    /// keccak for op check
+    fn keccak_for_check(self: @Bytes, checkSize: usize) -> u256 {
+        assert(checkSize <= self.size(), 'checkSize too large');
+        let (aligned_data_len, last_hash_data_item_size) = DivRem::div_rem(
+            checkSize, BYTES_PER_ELEMENT.try_into().expect('Division by 0')
+        );
+        let mut hash_data = u128_array_slice(self.data, 0, aligned_data_len);
+
+        if last_hash_data_item_size != 0 {
+            let (_, last_hash_data_item) = self
+                .read_u128_packed(checkSize - last_hash_data_item_size, last_hash_data_item_size);
+            hash_data.append(last_hash_data_item);
+        }
+
+        keccak_u128s_be(hash_data.span(), checkSize)
     }
 
     /// sha256 hash
