@@ -165,7 +165,6 @@ mod Zklink {
         GLOBAL_ASSET_ACCOUNT_ID, GLOBAL_ASSET_ACCOUNT_ADDRESS, USD_TOKEN_ID,
         MIN_USD_STABLE_TOKEN_ID, MAX_USD_STABLE_TOKEN_ID
     };
-    use debug::PrintTrait;
 
     /// Storage
     #[storage]
@@ -1783,7 +1782,6 @@ mod Zklink {
                 opPubData = _pubData.read_bytes(_pubdataOffset, DEPOSIT_BYTES);
                 if _chainId == CHAIN_ID {
                     checkPriorityOperation(
-                        _opType,
                         @opPubData,
                         @self.priorityRequests.read(_nextPriorityOpIdx),
                         DEPOSIT_CHECK_BYTES
@@ -1809,7 +1807,6 @@ mod Zklink {
                     opPubData = _pubData.read_bytes(_pubdataOffset, FULL_EXIT_BYTES);
                     if _chainId == CHAIN_ID {
                         checkPriorityOperation(
-                            _opType,
                             @opPubData,
                             @self.priorityRequests.read(_nextPriorityOpIdx),
                             FULL_EXIT_CHECK_BYTES
@@ -2115,10 +2112,10 @@ mod Zklink {
     }
 
     // Checks the peration is same as operation in priority queue
+    #[inline(always)]
     fn checkPriorityOperation(
-        _opType: OpType, op: @Bytes, _priorityOperation: @PriorityOperation, _checkSize: usize
+        op: @Bytes, _priorityOperation: @PriorityOperation, _checkSize: usize
     ) {
-        assert(*_priorityOperation.opType == _opType, 'OP: not op type');
         assert(
             op.keccak_for_check(_checkSize) == *_priorityOperation.hashedPubData,
             'OP: invalid op hash'

@@ -9,7 +9,7 @@ use zklink::utils::math::{u128_fast_shift, u128_join, u128_split, read_sub_u128}
 use zklink::utils::utils::{u128_array_slice, u8_array_to_u256};
 use zklink::utils::keccak::keccak_u128s_be;
 use alexandria_math::sha256::sha256;
-use debug::PrintTrait;
+
 
 // You can impl this trait for your own type.
 // To make it able to read type T from Bytes.
