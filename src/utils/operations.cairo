@@ -9,7 +9,8 @@ mod Operations {
         Store, StorageBaseAddress, SyscallResult, storage_read_syscall, storage_write_syscall,
         storage_address_from_base_and_offset, ContractAddress
     };
-    use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes,};
+    use zklink_starknet_utils::bytes::{Bytes, BytesTrait, ReadBytes};
+
 
     // zkLink circuit operation type
     #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]

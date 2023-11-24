@@ -9,6 +9,8 @@ use starknet::Felt252TryIntoContractAddress;
 use starknet::testing::{set_contract_address, set_block_number, pop_log};
 use test::test_utils::assert_eq;
 
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
+
 use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
@@ -24,7 +26,6 @@ use zklink::tests::mocks::verifier_test::IVerifierMockDispatcher;
 use zklink::tests::mocks::verifier_test::IVerifierMockDispatcherTrait;
 use zklink::tests::utils;
 use zklink::tests::utils::Token;
-use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::data_structures::DataStructures::StoredBlockInfo;
 use zklink::utils::operations::Operations::Withdraw;
 

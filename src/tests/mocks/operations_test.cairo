@@ -1,5 +1,5 @@
+use zklink_starknet_utils::bytes::Bytes;
 use zklink::utils::operations::Operations::{Deposit, Withdraw, FullExit, ForcedExit, ChangePubKey};
-use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
 trait IOperationsMock<TContractState> {
@@ -19,7 +19,7 @@ mod OperationsMock {
         WithdrawReadOperation, FullExit, FullExitReadOperation, ForcedExit, ForcedExitReadOperation,
         ChangePubKey, ChangePubKeyReadOperation
     };
-    use zklink::utils::bytes::Bytes;
+    use zklink_starknet_utils::bytes::Bytes;
     use debug::PrintTrait;
 
     #[storage]

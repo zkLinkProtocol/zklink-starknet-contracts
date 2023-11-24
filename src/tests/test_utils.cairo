@@ -1,67 +1,9 @@
 use array::ArrayTrait;
-use zklink::utils::utils::{
-    u8_array_to_u256, u128_array_slice, u64_array_slice, concatHash, concatTwoHash, pubKeyHash
-};
-use zklink::utils::bytes::{Bytes, BytesTrait};
-use debug::PrintTrait;
 
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
 
-#[test]
-#[available_gas(20000000000)]
-fn test_u8_array_to_u256() {
-    let mut array = ArrayTrait::<u8>::new();
-    let mut i = 0;
-    loop {
-        if i == 32 {
-            break;
-        }
-        array.append(i % 8);
-        i += 1;
-    };
+use zklink::utils::utils::{concatHash, concatTwoHash, pubKeyHash};
 
-    let res: u256 = u8_array_to_u256(array.span());
-    assert(
-        res == 0x0001020304050607000102030405060700010203040506070001020304050607, 'invalid u256'
-    );
-}
-
-#[test]
-#[available_gas(20000000000)]
-fn test_u128_array_slice() {
-    let mut array = ArrayTrait::<u128>::new();
-    array.append(1);
-    array.append(2);
-    array.append(3);
-
-    let res = u128_array_slice(@array, 0, 2);
-    assert(res.len() == 2, 'invalid length 1');
-    assert(*res[0] == 1, 'invalid value 1');
-    assert(*res[1] == 2, 'invalid value 2');
-
-    let res = u128_array_slice(@array, 1, 3);
-    assert(res.len() == 2, 'invalid length 2');
-    assert(*res[0] == 2, 'invalid value 1');
-    assert(*res[1] == 3, 'invalid value 2');
-}
-
-#[test]
-#[available_gas(20000000000)]
-fn test_u64_array_slice() {
-    let mut array = ArrayTrait::<u64>::new();
-    array.append(1);
-    array.append(2);
-    array.append(3);
-
-    let res = u64_array_slice(@array, 0, 2);
-    assert(res.len() == 2, 'invalid length 1');
-    assert(*res[0] == 1, 'invalid value 1');
-    assert(*res[1] == 2, 'invalid value 2');
-
-    let res = u64_array_slice(@array, 1, 3);
-    assert(res.len() == 2, 'invalid length 2');
-    assert(*res[0] == 2, 'invalid value 1');
-    assert(*res[1] == 3, 'invalid value 2');
-}
 
 #[test]
 #[available_gas(20000000000)]

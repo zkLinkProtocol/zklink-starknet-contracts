@@ -6,13 +6,14 @@ use traits::TryInto;
 use starknet::ContractAddress;
 use starknet::Felt252TryIntoContractAddress;
 
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
+
 use zklink::tests::mocks::operations_test::OperationsMock;
 use zklink::tests::mocks::operations_test::IOperationsMockDispatcher;
 use zklink::tests::mocks::operations_test::IOperationsMockDispatcherTrait;
 use zklink::utils::operations::Operations::{
     OperationReadTrait, Deposit, Withdraw, FullExit, ForcedExit, ChangePubKey
 };
-use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::tests::utils;
 
 fn deploy_contract() -> IOperationsMockDispatcher {

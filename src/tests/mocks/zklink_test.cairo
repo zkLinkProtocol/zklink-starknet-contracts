@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
+use zklink_starknet_utils::bytes::Bytes;
 use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo};
 use zklink::utils::operations::Operations::{OpType, Withdraw};
-use zklink::utils::bytes::Bytes;
 
 #[starknet::interface]
 trait IZklinkMock<TContractState> {
@@ -62,6 +62,7 @@ mod ZklinkMock {
     use starknet::ContractAddress;
     use starknet::get_caller_address;
     use starknet::testing::set_caller_address;
+    use zklink_starknet_utils::bytes::Bytes;
     use zklink::contracts::zklink::Zklink;
     use zklink::contracts::zklink::Zklink::{
         exodusModeContractMemberStateTrait, priorityRequestsContractMemberStateTrait,
@@ -71,7 +72,6 @@ mod ZklinkMock {
     };
     use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo};
     use zklink::utils::operations::Operations::{OpType, Withdraw};
-    use zklink::utils::bytes::Bytes;
 
     #[storage]
     struct Storage {

@@ -37,4 +37,13 @@ dependencies = [
  "alexandria_data_structures",
  "alexandria_math",
  "openzeppelin",
+ "zklink_starknet_utils",
+]
+
+[[package]]
+name = "zklink_starknet_utils"
+version = "0.1.0"
+source = "git+https://github.com/zkLinkProtocol/zklink-starknet-utils.git?tag=v0.1.0#00f356e107b8a4bf9296baef08531b8f01c758a9"
+dependencies = [
+ "alexandria_data_structures",
 ]

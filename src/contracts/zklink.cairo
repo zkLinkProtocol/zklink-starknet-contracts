@@ -2,7 +2,7 @@ use starknet::{ContractAddress, ClassHash, EthAddress};
 use zklink::utils::data_structures::DataStructures::{
     StoredBlockInfo, CommitBlockInfo, ExecuteBlockInfo, RegisteredToken
 };
-use zklink::utils::bytes::Bytes;
+use zklink_starknet_utils::bytes::Bytes;
 
 #[starknet::interface]
 trait IZklink<TContractState> {
@@ -118,7 +118,10 @@ mod Zklink {
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcher;
     use openzeppelin::token::erc20::interface::IERC20CamelDispatcherTrait;
 
-    use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
+    use zklink_starknet_utils::bytes::{Bytes, BytesTrait, ReadBytes};
+    use zklink_starknet_utils::math::{fast_power10, u256_fast_pow2};
+    use zklink_starknet_utils::utils::uint_min;
+
     use zklink::utils::operations::Operations::{
         OpType, OpTypeIntoU8, OpTypeReadBytes, U8TryIntoOpType, PriorityOperation,
         OperationReadTrait, OperationWriteTrait, Deposit, DepositReadOperation, FullExit,
@@ -128,7 +131,6 @@ mod Zklink {
     use zklink::utils::data_structures::DataStructures::{
         RegisteredToken, StoredBlockInfo, CommitBlockInfo, ExecuteBlockInfo, OnchainOperationData
     };
-    use zklink::utils::math::{fast_power10, u256_fast_pow2, uint_min};
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash};
     use zklink::utils::constants::{
         EMPTY_STRING_KECCAK, MAX_AMOUNT_OF_REGISTERED_TOKENS, MAX_ACCOUNT_ID, MAX_SUB_ACCOUNT_ID,

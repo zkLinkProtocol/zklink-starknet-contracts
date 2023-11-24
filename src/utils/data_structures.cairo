@@ -8,7 +8,7 @@ mod DataStructures {
         Store, StorageBaseAddress, SyscallResult, storage_read_syscall, storage_write_syscall,
         storage_address_from_base_and_offset
     };
-    use zklink::utils::bytes::{Bytes, BytesTrait, ReadBytes};
+    use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
 
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct RegisteredToken {
