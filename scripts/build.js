@@ -38,16 +38,12 @@ function writeZklinkConstants(configs) {
         result = result.replace(/(const UPGRADE_NOTICE_PERIOD: u64 = )(\d+)(;)/, `$1${configs.upgradeNoticePeriod}$3`);
         // CHAIN_ID
         result = result.replace(/(const CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.chainId}$3`);
-        // MIN_CHAIN_ID
-        result = result.replace(/(const MIN_CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.minChainId}$3`);
         // MAX_CHAIN_ID
         result = result.replace(/(const MAX_CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.maxChainId}$3`);
         // ALL_CHAAINS
         result = result.replace(/(const ALL_CHAINS: u256 = )(\d+)(;)/, `$1${configs.allChains}$3`);
-        // CHAIN_INDEX
-        result = result.replace(/(const CHAIN_INDEX: u256 = )(\d+)(;)/, `$1${configs.chainIndex}$3`);
-        // ENABLE_COMMIT_COMPRESSED_BLOCK
-        result = result.replace(/(const ENABLE_COMMIT_COMPRESSED_BLOCK: felt252 = )(\d+)(;)/, `$1${configs.enableCommitCompressedBlock}$3`);
+        // MASTER_CHAIN_ID
+        result = result.replace(/(const MASTER_CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.chainIndex}$3`);
 
         fs.writeFile(contractPath.ZKLINK_CONSTANTS_PATH, result, 'utf8', (err) => {
             if (err) {

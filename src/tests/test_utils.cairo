@@ -13,7 +13,7 @@ fn test_u8_array_to_u256() {
     let mut i = 0;
     loop {
         if i == 32 {
-            break ();
+            break;
         }
         array.append(i % 8);
         i += 1;

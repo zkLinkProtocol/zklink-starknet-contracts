@@ -162,7 +162,7 @@ mod UpgradeGateKeeper {
             let mut newTargetsIndex = 0;
             loop {
                 if newTargetsIndex >= newTargets.len() {
-                    break ();
+                    break;
                 }
 
                 let newTarget: ClassHash = *newTargets[newTargetsIndex];
@@ -205,7 +205,7 @@ mod UpgradeGateKeeper {
             let mut i = 0;
             loop {
                 if i >= self.managedContractsLength.read() {
-                    break ();
+                    break;
                 }
 
                 let nextTarget: ClassHash = self.nextTargets.read(i);
@@ -226,7 +226,7 @@ mod UpgradeGateKeeper {
             let mut i = 0;
             loop {
                 if i >= self.nextTargetsLength.read() {
-                    break ();
+                    break;
                 }
                 newTargets.append(self.nextTargets.read(i));
                 self.nextTargets.write(i, Zeroable::zero());
@@ -258,7 +258,7 @@ mod UpgradeGateKeeper {
             let mut i = 0;
             loop {
                 if i >= self.nextTargetsLength.read() {
-                    break ();
+                    break;
                 }
                 self.nextTargets.write(i, Zeroable::zero());
                 i += 1;
