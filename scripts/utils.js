@@ -40,9 +40,9 @@ export async function connectStarknet() {
     return { provider, deployer, governor, netConfig};
 }
 
-export function buildFaucetTokenConstructorArgs(abi, name, symbol, decimals, fromTransferFeeRatio, toTransferFeeRatio) {
+export function buildFaucetTokenConstructorArgs(abi, name, symbol, decimals) {
     const contractCallData = new CallData(abi);
-    const constructorArgs = contractCallData.compile("constructor", [name, symbol, decimals, fromTransferFeeRatio, toTransferFeeRatio])
+    const constructorArgs = contractCallData.compile("constructor", [name, symbol, decimals])
     return constructorArgs;
 }
 
@@ -58,17 +58,13 @@ export function buildVerifierConstructorArgs(abi, master) {
     return constructorArgs;
 }
 
-export function buildZklinkConstructorArgs(abi, master, verifierAddress, networkGovernor, blockNumber, timestamp, stateHash, commitment, syncHash) {
+export function buildZklinkConstructorArgs(abi, master, verifierAddress, networkGovernor, blockNumber) {
     const contractCallData = new CallData(abi);
     const constructorArgs = contractCallData.compile("constructor", [
         master,
         verifierAddress,
         networkGovernor,
         blockNumber,
-        timestamp,
-        stateHash,
-        commitment,
-        syncHash
     ])
     return constructorArgs;
 }

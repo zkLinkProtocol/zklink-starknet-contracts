@@ -43,7 +43,7 @@ function writeZklinkConstants(configs) {
         // ALL_CHAAINS
         result = result.replace(/(const ALL_CHAINS: u256 = )(\d+)(;)/, `$1${configs.allChains}$3`);
         // MASTER_CHAIN_ID
-        result = result.replace(/(const MASTER_CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.chainIndex}$3`);
+        result = result.replace(/(const MASTER_CHAIN_ID: u8 = )(\d+)(;)/, `$1${configs.masterChainId}$3`);
 
         fs.writeFile(contractPath.ZKLINK_CONSTANTS_PATH, result, 'utf8', (err) => {
             if (err) {
@@ -64,22 +64,18 @@ async function build() {
     const upgradeNoticePeriod = netConfig.macro.UPGRADE_NOTICE_PERIOD;
     const priorityExpiration = netConfig.macro.PRIORITY_EXPIRATION;
     const chainId = netConfig.macro.CHAIN_ID;
-    const enableCommitCompressedBlock = netConfig.macro.ENABLE_COMMIT_COMPRESSED_BLOCK ? 1 : 0;
-    const minChainId = netConfig.macro.MIN_CHAIN_ID;
     const maxChainId = netConfig.macro.MAX_CHAIN_ID;
     const allChains = netConfig.macro.ALL_CHAINS;
-    const chainIndex = 1 << (chainId - 1);
+    const masterChainId = netConfig.macro.MAX_CHAIN_ID;
 
     const configs = {
         blockPeriod,
         upgradeNoticePeriod,
         priorityExpiration,
         chainId,
-        enableCommitCompressedBlock,
-        minChainId,
         maxChainId,
         allChains,
-        chainIndex
+        masterChainId
     }
 
     console.log("🔥 Reading and replace zklink constants...");
