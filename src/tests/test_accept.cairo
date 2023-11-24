@@ -8,6 +8,8 @@ use starknet::{ContractAddress, contract_address_const};
 use starknet::Felt252TryIntoContractAddress;
 use starknet::testing::{set_caller_address, set_contract_address};
 
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
+
 use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
@@ -20,7 +22,6 @@ use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatc
 use zklink::tests::mocks::standard_decimals_token::IStandardDecimalsTokenDispatcherTrait;
 use zklink::tests::utils;
 use zklink::tests::utils::Token;
-use zklink::utils::bytes::{Bytes, BytesTrait};
 
 
 #[test]

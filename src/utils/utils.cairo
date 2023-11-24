@@ -2,84 +2,10 @@ use traits::Into;
 use array::{ArrayTrait, SpanTrait};
 use traits::TryInto;
 use option::OptionTrait;
-use zklink::utils::math::{u128_split, u128_join};
-use zklink::utils::bytes::{Bytes, BytesTrait};
-use zklink::utils::keccak::keccak_u128s_be;
+use zklink_starknet_utils::utils::{u128_split, u128_join};
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
+use zklink_starknet_utils::keccak::keccak_u128s_be;
 use alexandria_data_structures::array_ext::ArrayTraitExt;
-
-// Convert sha256 result(Array<u8>) to u256
-// result length MUST be 32
-fn u8_array_to_u256(arr: Span<u8>) -> u256 {
-    assert(arr.len() == 32, 'too large');
-    let mut i = 0;
-    let mut high: u128 = 0;
-    let mut low: u128 = 0;
-    // process high
-    loop {
-        if i >= arr.len() {
-            break;
-        }
-        if i == 16 {
-            break;
-        }
-        high = u128_join(high, (*arr[i]).into(), 1);
-        i += 1;
-    };
-    // process low
-    loop {
-        if i >= arr.len() {
-            break;
-        }
-        if i == 32 {
-            break;
-        }
-        low = u128_join(low, (*arr[i]).into(), 1);
-        i += 1;
-    };
-
-    u256 { low, high }
-}
-
-// https://github.com/keep-starknet-strange/alexandria/blob/main/alexandria/data_structures/src/data_structures.cairo
-/// Returns the slice of an array.
-/// * `arr` - The array to slice.
-/// * `begin` - The index to start the slice at.
-/// * `end` - The index to end the slice at (not included).
-/// # Returns
-/// * `Array<u128>` - The slice of the array.
-fn u128_array_slice(src: @Array<u128>, mut begin: usize, end: usize) -> Array<u128> {
-    let mut slice = ArrayTrait::new();
-    let len = begin + end;
-    loop {
-        if begin >= len {
-            break;
-        }
-        if begin >= src.len() {
-            break;
-        }
-
-        slice.append(*src[begin]);
-        begin += 1;
-    };
-    slice
-}
-
-fn u64_array_slice(src: @Array<u64>, mut begin: usize, end: usize) -> Array<u64> {
-    let mut slice = ArrayTrait::new();
-    let len = begin + end;
-    loop {
-        if begin >= len {
-            break;
-        }
-        if begin >= src.len() {
-            break;
-        }
-
-        slice.append(*src[begin]);
-        begin += 1;
-    };
-    slice
-}
 
 // new_hash = hash(old_hash + bytes)
 fn concatHash(_hash: u256, _bytes: @Bytes) -> u256 {

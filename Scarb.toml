@@ -9,6 +9,7 @@ starknet = ">=2.3.1"
 alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", tag = "cairo-v2.3.0-rc0" }
 alexandria_data_structures = { git = "https://github.com/keep-starknet-strange/alexandria.git", tag = "cairo-v2.3.0-rc0" }
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0-beta.0" }
+zklink_starknet_utils = { git = "https://github.com/zkLinkProtocol/zklink-starknet-utils.git", tag = "v0.1.0" }
 
 [[target.starknet-contract]]
 casm = true

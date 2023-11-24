@@ -10,9 +10,11 @@ use starknet::SyscallResultTrait;
 use traits::{TryInto, Into};
 use starknet::testing;
 use test::test_utils::assert_eq;
-use zklink::utils::bytes::{Bytes, BytesTrait};
+
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
+use zklink_starknet_utils::utils::u128_join;
+
 use zklink::utils::constants::CHUNK_BYTES;
-use zklink::utils::math::u128_join;
 use zklink::contracts::zklink::Zklink;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;

@@ -6,6 +6,8 @@ use clone::Clone;
 use starknet::ContractAddress;
 use starknet::Felt252TryIntoContractAddress;
 
+use zklink_starknet_utils::bytes::{Bytes, BytesTrait};
+
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
@@ -16,7 +18,6 @@ use zklink::utils::data_structures::DataStructures::{
 use zklink::utils::constants::{
     EMPTY_STRING_KECCAK, CHUNK_BYTES, DEPOSIT_CHECK_BYTES, FULL_EXIT_CHECK_BYTES
 };
-use zklink::utils::bytes::{Bytes, BytesTrait};
 use zklink::utils::operations::Operations::{OpType, U8TryIntoOpType};
 use zklink::utils::utils::concatHash;
 use zklink::tests::utils;
