@@ -56,10 +56,8 @@ mod DataStructures {
     struct CommitBlockInfo {
         newStateHash: u256,
         publicData: Bytes,
-        timestamp: u64,
         onchainOperations: Array<OnchainOperationData>,
-        blockNumber: u64,
-        feeAccount: u32
+        blockNumber: u64
     }
 
     // Data needed to execute committed and verified block
