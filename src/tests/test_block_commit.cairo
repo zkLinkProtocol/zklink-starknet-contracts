@@ -40,10 +40,8 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_length1() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     dispatcher.testCollectOnchainOps(block);
@@ -65,10 +63,8 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_length2() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     dispatcher.testCollectOnchainOps(block);
@@ -88,10 +84,8 @@ fn test_zklink_collectOnchainOps_no_pubdata() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     let (
@@ -123,10 +117,8 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset1() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     dispatcher.testCollectOnchainOps(block);
@@ -150,10 +142,8 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset2() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     dispatcher.testCollectOnchainOps(block);
@@ -177,10 +167,8 @@ fn test_zklink_collectOnchainOps_invalid_pubdata_offset3() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     dispatcher.testCollectOnchainOps(block);
@@ -204,10 +192,8 @@ fn test_zklink_collectOnchainOps_invalid_op_type() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: publicData,
-        timestamp: 1652422395,
         onchainOperations: onchainOperations,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     dispatcher.testCollectOnchainOps(block);
@@ -343,10 +329,8 @@ fn test_zklink_collectOnchainOps_success() {
     let mut block = CommitBlockInfo {
         newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
         publicData: pubdatas,
-        timestamp: 1652422395,
         onchainOperations: ops,
         blockNumber: 10,
-        feeAccount: 0
     };
 
     let (
@@ -379,12 +363,7 @@ fn test_zklink_testCommitOneBlock_invalid_block_number() {
     };
 
     let commitBlock = CommitBlockInfo {
-        newStateHash: 5,
-        publicData: BytesTrait::new(),
-        timestamp: 1652422395,
-        onchainOperations: array![],
-        blockNumber: 9,
-        feeAccount: 0
+        newStateHash: 5, publicData: BytesTrait::new(), onchainOperations: array![], blockNumber: 9,
     };
 
     dispatcher.testCommitOneBlock(preBlock, commitBlock);
@@ -520,22 +499,18 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     };
 
     let blockNumber = 13;
-    let timestamp = 1652422396;
     let newStateHash = 5;
     let compressedBlock = CommitBlockInfo {
         newStateHash: newStateHash,
         publicData: pubdatas,
-        timestamp: timestamp,
         onchainOperations: onchainOperations,
         blockNumber: blockNumber,
-        feeAccount: 0
     };
 
     let syncHash = createSlaverChainSyncHash(
         preBlock.syncHash,
         compressedBlock.blockNumber,
         compressedBlock.newStateHash,
-        compressedBlock.timestamp,
         onchainOpPubdataHash
     );
 
