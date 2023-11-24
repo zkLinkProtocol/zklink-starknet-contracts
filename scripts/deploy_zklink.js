@@ -12,10 +12,6 @@ program
     .option('--validator <validator>', 'Validator address')
     .option('--fee-account <feeAccount>', 'Fee account address')
     .option('--block-number <blockNumber>', 'Block number', 0)
-    .option('--timestamp <timestamp>', 'Timestamp', 0)
-    .requiredOption('--genesis-root <genesisRoot>', 'Gemesis root')
-    .option('--commitment <commitment>', 'Commitment', "0x0000000000000000000000000000000000000000000000000000000000000000")
-    .option('--sync-hash <syncHash>', 'Sync hash', "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
     .option('--skip-verify', 'Skip verification', false)
     .option('--force', 'Force redeploy', false)
     .action(async (options) => {
@@ -78,10 +74,6 @@ async function deploy_zklink(options) {
             deployLog[logName.DEPLOY_LOG_VERIFIER],
             options.governor,
             options.blockNumber,
-            options.timestamp,
-            cairo.uint256(options.genesisRoot),
-            cairo.uint256(options.commitment),
-            cairo.uint256(options.syncHash)
         );
 
         const deployResponse = await deployer.deployContract({ classHash: deployLog[logName.DEPLOY_LOG_ZKLINK_CLASS_HASH], constructorCalldata: zklinkConstructorArgs });

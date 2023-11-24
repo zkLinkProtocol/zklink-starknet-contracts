@@ -29,7 +29,7 @@ fn keccak_u128s_be(mut input: Span<u128>, n_bytes: usize) -> u256 {
                 keccak_add_uint128_be(ref keccak_input, *v, value_size);
                 size -= value_size;
             },
-            Option::None(_) => { break (); },
+            Option::None(_) => { break; },
         };
     };
 

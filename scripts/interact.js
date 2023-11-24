@@ -61,7 +61,7 @@ async function add_bridge(options) {
     const zklink = new Contract(zklinkContractSierra.abi, zklinkAddress, provider);
 
     zklink.connect(governor);
-    const call = zklink.populate("addBridge", [bridgeAddress]);
+    const call = zklink.populate("setSyncService", [bridgeAddress]);
     const tx = await zklink.addBridge(call.calldata);
     await provider.waitForTransaction(tx.transaction_hash);
     console.log('✅ zklink add bridge success, tx:', tx.transaction_hash);

@@ -9,11 +9,9 @@ use starknet::Felt252TryIntoContractAddress;
 use zklink::tests::mocks::zklink_test::ZklinkMock;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcher;
 use zklink::tests::mocks::zklink_test::IZklinkMockDispatcherTrait;
-use zklink::contracts::zklink::Zklink::{
-    createSyncHash, createBlockCommitmentForSync, buildOnchainOperationPubdataHashs
-};
+use zklink::contracts::zklink::Zklink::{createSlaverChainSyncHash};
 use zklink::utils::data_structures::DataStructures::{
-    CommitBlockInfo, OnchainOperationData, StoredBlockInfo, CompressedBlockExtraInfo
+    CommitBlockInfo, OnchainOperationData, StoredBlockInfo
 };
 use zklink::utils::constants::{
     EMPTY_STRING_KECCAK, CHUNK_BYTES, DEPOSIT_CHECK_BYTES, FULL_EXIT_CHECK_BYTES
@@ -226,89 +224,6 @@ fn test_zklink_collectOnchainOps_invalid_op_type() {
 
 #[test]
 #[available_gas(20000000000)]
-#[should_panic(expected: ('i1', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_collectOnchainOps_invalid_chain_id1() {
-    let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[utils::ADDR_ZKLINK];
-    let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    // chain_id = MIN_CHAIN_ID - 1
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 0, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
-    //
-    // data = [1329227995786124801101358576590389248, 549787120963470, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
-    // pending_data_size = 11
-
-    let mut publicData = Bytes {
-        data: array![
-            1329227995786124801101358576590389248,
-            549787120963470,
-            179892997260459296479640320015568236610
-        ],
-        pending_data: 3254000107459431534606125,
-        pending_data_size: 11
-    };
-
-    utils::paddingChunk(ref publicData, utils::OP_DEPOSIT_CHUNKS);
-
-    let onchainOperation = OnchainOperationData { publicDataOffset: 0 };
-    let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
-
-    let mut block = CommitBlockInfo {
-        newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
-        publicData: publicData,
-        timestamp: 1652422395,
-        onchainOperations: onchainOperations,
-        blockNumber: 10,
-        feeAccount: 0
-    };
-
-    dispatcher.testCollectOnchainOps(block);
-}
-
-#[test]
-#[available_gas(20000000000)]
-#[should_panic(expected: ('i1', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_collectOnchainOps_invalid_chain_id2() {
-    let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[utils::ADDR_ZKLINK];
-    let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-    // chain_id = MAX_CHAIN_ID + 1
-    // encode_format = ["uint8","uint8","uint32","uint8","uint16","uint16","uint128","uint256"]
-    // example = [1, 5, 1, 0, 33, 33, 500, 0x74a0c0f8e8756218a96c2d9aae21152d786a0704202b10fb30496e46222b72d]
-    //
-    // data = [1355189480078798939244011058236489728, 549787120963470, 179892997260459296479640320015568236610]
-    // pending_data = 3254000107459431534606125
-    // pending_data_size = 11
-
-    let mut publicData = Bytes {
-        data: array![
-            1355189480078798939244011058236489728,
-            549787120963470,
-            179892997260459296479640320015568236610
-        ],
-        pending_data: 3254000107459431534606125,
-        pending_data_size: 11
-    };
-    utils::paddingChunk(ref publicData, utils::OP_DEPOSIT_CHUNKS);
-
-    let onchainOperation = OnchainOperationData { publicDataOffset: 0 };
-    let onchainOperations: Array<OnchainOperationData> = array![onchainOperation];
-
-    let mut block = CommitBlockInfo {
-        newStateHash: 0xbb66ffc06a476f05a218f6789ca8946e4f0cf29f1efc2e4d0f9a8e70f0326313,
-        publicData: publicData,
-        timestamp: 1652422395,
-        onchainOperations: onchainOperations,
-        blockNumber: 10,
-        feeAccount: 0
-    };
-
-    dispatcher.testCollectOnchainOps(block);
-}
-
-#[test]
-#[available_gas(20000000000)]
 fn test_zklink_collectOnchainOps_success() {
     let (addrs, _) = utils::prepare_test_deploy();
     let zklink = *addrs[utils::ADDR_ZKLINK];
@@ -456,67 +371,22 @@ fn test_zklink_testCommitOneBlock_invalid_block_number() {
 
     let preBlock = StoredBlockInfo {
         blockNumber: 10,
+        preCommittedBlockNumber: 9,
         priorityOperations: 0,
         pendingOnchainOperationsHash: 1,
-        timestamp: 1652422395,
-        stateHash: 2,
-        commitment: 3,
         syncHash: 4
     };
 
-    let mut commitBlock = CommitBlockInfo {
+    let commitBlock = CommitBlockInfo {
         newStateHash: 5,
         publicData: BytesTrait::new(),
         timestamp: 1652422395,
         onchainOperations: array![],
-        blockNumber: 11,
+        blockNumber: 9,
         feeAccount: 0
     };
 
-    let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: 0, offsetCommitmentHash: 0, onchainOperationPubdataHashs: array![]
-    };
-
-    commitBlock.blockNumber = 12;
-
-    dispatcher.testCommitOneBlock(preBlock, commitBlock, extraBlock);
-}
-
-#[test]
-#[available_gas(20000000000)]
-#[should_panic(expected: ('g2', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_testCommitOneBlock_invalid_timestamp() {
-    let (addrs, _) = utils::prepare_test_deploy();
-    let zklink = *addrs[utils::ADDR_ZKLINK];
-    let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-
-    let mut preBlock = StoredBlockInfo {
-        blockNumber: 10,
-        priorityOperations: 0,
-        pendingOnchainOperationsHash: 1,
-        timestamp: 1652422395,
-        stateHash: 2,
-        commitment: 3,
-        syncHash: 4
-    };
-
-    let mut commitBlock = CommitBlockInfo {
-        newStateHash: 5,
-        publicData: BytesTrait::new(),
-        timestamp: 1652422395,
-        onchainOperations: array![],
-        blockNumber: 11,
-        feeAccount: 0
-    };
-
-    let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: 0, offsetCommitmentHash: 0, onchainOperationPubdataHashs: array![]
-    };
-
-    commitBlock.timestamp = preBlock.timestamp - 1;
-    preBlock.timestamp = preBlock.timestamp + 1;
-
-    dispatcher.testCommitOneBlock(preBlock, commitBlock, extraBlock);
+    dispatcher.testCommitOneBlock(preBlock, commitBlock);
 }
 
 #[test]
@@ -527,10 +397,9 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     // build test block
     let mut pubdatas: Bytes = BytesTrait::new();
-    let mut pubdatasOfChain1: Bytes = BytesTrait::new();
-    let mut opsOfChain1: Array<OnchainOperationData> = array![];
-    let mut onchainOpPubdataHash1: u256 = EMPTY_STRING_KECCAK;
-    let mut publicDataOffsetOfChain1: usize = 0;
+    let mut onchainOperations: Array<OnchainOperationData> = array![];
+    let mut onchainOpPubdataHash: u256 = EMPTY_STRING_KECCAK;
+    let mut publicDataOffset: usize = 0;
     let mut priorityOperationsProcessed: u64 = 0;
     let mut processableOpPubdataHash: u256 = EMPTY_STRING_KECCAK;
     let mut offsetsCommitment: Bytes = BytesTrait::new();
@@ -557,10 +426,9 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         );
     utils::paddingChunk(ref op, utils::OP_DEPOSIT_CHUNKS);
     pubdatas.concat(@op);
-    pubdatasOfChain1.concat(@op);
-    onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
-    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
-    publicDataOffsetOfChain1 += op.size();
+    onchainOpPubdataHash = concatHash(onchainOpPubdataHash, @op);
+    onchainOperations.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    publicDataOffset += op.size();
     priorityOperationsProcessed += 1;
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
@@ -583,11 +451,10 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     };
     utils::paddingChunk(ref op, utils::OP_WITHDRAW_CHUNKS);
     pubdatas.concat(@op);
-    pubdatasOfChain1.concat(@op);
-    onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
+    onchainOpPubdataHash = concatHash(onchainOpPubdataHash, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
-    publicDataOffsetOfChain1 += op.size();
+    onchainOperations.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    publicDataOffset += op.size();
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     // full exit of current chain
@@ -612,11 +479,10 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         );
     utils::paddingChunk(ref op, utils::OP_FULL_EXIT_CHUNKS);
     pubdatas.concat(@op);
-    pubdatasOfChain1.concat(@op);
-    onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
+    onchainOpPubdataHash = concatHash(onchainOpPubdataHash, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
-    publicDataOffsetOfChain1 += op.size();
+    onchainOperations.append(OnchainOperationData { publicDataOffset: publicDataOffset });
+    publicDataOffset += op.size();
     priorityOperationsProcessed += 1;
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
@@ -639,57 +505,44 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     };
     utils::paddingChunk(ref op, utils::OP_FORCE_EXIT_CHUNKS);
     pubdatas.concat(@op);
-    pubdatasOfChain1.concat(@op);
-    onchainOpPubdataHash1 = concatHash(onchainOpPubdataHash1, @op);
+    onchainOpPubdataHash = concatHash(onchainOpPubdataHash, @op);
     processableOpPubdataHash = concatHash(processableOpPubdataHash, @op);
-    opsOfChain1.append(OnchainOperationData { publicDataOffset: publicDataOffsetOfChain1 });
+    onchainOperations.append(OnchainOperationData { publicDataOffset: publicDataOffset });
     utils::createOffsetCommitment(ref offsetsCommitment, @op, true);
 
     let preBlock = StoredBlockInfo {
         blockNumber: 10,
+        preCommittedBlockNumber: 9,
         priorityOperations: 0,
         pendingOnchainOperationsHash: 1,
-        timestamp: 1652422395,
-        stateHash: 2,
-        commitment: 3,
         syncHash: 4
     };
 
-    let blockNumber = 11;
+    let blockNumber = 13;
     let timestamp = 1652422396;
     let newStateHash = 5;
     let compressedBlock = CommitBlockInfo {
         newStateHash: newStateHash,
-        publicData: pubdatasOfChain1,
+        publicData: pubdatas,
         timestamp: timestamp,
-        onchainOperations: opsOfChain1,
+        onchainOperations: onchainOperations,
         blockNumber: blockNumber,
         feeAccount: 0
     };
 
-    let extraBlock = CompressedBlockExtraInfo {
-        publicDataHash: pubdatas.keccak(),
-        offsetCommitmentHash: offsetsCommitment.keccak(),
-        onchainOperationPubdataHashs: array![
-            EMPTY_STRING_KECCAK,
-            EMPTY_STRING_KECCAK,
-            EMPTY_STRING_KECCAK // only need to commit onchain pubdata hash of chain [2,3,4]
-        ]
-    };
-
-    let commitmentForSync = createBlockCommitmentForSync(@preBlock, @compressedBlock, @extraBlock);
-    let onchainOpPubdataHashs: Array<u256> = buildOnchainOperationPubdataHashs(
-        onchainOpPubdataHash1, @extraBlock.onchainOperationPubdataHashs
+    let syncHash = createSlaverChainSyncHash(
+        preBlock.syncHash,
+        compressedBlock.blockNumber,
+        compressedBlock.newStateHash,
+        compressedBlock.timestamp,
+        onchainOpPubdataHash
     );
-    let syncHash = createSyncHash(4, commitmentForSync, @onchainOpPubdataHashs);
 
-    let r1: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, compressedBlock, extraBlock);
+    let r: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, compressedBlock);
 
-    assert(r1.blockNumber == blockNumber, 'invaid value1');
-    assert(r1.priorityOperations == priorityOperationsProcessed, 'invaid value2');
-    assert(r1.pendingOnchainOperationsHash == processableOpPubdataHash, 'invaid value3');
-    assert(r1.timestamp == timestamp, 'invaid value4');
-    assert(r1.stateHash == newStateHash, 'invaid value5');
-    assert(r1.commitment == 0, 'invaid value6');
-    assert(r1.syncHash == syncHash, 'invaid value7');
+    assert(r.blockNumber == blockNumber, 'invaid value1');
+    assert(r.preCommittedBlockNumber == preBlock.blockNumber, 'invaid value2');
+    assert(r.priorityOperations == priorityOperationsProcessed, 'invaid value3');
+    assert(r.pendingOnchainOperationsHash == processableOpPubdataHash, 'invaid value4');
+    assert(r.syncHash == syncHash, 'invaid value5');
 }

@@ -17,10 +17,10 @@ fn u8_array_to_u256(arr: Span<u8>) -> u256 {
     // process high
     loop {
         if i >= arr.len() {
-            break ();
+            break;
         }
         if i == 16 {
-            break ();
+            break;
         }
         high = u128_join(high, (*arr[i]).into(), 1);
         i += 1;
@@ -28,10 +28,10 @@ fn u8_array_to_u256(arr: Span<u8>) -> u256 {
     // process low
     loop {
         if i >= arr.len() {
-            break ();
+            break;
         }
         if i == 32 {
-            break ();
+            break;
         }
         low = u128_join(low, (*arr[i]).into(), 1);
         i += 1;
@@ -52,10 +52,10 @@ fn u128_array_slice(src: @Array<u128>, mut begin: usize, end: usize) -> Array<u1
     let len = begin + end;
     loop {
         if begin >= len {
-            break ();
+            break;
         }
         if begin >= src.len() {
-            break ();
+            break;
         }
 
         slice.append(*src[begin]);
@@ -69,10 +69,10 @@ fn u64_array_slice(src: @Array<u64>, mut begin: usize, end: usize) -> Array<u64>
     let len = begin + end;
     loop {
         if begin >= len {
-            break ();
+            break;
         }
         if begin >= src.len() {
-            break ();
+            break;
         }
 
         slice.append(*src[begin]);

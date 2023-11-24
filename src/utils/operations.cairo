@@ -97,6 +97,10 @@ mod Operations {
     // pubKeyHash: felt252, 20 bytes
     const PUBKEY_HASH_BYTES: usize = 20;
 
+    // changePubkey check offset
+    // OP_TYPE_BYTES + CHAIN_BYTES + ACCOUNT_ID_BYTES + SUB_ACCOUNT_ID_BYTES = 7
+    const CHANGE_PUBKEY_CHECK_OFFSET: usize = 7;
+
     // Priority operations: Deposit, FullExit
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct PriorityOperation {

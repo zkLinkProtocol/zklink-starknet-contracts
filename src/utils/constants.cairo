@@ -6,11 +6,9 @@
 // - PRIORITY_EXPIRATION
 // - UPGRADE_NOTICE_PERIOD
 // - CHAIN_ID
-// - MIN_CHAIN_ID
 // - MAX_CHAIN_ID
 // - ALL_CHAINS
-// - CHAIN_INDEX
-// - ENABLE_COMMIT_COMPRESSED_BLOCK
+// - MASTER_CHAIN_ID
 
 const EMPTY_STRING_KECCAK: u256 =
     0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
@@ -87,13 +85,8 @@ const MAX_CHAIN_ID: u8 = 4;
 // All chain index, for example [1, 2, 3, 4] => 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 = 15
 const ALL_CHAINS: u256 = 15;
 
-// Chain index, CHAIN_ID is non-zero value
-const CHAIN_INDEX: u256 = 1;
-
-// Enable commit a compressed block
-// Now, in cairo only literal constants are currently supported.
-// It should be 1 if true, be 0 if false.
-const ENABLE_COMMIT_COMPRESSED_BLOCK: felt252 = 1;
+// Master chain id defined by ZkLink
+const MASTER_CHAIN_ID: u8 = 2;
 
 // When set fee = 100, it means 1%
 const MAX_ACCEPT_FEE_RATE: u16 = 10000;

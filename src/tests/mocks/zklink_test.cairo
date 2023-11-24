@@ -1,7 +1,5 @@
 use starknet::ContractAddress;
-use zklink::utils::data_structures::DataStructures::{
-    CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo
-};
+use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo};
 use zklink::utils::operations::Operations::{OpType, Withdraw};
 use zklink::utils::bytes::Bytes;
 
@@ -28,17 +26,6 @@ trait IZklinkMock<TContractState> {
     fn requestFullExit(
         self: @TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
     );
-    fn performExodus(
-        self: @TContractState,
-        _storedBlockInfo: StoredBlockInfo,
-        _owner: u256,
-        _accountId: u32,
-        _subAccountId: u8,
-        _withdrawTokenId: u16,
-        _deductTokenId: u16,
-        _amount: u128,
-        _proof: Array<u256>
-    );
     fn cancelOutstandingDepositsForExodusMode(
         self: @TContractState, _n: u64, _depositsPubdata: Array<Bytes>
     );
@@ -64,10 +51,7 @@ trait IZklinkMock<TContractState> {
         self: @TContractState, _opType: OpType, _opData: Bytes, _hashInputSize: usize
     );
     fn testCommitOneBlock(
-        self: @TContractState,
-        _previousBlock: StoredBlockInfo,
-        _newBlock: CommitBlockInfo,
-        _newBlockExtra: CompressedBlockExtraInfo
+        self: @TContractState, _previousBlock: StoredBlockInfo, _newBlock: CommitBlockInfo
     ) -> StoredBlockInfo;
     fn testExecuteWithdraw(self: @TContractState, _op: Withdraw);
 }
@@ -85,9 +69,7 @@ mod ZklinkMock {
         totalBlocksExecutedContractMemberStateTrait, pendingBalancesContractMemberStateTrait,
         totalOpenPriorityRequestsContractMemberStateTrait
     };
-    use zklink::utils::data_structures::DataStructures::{
-        CommitBlockInfo, StoredBlockInfo, CompressedBlockExtraInfo
-    };
+    use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo};
     use zklink::utils::operations::Operations::{OpType, Withdraw};
     use zklink::utils::bytes::Bytes;
 
@@ -102,25 +84,11 @@ mod ZklinkMock {
         _master: ContractAddress,
         _verifierAddress: ContractAddress,
         _networkGovernor: ContractAddress,
-        _blockNumber: u64,
-        _timestamp: u64,
-        _stateHash: u256,
-        _commitment: u256,
-        _syncHash: u256
+        _blockNumber: u64
     ) {
         self._governor.write(_networkGovernor);
         let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-        Zklink::constructor(
-            ref state,
-            _master,
-            _verifierAddress,
-            _networkGovernor,
-            _blockNumber,
-            _timestamp,
-            _stateHash,
-            _commitment,
-            _syncHash
-        );
+        Zklink::constructor(ref state, _master, _verifierAddress, _networkGovernor, _blockNumber);
     }
 
     #[external(v0)]
@@ -174,30 +142,6 @@ mod ZklinkMock {
             );
         }
 
-        fn performExodus(
-            self: @ContractState,
-            _storedBlockInfo: StoredBlockInfo,
-            _owner: u256,
-            _accountId: u32,
-            _subAccountId: u8,
-            _withdrawTokenId: u16,
-            _deductTokenId: u16,
-            _amount: u128,
-            _proof: Array<u256>
-        ) {
-            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::Zklink::performExodus(
-                ref state,
-                _storedBlockInfo,
-                _owner,
-                _accountId,
-                _subAccountId,
-                _withdrawTokenId,
-                _deductTokenId,
-                _amount,
-                _proof
-            );
-        }
         fn cancelOutstandingDepositsForExodusMode(
             self: @ContractState, _n: u64, _depositsPubdata: Array<Bytes>
         ) {
@@ -274,7 +218,7 @@ mod ZklinkMock {
             self: @ContractState, _newBlockData: CommitBlockInfo
         ) -> (u256, u64, u256) {
             let state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::InternalFunctions::collectOnchainOps(@state, @_newBlockData)
+            Zklink::InternalFunctions::collectOnchainOpsOfCompressedBlock(@state, @_newBlockData)
         }
 
         fn testAddPriorityRequest(
@@ -287,14 +231,11 @@ mod ZklinkMock {
         }
 
         fn testCommitOneBlock(
-            self: @ContractState,
-            _previousBlock: StoredBlockInfo,
-            _newBlock: CommitBlockInfo,
-            _newBlockExtra: CompressedBlockExtraInfo
+            self: @ContractState, _previousBlock: StoredBlockInfo, _newBlock: CommitBlockInfo,
         ) -> StoredBlockInfo {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-            Zklink::InternalFunctions::commitOneBlock(
-                ref state, @_previousBlock, @_newBlock, @_newBlockExtra
+            Zklink::InternalFunctions::commitOneCompressedBlock(
+                ref state, @_previousBlock, @_newBlock
             )
         }
 

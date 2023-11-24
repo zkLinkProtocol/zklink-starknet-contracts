@@ -18,26 +18,13 @@ mod DataStructures {
         decimals: u8 // the token decimals of layer one
     }
 
-    // We can set `enableBridgeTo` and `enableBridgeTo` to false
-    // to disable bridge when `bridge` is compromised
-    #[derive(Copy, Drop, Serde, starknet::Store)]
-    struct BridgeInfo {
-        bridge: ContractAddress,
-        enableBridgeTo: bool,
-        enableBridgeFrom: bool
-    }
-
-    // block stored data
-    // `blockNumber`,`timestamp`,`stateHash`,`commitment` are the same on all chains
-    // `priorityOperations`,`pendingOnchainOperationsHash` is different for each chain
+    /// block stored data
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct StoredBlockInfo {
         blockNumber: u64, // Rollup block number
+        preCommittedBlockNumber: u64, // The pre not empty block number committed
         priorityOperations: u64, // Number of priority operations processed
         pendingOnchainOperationsHash: u256, // Hash of all operations that must be processed after verify
-        timestamp: u64, // Rollup block timestamp
-        stateHash: u256, // Root hash of the rollup state
-        commitment: u256, // Verified input for the ZkLink circuit
         syncHash: u256 // Used for cross chain block verify
     }
 
@@ -45,11 +32,8 @@ mod DataStructures {
         fn into(self: StoredBlockInfo) -> Bytes {
             let mut bytes = BytesTrait::new();
             bytes.append_u64(self.blockNumber);
+            bytes.append_u64(self.preCommittedBlockNumber);
             bytes.append_u64(self.priorityOperations);
-            bytes.append_u256(self.pendingOnchainOperationsHash);
-            bytes.append_u64(self.timestamp);
-            bytes.append_u256(self.stateHash);
-            bytes.append_u256(self.commitment);
             bytes.append_u256(self.syncHash);
 
             bytes
@@ -60,7 +44,6 @@ mod DataStructures {
     // Onchain operations is operations that need some processing on L1: Deposits, Withdrawals, ChangePubKey.
     #[derive(Drop, Serde)]
     struct OnchainOperationData {
-        // ethWitness: Bytes, // Some external data that can be needed for operation processing
         publicDataOffset: usize // Byte offset in public data for onchain operation
     }
 
@@ -79,25 +62,6 @@ mod DataStructures {
         feeAccount: u32
     }
 
-    #[derive(Drop, Serde)]
-    struct CompressedBlockExtraInfo {
-        publicDataHash: u256, // pubdata hash of all chains
-        offsetCommitmentHash: u256, // all chains pubdata offset commitment hash
-        onchainOperationPubdataHashs: Array<
-            u256
-        > // onchain operation pubdata hash of the all other chains
-    }
-
-    impl CompressedBlockExtraInfoDefault of Default<CompressedBlockExtraInfo> {
-        fn default() -> CompressedBlockExtraInfo {
-            CompressedBlockExtraInfo {
-                publicDataHash: Default::default(),
-                offsetCommitmentHash: Default::default(),
-                onchainOperationPubdataHashs: Default::default()
-            }
-        }
-    }
-
     // Data needed to execute committed and verified block
     #[derive(Drop, Serde)]
     struct ExecuteBlockInfo {
@@ -105,16 +69,6 @@ mod DataStructures {
         pendingOnchainOpsPubdata: Array<
             Bytes
         > // onchain ops(e.g. Withdraw, ForcedExit, FullExit) that will be executed
-    }
-
-    // Recursive proof input data (individual commitments are constructed onchain)
-    #[derive(Drop, Serde, Clone)]
-    struct ProofInput {
-        recursiveInput: Array<u256>,
-        proof: Array<u256>,
-        commitments: Array<u256>,
-        vkIndexes: Array<u8>,
-        subproofsLimbs: Array<u256>
     }
 
     #[derive(Copy, Drop, PartialEq, Serde, starknet::Store)]
