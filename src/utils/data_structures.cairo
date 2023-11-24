@@ -44,7 +44,6 @@ mod DataStructures {
     // Onchain operations is operations that need some processing on L1: Deposits, Withdrawals, ChangePubKey.
     #[derive(Drop, Serde)]
     struct OnchainOperationData {
-        // ethWitness: Bytes, // Some external data that can be needed for operation processing
         publicDataOffset: usize // Byte offset in public data for onchain operation
     }
 

@@ -32,25 +32,11 @@ mod ZklinkUpgradeV1 {
         _master: ContractAddress,
         _verifierAddress: ContractAddress,
         _networkGovernor: ContractAddress,
-        _blockNumber: u64,
-        _timestamp: u64,
-        _stateHash: u256,
-        _commitment: u256,
-        _syncHash: u256
+        _blockNumber: u64
     ) {
         self._governor.write(_networkGovernor);
         let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
-        Zklink::constructor(
-            ref state,
-            _master,
-            _verifierAddress,
-            _networkGovernor,
-            _blockNumber,
-            _timestamp,
-            _stateHash,
-            _commitment,
-            _syncHash
-        );
+        Zklink::constructor(ref state, _master, _verifierAddress, _networkGovernor, _blockNumber);
     }
 
     #[external(v0)]

@@ -178,13 +178,6 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
         verifier.into(), // verifier
         2, // governor
         0, // blockNumber
-        0, // timestamp
-        GENESIS_ROOT.low.into(), // stateHash low
-        GENESIS_ROOT.high.into(), // stateHash high
-        0, // commitment low
-        0, // commitment high
-        EMPTY_STRING_KECCAK.low.into(), // syncHash low
-        EMPTY_STRING_KECCAK.high.into(), // syncHash high
     ];
     let zklink: ContractAddress = deploy(ZklinkMock::TEST_CLASS_HASH, calldata);
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };

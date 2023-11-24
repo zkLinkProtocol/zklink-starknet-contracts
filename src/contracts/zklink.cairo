@@ -126,8 +126,7 @@ mod Zklink {
         ChangePubKey, ChangePubKeyReadOperation, PUBKEY_HASH_BYTES, CHANGE_PUBKEY_CHECK_OFFSET
     };
     use zklink::utils::data_structures::DataStructures::{
-        RegisteredToken, StoredBlockInfo, CommitBlockInfo, ExecuteBlockInfo,
-        OnchainOperationData
+        RegisteredToken, StoredBlockInfo, CommitBlockInfo, ExecuteBlockInfo, OnchainOperationData
     };
     use zklink::utils::math::{fast_power10, u256_fast_pow2, uint_min};
     use zklink::utils::utils::{concatHash, pubKeyHash, concatTwoHash};
@@ -1387,7 +1386,7 @@ mod Zklink {
         fn commitOneCompressedBlock(
             ref self: ContractState, _previousBlock: @StoredBlockInfo, _newBlock: @CommitBlockInfo
         ) -> StoredBlockInfo {
-            assert(*_newBlock.blockNumber == *_previousBlock.blockNumber + 1, 'g0');
+            assert(*_newBlock.blockNumber > *_previousBlock.blockNumber, 'g0');
 
             // Check onchain operations
             let (pendingOnchainOpsHash, priorityReqCommitted, onchainOperationPubdataHash) = self

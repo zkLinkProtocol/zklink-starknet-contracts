@@ -24,16 +24,9 @@ fn deploy_zklink() -> (ContractAddress, ContractAddress, ContractAddress) {
 
     let calldata = array![
         deployer.into(), // master
-        0x123, // verifier
-        2, // governor
-        0, // blockNumber
-        0, // timestamp
-        utils::GENESIS_ROOT.low.into(), // stateHash low
-        utils::GENESIS_ROOT.high.into(), // stateHash high
-        0, // commitment low
-        0, // commitment high
-        utils::EMPTY_STRING_KECCAK.low.into(), // syncHash low
-        utils::EMPTY_STRING_KECCAK.high.into(), // syncHash high
+         0x123, // verifier
+         2, // governor
+         0, // blockNumber
     ];
 
     let v1: ContractAddress = utils::deploy(ZklinkUpgradeV1::TEST_CLASS_HASH, calldata.clone());
