@@ -1399,7 +1399,6 @@ mod Zklink {
                 *_previousBlock.syncHash,
                 *_newBlock.blockNumber,
                 *_newBlock.newStateHash,
-                *_newBlock.timestamp,
                 onchainOperationPubdataHash
             );
 
@@ -1784,14 +1783,12 @@ mod Zklink {
         _preBlockSyncHash: u256,
         _newBlockNumber: u64,
         _newBlockStateHash: u256,
-        _newBlockTimestamp: u64,
         _newBlockOnchainOperationPubdataHash: u256
     ) -> u256 {
         let mut bytes: Bytes = BytesTrait::new();
         bytes.append_u256(_preBlockSyncHash);
         bytes.append_u32(_newBlockNumber.try_into().unwrap()); // convert block number to u32
         bytes.append_u256(_newBlockStateHash);
-        bytes.append_u256(_newBlockTimestamp.into()); // convert timestamp to u256
         bytes.append_u256(_newBlockOnchainOperationPubdataHash);
 
         bytes.keccak()

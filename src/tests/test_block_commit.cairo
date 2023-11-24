@@ -535,7 +535,6 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
         preBlock.syncHash,
         compressedBlock.blockNumber,
         compressedBlock.newStateHash,
-        compressedBlock.timestamp,
         onchainOpPubdataHash
     );
 
