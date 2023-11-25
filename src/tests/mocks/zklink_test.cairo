@@ -16,7 +16,7 @@ trait IZklinkMock<TContractState> {
     fn acceptERC20(
         self: @TContractState,
         _receiver: ContractAddress,
-        _tokenId: u16,
+        _token: ContractAddress,
         _amount: u128,
         _withdrawFeeRate: u16,
         _accountIdOfNonce: u32,
@@ -111,7 +111,7 @@ mod ZklinkMock {
         fn acceptERC20(
             self: @ContractState,
             _receiver: ContractAddress,
-            _tokenId: u16,
+            _token: ContractAddress,
             _amount: u128,
             _withdrawFeeRate: u16,
             _accountIdOfNonce: u32,
@@ -123,7 +123,7 @@ mod ZklinkMock {
             Zklink::Zklink::acceptERC20(
                 ref state,
                 _receiver,
-                _tokenId,
+                _token,
                 _amount,
                 _withdrawFeeRate,
                 _accountIdOfNonce,

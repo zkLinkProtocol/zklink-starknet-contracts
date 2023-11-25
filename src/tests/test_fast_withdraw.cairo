@@ -120,16 +120,18 @@ fn test_zklink_fast_withdraw_and_not_accept_success() {
     let b1 = token2_dispatcher.balanceOf(owner);
     assert(b1 - b0 == amount.into(), 'balance');
 
-    // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
-    // example = [1, 1, 2, 0x616c696365, 34, 10000000000000000000, 50]
+    // encode_format = ["uint32","uint8","uint32", "uint256","uint256","uint128","uint16"]
+    // example = [1, 1, 2, 0x616c696365, 0x4, 10000000000000000000, 50]
     //
-    // data = [79537647524229797850344587264, 0, 30151107623175070608391143424]
+    // data = [79537647524229797850344587264, 0, 30151107623175033224995799040, 0, 288230376151711744]
     // pending_data = 655360000000000000000050
-    // pending_data_size = 13
+    // pending_data_size = 11
     let pubdata = Bytes {
-        data: array![79537647524229797850344587264, 0, 30151107623175070608391143424],
+        data: array![
+            79537647524229797850344587264, 0, 30151107623175033224995799040, 0, 288230376151711744
+        ],
         pending_data: 655360000000000000000050,
-        pending_data_size: 13
+        pending_data_size: 11
     };
     let hash = pubdata.keccak();
     let address = zklink_dispatcher.getAcceptor(hash);
@@ -152,7 +154,6 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     let chainId: u8 = 1;
     let accountId: u32 = 1;
     let subAccountId: u8 = 1;
-    let tokenId: u16 = token5.tokenId;
     let l1Amount: u128 = 10000000; // 10 Ether
     let l2Amount: u128 = 10000000000000000000; // 10 Ether
     let owner: ContractAddress = alice;
@@ -162,7 +163,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
 
     let bobBalance0 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance0 = zklink_dispatcher
-        .getPendingBalance(utils::extendAddress(bob), tokenId);
+        .getPendingBalance(utils::extendAddress(bob), token5.tokenId);
     let aliceBalance0 = token5_dispatcher.balanceOf(alice);
 
     token5_dispatcher.mintTo(bob, l1Amount.into());
@@ -172,13 +173,21 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     set_contract_address(bob);
     token5_dispatcher.approve(zklink, amountTransfer.into());
     zklink_dispatcher
-        .acceptERC20(owner, tokenId, l1Amount, fastWithdrawFeeRate, accountId, subAccountId, nonce);
+        .acceptERC20(
+            owner,
+            token5.tokenAddress,
+            l1Amount,
+            fastWithdrawFeeRate,
+            accountId,
+            subAccountId,
+            nonce
+        );
 
     let op = Withdraw {
         chainId,
         accountId,
         subAccountId,
-        tokenId,
+        tokenId: token5.tokenId,
         amount: l2Amount,
         owner,
         nonce,
@@ -190,7 +199,7 @@ fn test_zklink_fast_withdraw_and_accept_success() {
     let aliceBalance1 = token5_dispatcher.balanceOf(alice);
     let bobBalance1 = token5_dispatcher.balanceOf(bob);
     let bobPendingBalance1 = zklink_dispatcher
-        .getPendingBalance(utils::extendAddress(bob), tokenId);
+        .getPendingBalance(utils::extendAddress(bob), token5.tokenId);
 
     assert(
         aliceBalance1 - aliceBalance0 == amountTransfer.into(), 'alice balance'
