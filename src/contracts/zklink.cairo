@@ -23,7 +23,7 @@ trait IZklink<TContractState> {
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
         _nonce: u32
-    ) -> bool;
+    );
     fn requestFullExit(
         ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
     );
@@ -495,7 +495,7 @@ mod Zklink {
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
             _nonce: u32
-        ) -> bool {
+        ) {
             self.start();
 
             // Checks
@@ -531,7 +531,7 @@ mod Zklink {
                     }
                 );
 
-            self.end()
+            self.end();
         }
 
         // Register full exit request - pack pubdata, add priority request
@@ -1249,9 +1249,8 @@ mod Zklink {
             self.entered.write(true);
         }
 
-        fn end(ref self: ContractState) -> bool {
+        fn end(ref self: ContractState) {
             self.entered.write(false);
-            true
         }
 
         /// Check if msg sender is a governor
