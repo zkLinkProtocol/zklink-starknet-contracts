@@ -37,7 +37,7 @@ fn test_zklink_accept_receiver_zero() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(ZERO, eth.tokenId, 100, 20, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(ZERO, eth.tokenAddress, 100, 20, 10, 0, 1);
 }
 
 #[test]
@@ -53,27 +53,12 @@ fn test_zklink_accept_same_acceptor_receiver() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(alice, eth.tokenId, 100, 20, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(alice, eth.tokenAddress, 100, 20, 10, 0, 1);
 }
 
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('H3', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_accept_token_unregisted() {
-    let (addrs, tokens) = utils::prepare_test_deploy();
-    let alice = *addrs[utils::ADDR_ALICE];
-    let bob = *addrs[utils::ADDR_BOB];
-    let zklink = *addrs[utils::ADDR_ZKLINK];
-    let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-
-    let ZERO: ContractAddress = contract_address_const::<0>();
-    set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(bob, 10000, 100, 20, 10, 0, 1);
-}
-
-#[test]
-#[available_gas(20000000000)]
-#[should_panic(expected: ('H4', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_accept_feerate_too_large() {
     let (addrs, tokens) = utils::prepare_test_deploy();
     let alice = *addrs[utils::ADDR_ALICE];
@@ -84,7 +69,7 @@ fn test_zklink_accept_feerate_too_large() {
 
     let ZERO: ContractAddress = contract_address_const::<0>();
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(bob, eth.tokenId, 100, 10000, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, eth.tokenAddress, 100, 10000, 10, 0, 1);
 }
 
 // calculate pubData from Python
@@ -99,7 +84,7 @@ fn test_zklink_accept_feerate_too_large() {
 
 #[test]
 #[available_gas(20000000000)]
-#[should_panic(expected: ('H6', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ('H4', 'ENTRYPOINT_FAILED'))]
 fn test_zklink_accept_has_acceptor() {
     let (addrs, tokens) = utils::prepare_test_deploy();
     let alice = *addrs[utils::ADDR_ALICE];
@@ -108,21 +93,23 @@ fn test_zklink_accept_has_acceptor() {
     let zklink_dispatcher = IZklinkMockDispatcher { contract_address: zklink };
     let eth: Token = *tokens[utils::TOKEN_ETH];
 
-    // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
-    // example = [10, 0, 1, 0x626f62, 33, 100, 100]
+    // encode_format = ["uint32","uint8","uint32", "uint256","uint256","uint128","uint16"]
+    // example = [10, 0, 1, 0x626f62, 0x3, 100, 100]
     //
-    // data = [792281625142715433529477431296, 0, 464846565593906591825920]
+    // data = [792281625142715433529477431296, 0, 464846565557622708109312, 0, 216172782113783808]
     // pending_data = 6553700
-    // pending_data_size = 13
+    // pending_data_size = 11
     let pubData = Bytes {
-        data: array![792281625142715433529477431296, 0, 464846565593906591825920],
+        data: array![
+            792281625142715433529477431296, 0, 464846565557622708109312, 0, 216172782113783808
+        ],
         pending_data: 6553700,
-        pending_data_size: 13
+        pending_data_size: 11
     };
     let hash = pubData.keccak();
     zklink_dispatcher.setAcceptor(hash, alice);
     set_contract_address(alice);
-    zklink_dispatcher.acceptERC20(bob, eth.tokenId, 100, 100, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, eth.tokenAddress, 100, 100, 10, 0, 1);
 }
 
 #[test]
@@ -138,7 +125,7 @@ fn test_zklink_accept_exodus() {
 
     set_contract_address(alice);
     zklink_dispatcher.setExodus(true);
-    zklink_dispatcher.acceptERC20(bob, eth.tokenId, 10000, 100, 10, 0, 1);
+    zklink_dispatcher.acceptERC20(bob, eth.tokenAddress, 10000, 100, 10, 0, 1);
 }
 
 #[test]
@@ -164,13 +151,19 @@ fn test_zklink_accept_standard_erc20_success() {
     token2_dispatcher.approve(zklink, amount.into());
     zklink_dispatcher
         .acceptERC20(
-            alice, token2.tokenId, amount, feeRate, accountIdOfNonce, subAccountIdOfNonce, nonce
+            alice,
+            token2.tokenAddress,
+            amount,
+            feeRate,
+            accountIdOfNonce,
+            subAccountIdOfNonce,
+            nonce
         );
     utils::assert_event_Accept(
         zklink,
         bob,
         alice,
-        token2.tokenId,
+        token2.tokenAddress,
         amount,
         feeRate,
         accountIdOfNonce,
@@ -179,16 +172,18 @@ fn test_zklink_accept_standard_erc20_success() {
         amountReceive
     );
 
-    // encode_format = ["uint32","uint8","uint32", "uint256","uint16","uint128","uint16"]
-    // example = [15, 3, 1, 0x616c696365, 34, 1000000000000000000, 100]
+    // encode_format = ["uint32","uint8","uint32", "uint256","uint256","uint128","uint16"]
+    // example = [15, 3, 1, 0x616c696365, 0x4, 1000000000000000000, 100]
     //
-    // data = [1189350892743501156703371526144, 0, 30151107623175070608391143424]
+    // data = [1189350892743501156703371526144, 0, 30151107623175033224995799040, 0, 288230376151711744]
     // pending_data = 65536000000000000000100
-    // pending_data_size = 13
+    // pending_data_size = 11
     let pubData = Bytes {
-        data: array![1189350892743501156703371526144, 0, 30151107623175070608391143424],
+        data: array![
+            1189350892743501156703371526144, 0, 30151107623175033224995799040, 0, 288230376151711744
+        ],
         pending_data: 65536000000000000000100,
-        pending_data_size: 13
+        pending_data_size: 11
     };
     let hash = pubData.keccak();
 
@@ -224,6 +219,12 @@ fn test_zklink_accept_erc20_approve_not_enough() {
     token2_dispatcher.approve(zklink, amountReceive.into()); // 0.98 Ether
     zklink_dispatcher
         .acceptERC20(
-            alice, token2.tokenId, amount, feeRate, accountIdOfNonce, subAccountIdOfNonce, nonce
+            alice,
+            token2.tokenAddress,
+            amount,
+            feeRate,
+            accountIdOfNonce,
+            subAccountIdOfNonce,
+            nonce
         );
 }

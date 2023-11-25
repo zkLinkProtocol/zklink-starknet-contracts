@@ -17,20 +17,20 @@ trait IZklink<TContractState> {
     fn acceptERC20(
         ref self: TContractState,
         _receiver: ContractAddress,
-        _tokenId: u16,
+        _token: ContractAddress,
         _amount: u128,
-        _withdrawFeeRate: u16,
+        _fastWithdrawFeeRate: u16,
         _accountIdOfNonce: u32,
         _subAccountIdOfNonce: u8,
         _nonce: u32
-    );
+    ) -> bool;
     fn requestFullExit(
         ref self: TContractState, _accountId: u32, _subAccountId: u8, _tokenId: u16, _mapping: bool
     );
     fn withdrawToL1(
         ref self: TContractState,
         _owner: EthAddress,
-        _tokenId: u16,
+        _token: ContractAddress,
         _amount: u128,
         _fastWithdrawFeeRate: u16,
         _accountIdOfNonce: u32,
@@ -214,8 +214,8 @@ mod Zklink {
         // Block number is u64 in Starknet
         storedBlockHashes: LegacyMap::<u64, u256>,
         // public
-        // Accept infos of fast withdraw of account
-        // keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, tokenId, amount, fastWithdrawFeeRate) => acceptor address
+        // Accept infos of withdraw
+        // keccak256(accountIdOfNonce, subAccountIdOfNonce, nonce, owner, token, amount, fastWithdrawFeeRate) => acceptor address
         accepts: LegacyMap::<u256, ContractAddress>,
         // public
         // A set of permitted validators
@@ -322,11 +322,9 @@ mod Zklink {
     // Event emitted when acceptor accept a fast withdraw
     #[derive(Drop, starknet::Event)]
     struct Accept {
-        #[key]
         acceptor: ContractAddress,
-        #[key]
         receiver: ContractAddress,
-        tokenId: u16,
+        token: ContractAddress,
         amount: u128,
         withdrawFeeRate: u16,
         accountIdOfNonce: u32,
@@ -484,38 +482,38 @@ mod Zklink {
         //  receiver User receive token from acceptor (the owner of withdraw operation)
         //  tokenId Token id
         //  amount The amount of withdraw operation
-        //  withdrawFeeRate Fast withdraw fee rate taken by acceptor
+        //  fastWithdrawFeeRate Fast withdraw fee rate taken by acceptor
         //  nonceFromAccountId Account that supply nonce, may be different from accountId
         //  nonceFromSubAccountId SubAccount that supply nonce
         //  nonce SubAccount nonce, used to produce unique accept info
         fn acceptERC20(
             ref self: ContractState,
             _receiver: ContractAddress,
-            _tokenId: u16,
+            _token: ContractAddress,
             _amount: u128,
-            _withdrawFeeRate: u16,
+            _fastWithdrawFeeRate: u16,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
             _nonce: u32
-        ) {
+        ) -> bool {
             self.start();
 
             // Checks
             let sender = get_caller_address();
-            let (amountReceive, tokenAddress) = self
+            let amountReceive = self
                 ._checkAccept(
                     sender,
                     _receiver,
-                    _tokenId,
+                    _token,
                     _amount,
-                    _withdrawFeeRate,
+                    _fastWithdrawFeeRate,
                     _accountIdOfNonce,
                     _subAccountIdOfNonce,
                     _nonce
                 );
 
             // Interactions
-            let _ = IERC20CamelDispatcher { contract_address: tokenAddress }
+            let _ = IERC20CamelDispatcher { contract_address: _token }
                 .transferFrom(sender, _receiver, amountReceive.into());
 
             self
@@ -523,9 +521,9 @@ mod Zklink {
                     Accept {
                         acceptor: sender,
                         receiver: _receiver,
-                        tokenId: _tokenId,
+                        token: _token,
                         amount: _amount,
-                        withdrawFeeRate: _withdrawFeeRate,
+                        withdrawFeeRate: _fastWithdrawFeeRate,
                         accountIdOfNonce: _accountIdOfNonce,
                         subAccountIdOfNonce: _subAccountIdOfNonce,
                         nonce: _nonce,
@@ -533,7 +531,7 @@ mod Zklink {
                     }
                 );
 
-            self.end();
+            self.end()
         }
 
         // Register full exit request - pack pubdata, add priority request
@@ -599,7 +597,7 @@ mod Zklink {
         fn withdrawToL1(
             ref self: ContractState,
             _owner: EthAddress,
-            _tokenId: u16,
+            _token: ContractAddress,
             _amount: u128,
             _fastWithdrawFeeRate: u16,
             _accountIdOfNonce: u32,
@@ -1251,8 +1249,9 @@ mod Zklink {
             self.entered.write(true);
         }
 
-        fn end(ref self: ContractState) {
+        fn end(ref self: ContractState) -> bool {
             self.entered.write(false);
+            true
         }
 
         /// Check if msg sender is a governor
@@ -1617,7 +1616,7 @@ mod Zklink {
                 _subAccountIdOfNonce,
                 _nonce,
                 _owner,
-                _tokenId,
+                rt.tokenAddress,
                 recoverAmount,
                 _fastWithdrawFeeRate
             );
@@ -1677,29 +1676,22 @@ mod Zklink {
             ref self: ContractState,
             _acceptor: ContractAddress,
             _receiver: ContractAddress,
-            _tokenId: u16,
+            _token: ContractAddress,
             _amount: u128,
-            _withdrawFeeRate: u16,
+            _fastWithdrawFeeRate: u16,
             _accountIdOfNonce: u32,
             _subAccountIdOfNonce: u8,
             _nonce: u32
-        ) -> (u128, ContractAddress) {
+        ) -> u128 {
             self.active();
             // acceptor and receiver MUST be set and MUST not be the same
-            assert(_acceptor != Zeroable::zero(), 'H0');
-            assert(_receiver != Zeroable::zero(), 'H1');
+            assert(_receiver.is_non_zero(), 'H1');
             assert(_acceptor != _receiver, 'H2');
 
-            // token MUST be registered to ZkLink
-            let rt: RegisteredToken = self.tokens.read(_tokenId);
-            assert(rt.registered, 'H3');
-
-            let tokenAddress = rt.tokenAddress;
-
             // feeRate MUST be valid and MUST not be 100%
-            assert(_withdrawFeeRate < MAX_ACCEPT_FEE_RATE, 'H4');
+            assert(_fastWithdrawFeeRate < MAX_ACCEPT_FEE_RATE, 'H3');
             let amountReceive: u128 = _amount
-                * (MAX_ACCEPT_FEE_RATE - _withdrawFeeRate).into()
+                * (MAX_ACCEPT_FEE_RATE - _fastWithdrawFeeRate).into()
                 / MAX_ACCEPT_FEE_RATE.into();
 
             // accept tx may be later than block exec tx(with user withdraw op)
@@ -1708,16 +1700,16 @@ mod Zklink {
                 _subAccountIdOfNonce,
                 _nonce,
                 _receiver,
-                _tokenId,
+                _token,
                 _amount,
-                _withdrawFeeRate
+                _fastWithdrawFeeRate
             );
-            assert(self.accepts.read(hash) == Zeroable::zero(), 'H6');
+            assert(self.accepts.read(hash).is_zero(), 'H4');
 
             // ===Effects===
             self.accepts.write(hash, _acceptor);
 
-            (amountReceive, tokenAddress)
+            amountReceive
         }
     }
 
@@ -1744,7 +1736,7 @@ mod Zklink {
         _subAccountIdOfNonce: u8,
         _nonce: u32,
         _owner: ContractAddress,
-        _tokenId: u16,
+        _token: ContractAddress,
         _amount: u128,
         _fastWithdrawFeeRate: u16
     ) -> u256 {
@@ -1753,7 +1745,7 @@ mod Zklink {
         bytes.append_u8(_subAccountIdOfNonce);
         bytes.append_u32(_nonce);
         bytes.append_address(_owner);
-        bytes.append_u16(_tokenId);
+        bytes.append_address(_token);
         bytes.append_u128(_amount);
         bytes.append_u16(_fastWithdrawFeeRate);
 

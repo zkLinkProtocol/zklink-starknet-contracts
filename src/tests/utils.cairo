@@ -93,7 +93,7 @@ fn assert_event_Accept(
     zklink: ContractAddress,
     _acceptor: ContractAddress,
     _receiver: ContractAddress,
-    _tokenId: u16,
+    _token: ContractAddress,
     _amount: u128,
     _withdrawFeeRate: u16,
     _accountIdOfNonce: u32,
@@ -104,7 +104,7 @@ fn assert_event_Accept(
     let event = pop_log::<Zklink::Accept>(zklink).unwrap();
     assert(event.acceptor == _acceptor, 'acceptor');
     assert(event.receiver == _receiver, 'receiver');
-    assert(event.tokenId == _tokenId, 'tokenId');
+    assert(event.token == _token, 'token');
     assert(event.amount == _amount, 'amount');
     assert(event.withdrawFeeRate == _withdrawFeeRate, 'withdrawFeeRate');
     assert(event.accountIdOfNonce == _accountIdOfNonce, 'accountIdOfNonce');
@@ -185,24 +185,28 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
 
     // tokens
+    // eth: id 33, address 0x3
     let eth = Token {
         tokenId: 33, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Ether', 'ETH'])
     };
     dispatcher.addToken(eth.tokenId, eth.tokenAddress, 18);
     drop_event(zklink);
 
+    // token2: id 34, address 0x4
     let token2 = Token {
         tokenId: 34, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token2', 'T2'])
     };
     dispatcher.addToken(token2.tokenId, token2.tokenAddress, 18);
     drop_event(zklink);
 
+    // token4: id 17, address 0x5
     let token4 = Token {
         tokenId: 17, tokenAddress: deploy(StandardToken::TEST_CLASS_HASH, array!['Token4', 'T4'])
     };
     dispatcher.addToken(token4.tokenId, token4.tokenAddress, 18);
     drop_event(zklink);
 
+    // token5: id 36, address 0x6
     let token5 = Token {
         tokenId: 36,
         tokenAddress: deploy(StandardDecimalsToken::TEST_CLASS_HASH, array!['Token5', 'T5', 6])
@@ -210,6 +214,7 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     dispatcher.addToken(token5.tokenId, token5.tokenAddress, 6);
     drop_event(zklink);
 
+    // token6: id 37, address 0x7
     let token6 = Token {
         tokenId: 37,
         tokenAddress: deploy(CamelStandardToken::TEST_CLASS_HASH, array!['Token6', 'T6'])
