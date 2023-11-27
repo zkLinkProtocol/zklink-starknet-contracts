@@ -17,12 +17,6 @@ You can find the docs [here](docs/setup_environment.md)
 
 ## Work with `zklink-starknet-contracts`
 
-First of all, you should active the cairo python virtual environment before you work with `zklink-starknet-contracts`.
-
-```bash
-pyenv active cairo_env
-```
-
 ### Install Dependencies
 
 `zklink-starknet-contracts` use [starknet.js](https://github.com/0xs34n/starknet.js) as SDK. You should run follow command to install dependencies:
@@ -40,10 +34,10 @@ To build an test `zklink-starknet-contracts`, you should run the following comma
 scarb build
 
 # test
-scarb run test
+scarb test
 ```
 
 ### Deploy
 
-- [setting up an account](docs/setup_account.md)
-- [deploy zklink contract](docs/deploy.md)
+- [Setting up an account](https://book.starkli.rs/accounts)
+- [Deploy zklink contract](docs/deploy.md)
