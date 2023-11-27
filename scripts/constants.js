@@ -21,17 +21,26 @@ const DEPLOY_LOG_GATEKEEPER_CLASS_HASH = "gatekeeperClassHash";
 const DEPLOY_LOG_GATEKEEPER_VERIFIED = "gatekeeperVerified";
 const DEPLOY_LOG_GATEKEEPER_TRANSFER_MASTER_TX_HASH = "gatekeepertransferMasterTxHash";
 
+// multicall
+const DEPLOY_MULTICALL_LOG_PREFIX = 'deploy_multicall';
+const DEPLOY_LOG_MULTICALL_CLASS_HASH = "multicallClassHash";
+const DEPLOY_LOG_MULTICALL = "multicall";
+const DEPLOY_LOG_MULTICALL_TX_HASH = "multicallTxHash";
+const DEPLOY_LOG_MULTICALL_BLOCK_NUMBER = "multicallBlockNumber";
+const DEPLOY_LOG_MULTICALL_VERIFIED = "multicallVerified";
+
+// faucet token
+const DEPLOY_FAUCET_TOKEN_LOG_PREFIX = 'deploy_token';
+const DEPLOY_LOG_FAUCET_TOKEN_CLASS_HASH = "faucetTokenClassHash";
 
 // path
-const GATEKEEPER_SIERRA_PATH = "./target/release/zklink_UpgradeGateKeeper.sierra.json";
-const GATEKEEPER_CASM_PATH = "./target/release/zklink_UpgradeGateKeeper.casm.json";
-const VERIFIER_SIERRA_PATH = "./target/release/zklink_Verifier.sierra.json";
-const VERIFIER_CASM_PATH = "./target/release/zklink_Verifier.casm.json";
-const ZKLINK_SIERRA_PATH = "./target/release/zklink_Zklink.sierra.json";
-const ZKLINK_CASM_PATH = "./target/release/zklink_Zklink.casm.json";
-const FAUCET_TOKEN_SIERRA_PATH = "./target/release/zklink_FaucetToken.sierra.json";
-const FAUCET_TOKEN_CASM_PATH = "./target/release/zklink_FaucetToken.casm.json";
 const ZKLINK_CONSTANTS_PATH = "./src/utils/constants.cairo";
+const ZKLINK_ARTIFACTS_PATH = "./target/release/zklink.starknet_artifacts.json";
+const ZKLINK = "Zklink";
+const VERIFIER = "Verifier";
+const GATEKEEPER = "UpgradeGateKeeper";
+const MULTICALL = "Multicall";
+const FAUCET_TOKEN = "FaucetToken";
 
 // upgrade status
 const IDLE = "Idle";
@@ -50,18 +59,17 @@ export var command = {
 }
 
 export var contractPath = {
-    GATEKEEPER_SIERRA_PATH,
-    GATEKEEPER_CASM_PATH,
-    VERIFIER_SIERRA_PATH,
-    VERIFIER_CASM_PATH,
-    ZKLINK_SIERRA_PATH,
-    ZKLINK_CASM_PATH,
     ZKLINK_CONSTANTS_PATH,
-    FAUCET_TOKEN_SIERRA_PATH,
-    FAUCET_TOKEN_CASM_PATH
+    ZKLINK_ARTIFACTS_PATH,
+    ZKLINK,
+    VERIFIER,
+    GATEKEEPER,
+    MULTICALL,
+    FAUCET_TOKEN
 }
 
 export var logName = {
+    // deploy zklink
     DEPLOY_ZKLINK_LOG_PREFIX,
     DEPLOY_LOG_DEPLOYER,
     DEPLOY_LOG_GOVERNOR,
@@ -82,5 +90,15 @@ export var logName = {
     DEPLOY_LOG_GATEKEEPER,
     DEPLOY_LOG_GATEKEEPER_CLASS_HASH,
     DEPLOY_LOG_GATEKEEPER_VERIFIED,
-    DEPLOY_LOG_GATEKEEPER_TRANSFER_MASTER_TX_HASH
+    DEPLOY_LOG_GATEKEEPER_TRANSFER_MASTER_TX_HASH,
+    // deploy multicall
+    DEPLOY_MULTICALL_LOG_PREFIX,
+    DEPLOY_LOG_MULTICALL_CLASS_HASH,
+    DEPLOY_LOG_MULTICALL,
+    DEPLOY_LOG_MULTICALL_TX_HASH,
+    DEPLOY_LOG_MULTICALL_BLOCK_NUMBER,
+    DEPLOY_LOG_MULTICALL_VERIFIED,
+    // deploy faucet token
+    DEPLOY_FAUCET_TOKEN_LOG_PREFIX,
+    DEPLOY_LOG_FAUCET_TOKEN_CLASS_HASH
 };

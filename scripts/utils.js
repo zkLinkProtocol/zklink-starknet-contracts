@@ -1,23 +1,12 @@
 import fs from "fs";
-import { Provider, CallData, Account, constants, json } from "starknet";
+import { RpcProvider, CallData, Account, json } from "starknet";
 import { exec } from "child_process";
 import { logName, contractPath } from "./constants.js";
 
 
 function buildProvider(networkConfig) {
-    let provider = null;
-    if (networkConfig.name === "devnet") {
-        provider = new Provider({ sequencer: { baseUrl: networkConfig.url } });
-        console.log('✅ Connected to devnet.');
-    } else if (networkConfig.name === "testnet") {
-        provider = new Provider({ sequencer: { network: constants.NetworkName.SN_GOERLI } });
-        console.log('✅ Connected to testnet.');
-    } else if (networkConfig.name === "mainnet") {
-        provider = Provider({ sequencer: { network: constants.NetworkName.SN_MAIN } });
-        console.log('✅ Connected to mainnet.');
-    } else {
-        throw new Error(`Unknown network name: ${networkConfig.name}`);
-    }
+    let provider = new RpcProvider({ nodeUrl: networkConfig.url });
+    console.log(`✅ Connected to ${networkConfig.name}`);
     return provider;
 }
 
@@ -43,6 +32,12 @@ export async function connectStarknet() {
 export function buildFaucetTokenConstructorArgs(abi, name, symbol, decimals) {
     const contractCallData = new CallData(abi);
     const constructorArgs = contractCallData.compile("constructor", [name, symbol, decimals])
+    return constructorArgs;
+}
+
+export function buildMulticallConstructorArgs(abi) {
+    const contractCallData = new CallData(abi);
+    const constructorArgs = contractCallData.compile("constructor", [])
     return constructorArgs;
 }
 
@@ -80,6 +75,7 @@ export async function declare_zklink(provider, deployer, log, options) {
     const declareVerifier = options.declareVerifier;
     const declareZklink = options.declareZklink;
     const upgrade = options.upgrade;
+
     console.log("declare gatekeeper: ", declareGatekeeper);
     console.log("declare verifier: ", declareVerifier);
     console.log("declare zklink: ", declareZklink);
@@ -89,19 +85,17 @@ export async function declare_zklink(provider, deployer, log, options) {
     if (declareGatekeeper) {
         if (!(logName.DEPLOY_LOG_GATEKEEPER_CLASS_HASH in deployLog) || upgrade) {
             let gatekeeperContractClassHash;
-            const gatekeeperContractSierra = json.parse(fs.readFileSync(contractPath.GATEKEEPER_SIERRA_PATH).toString("ascii"));
-            const gatekeeperContractCasm = json.parse(fs.readFileSync(contractPath.GATEKEEPER_CASM_PATH).toString("ascii"));
-    
+            let {sierraContract, casmContract} = getContractClass(contractPath.GATEKEEPER);
+
             try {
-                const gatekeeperDeclareResponse = await deployer.declare({ contract: gatekeeperContractSierra, casm: gatekeeperContractCasm });
+                const gatekeeperDeclareResponse = await deployer.declare({ contract: sierraContract, casm: casmContract });
                 await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
                 gatekeeperContractClassHash = gatekeeperDeclareResponse.class_hash;
                 console.log('✅ Gatekeeper Contract declared with classHash = ', gatekeeperContractClassHash);
             } catch (error) {
-                if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
+                if (!error.message.includes('is already declared.')) {
                     throw error;
                 }
-    
                 gatekeeperContractClassHash = getClassHashFromError(error);
                 if (gatekeeperContractClassHash === undefined) {
                     console.log('❌ Cannot declare gatekeeper contract class hash:', error);
@@ -122,16 +116,15 @@ export async function declare_zklink(provider, deployer, log, options) {
     if (declareVerifier) {
         if (!(logName.DEPLOY_LOG_VERIFIER_CLASS_HASH in deployLog) || upgrade) {
             let verifierContractClassHash;
-            const verifierContractSierra = json.parse(fs.readFileSync(contractPath.VERIFIER_SIERRA_PATH).toString("ascii"));
-            const verifierContractCasm = json.parse(fs.readFileSync(contractPath.VERIFIER_CASM_PATH).toString("ascii"));
+            const {sierraContract, casmContract} = getContractClass(contractPath.VERIFIER);
     
             try {
-                const verifierDeclareResponse = await deployer.declare({ contract: verifierContractSierra, casm: verifierContractCasm });
-                await provider.waitForTransaction(gatekeeperDeclareResponse.transaction_hash);
+                const verifierDeclareResponse = await deployer.declare({ contract: sierraContract, casm: casmContract });
+                await provider.waitForTransaction(verifierDeclareResponse.transaction_hash);
                 verifierContractClassHash = verifierDeclareResponse.class_hash;
                 console.log('✅ Verifier Contract declared with classHash = ', verifierContractClassHash);
             } catch (error) {
-                if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
+                if (!error.message.includes('is already declared.')) {
                     throw error;
                 }
     
@@ -154,16 +147,14 @@ export async function declare_zklink(provider, deployer, log, options) {
     if (declareZklink) {
         if (!(logName.DEPLOY_LOG_ZKLINK_CLASS_HASH in deployLog) || upgrade) {
             let zklinkContractClassHash;
-            const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
-            const zklinkContractCasm = json.parse(fs.readFileSync(contractPath.ZKLINK_CASM_PATH).toString("ascii"));
-
+            const {sierraContract, casmContract} = getContractClass(contractPath.ZKLINK);
             try {
-                const zklinkDeclareResponse = await deployer.declare({ contract: zklinkContractSierra, casm: zklinkContractCasm });
+                const zklinkDeclareResponse = await deployer.declare({ contract: sierraContract, casm: casmContract });
                 await provider.waitForTransaction(zklinkDeclareResponse.transaction_hash);
                 zklinkContractClassHash = zklinkDeclareResponse.class_hash;
                 console.log('✅ Zklink Contract declared with classHash = ', zklinkContractClassHash);
             } catch (error) {
-                if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
+                if (!error.message.includes('is already declared.')) {
                     throw error;
                 }
 
@@ -200,12 +191,12 @@ export function getDeployLog(name) {
 
 // error type is GatewayError
 // error.message looks like this:
-//  Class with hash 0x149b1c008b9dc20c66c228f83f75f8a3e5be4255964f54293fc98faa12813e2 is already declared.
+//  Class with hash ClassHash(StarkFelt(\"0x038f7db13bb80ea5f7536a70360ae15499f7036fcb7f8563698c273b3971ed70\")) is already declared.
 export function getClassHashFromError(error) {
-    const regex = /0x[0-9a-fA-F]{0,63}/;
+    const regex = /StarkFelt\(\\"([^"]*)\\/;
     const match = error.message.match(regex);
     if (match) {
-        return match[0];
+        return match[1];
     } else {
         return undefined;
     }
@@ -224,4 +215,21 @@ export function executeCommand(command) {
         }
         });
     });
+}
+
+// read zklink.starknet_artifacts.json and return sierra and casm path
+export function getContractClass(contracName) {
+    const zkLink_contracts = json.parse(fs.readFileSync(contractPath.ZKLINK_ARTIFACTS_PATH).toString("ascii")).contracts;
+    let sierraPath = "";
+    let casmPath = "";
+    for (let contract of zkLink_contracts) {
+        if (contract.contract_name == contracName) {
+            sierraPath = "./target/release/" + contract.artifacts.sierra;
+            casmPath = "./target/release/" + contract.artifacts.casm;
+        }
+    }
+
+    const sierraContract = json.parse(fs.readFileSync(sierraPath).toString("ascii"));
+    const casmContract = json.parse(fs.readFileSync(casmPath).toString("ascii"));
+    return {sierraContract, casmContract};
 }

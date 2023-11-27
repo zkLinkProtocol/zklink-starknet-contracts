@@ -1,8 +1,8 @@
-import { Contract, json, cairo, CairoCustomEnum } from "starknet";
+import { Contract, json} from "starknet";
 import fs from "fs";
 import { program } from "commander";
 import { logName, contractPath, UpgradeStatus } from "./constants.js"
-import { connectStarknet, getDeployLog, declare_zklink } from "./utils.js"
+import { connectStarknet, getDeployLog, declare_zklink, getContractClass } from "./utils.js"
 
 program
     .command("upgradeZklink")
@@ -41,7 +41,7 @@ async function upgrade_zklink(options) {
         return;
     }
     
-    const gatekeeperContractSierra = json.parse(fs.readFileSync(contractPath.GATEKEEPER_SIERRA_PATH).toString("ascii"));
+    const {sierraContract: gatekeeperContractSierra, casmContract: gatekeeperContractCasm} = getContractClass(contractPath.GATEKEEPER);
     const gatekeeper = new Contract(gatekeeperContractSierra.abi, deployLog[logName.DEPLOY_LOG_GATEKEEPER], provider);
 
     gatekeeper.connect(deployer);
@@ -76,7 +76,7 @@ async function upgrade_zklink(options) {
     }
 
     // check if upgrade at testnet
-    const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
+    const {sierraContract: zklinkContractSierra, casmContract: zklinkContractCasm} = getContractClass(contractPath.ZKLINK);
     const zklink = new Contract(zklinkContractSierra.abi, deployLog[logName.DEPLOY_LOG_ZKLINK], provider);
     zklink.connect(deployer);
     const noticePeriod = await zklink.getNoticePeriod();

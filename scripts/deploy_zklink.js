@@ -1,8 +1,8 @@
-import { Contract, json, cairo } from "starknet";
+import { Contract } from "starknet";
 import fs from "fs";
 import { program } from "commander";
 import { logName, contractPath } from "./constants.js"
-import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklinkConstructorArgs, buildGateKeeperConstructorArgs, declare_zklink } from "./utils.js";
+import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklinkConstructorArgs, buildGateKeeperConstructorArgs, declare_zklink, getContractClass } from "./utils.js";
 
 
 program
@@ -48,10 +48,10 @@ async function deploy_zklink(options) {
     deployLog[logName.DEPLOY_LOG_GOVERNOR] = options.governor;
     deployLog[logName.DEPLOY_LOG_VALIDATOR] = options.validator;
     fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
-    
-    const gatekeeperContractSierra = json.parse(fs.readFileSync(contractPath.GATEKEEPER_SIERRA_PATH).toString("ascii"));
-    const verifierContractSierra = json.parse(fs.readFileSync(contractPath.VERIFIER_SIERRA_PATH).toString("ascii"));
-    const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
+
+    const {sierraContract: gatekeeperContractSierra, casmContract: gatekeeperContractCasm} = getContractClass(contractPath.GATEKEEPER);
+    const {sierraContract: verifierContractSierra, casmContract: verifierContractCasm} = getContractClass(contractPath.VERIFIER);
+    const {sierraContract: zklinkContractSierra, casmContract: zklinkContractCasm} = getContractClass(contractPath.ZKLINK);
 
     // deploy verifier contract
     if (!(logName.DEPLOY_LOG_VERIFIER in deployLog) || options.force) {

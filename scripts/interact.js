@@ -2,7 +2,7 @@ import { program } from "commander";
 import fs from "fs";
 import { Contract, json } from "starknet";
 import { contractPath, logName } from "./constants.js";
-import { connectStarknet, getDeployLog } from "./utils.js";
+import { connectStarknet, getDeployLog, getContractClass } from "./utils.js";
 
 program
     .command("addToken")
@@ -41,8 +41,8 @@ async function add_token(options) {
     console.log("tokenDecimals:", tokenDecimals);
     console.log("Adding new ERC20 token to zklink");
 
-    const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
-    const zklink = new Contract(zklinkContractSierra.abi, zklinkAddress, provider);
+    const {sierraContract, casmContract} = getContractClass(contractPath.ZKLINK);
+    const zklink = new Contract(sierraContract.abi, zklinkAddress, provider);
 
     zklink.connect(governor);
     const call = zklink.populate("addToken", [tokenId, tokenAddress, tokenDecimals]);
@@ -57,12 +57,12 @@ async function add_bridge(options) {
 
     const bridgeAddress = options.bridge;
     const zklinkAddress = deployLog[logName.DEPLOY_LOG_ZKLINK];
-    const zklinkContractSierra = json.parse(fs.readFileSync(contractPath.ZKLINK_SIERRA_PATH).toString("ascii"));
-    const zklink = new Contract(zklinkContractSierra.abi, zklinkAddress, provider);
+    const {sierraContract, casmContract} = getContractClass(contractPath.ZKLINK);
+    const zklink = new Contract(sierraContract.abi, zklinkAddress, provider);
 
     zklink.connect(governor);
     const call = zklink.populate("setSyncService", [bridgeAddress]);
-    const tx = await zklink.addBridge(call.calldata);
+    const tx = await zklink.setSyncService(call.calldata);
     await provider.waitForTransaction(tx.transaction_hash);
     console.log('✅ zklink add bridge success, tx:', tx.transaction_hash);
 }
