@@ -93,6 +93,8 @@ mod Multicall {
                 )
                     .unwrap_syscall();
 
+                // TODO: when Sierra has the ability to catch a revert to resume execution
+                // we should add false to the result to indicate a failure
                 results.append(MulticallResult { success: true, returnData: returnData });
                 i += 1;
             };
@@ -124,7 +126,8 @@ mod Multicall {
                     address: _zklink,
                     entry_point_selector: selector!("withdrawToL1"),
                     calldata: calldata.span()
-                );
+                )
+                    .unwrap_syscall();
 
                 i += 1;
             }
@@ -152,7 +155,8 @@ mod Multicall {
                     address: _zklink,
                     entry_point_selector: selector!("withdrawPendingBalance"),
                     calldata: calldata.span()
-                );
+                )
+                    .unwrap_syscall();
 
                 i += 1;
             }
