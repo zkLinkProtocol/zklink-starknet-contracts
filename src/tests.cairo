@@ -9,5 +9,6 @@ mod test_fast_withdraw;
 mod test_ownable;
 mod test_gatekeeper;
 mod test_multicall;
+mod test_governance;
 mod mocks;
 mod utils;

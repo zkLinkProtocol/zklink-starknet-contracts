@@ -5,7 +5,7 @@ use core::result::ResultTrait;
 use option::OptionTrait;
 use clone::Clone;
 use starknet::class_hash::Felt252TryIntoClassHash;
-use starknet::{ContractAddress, contract_address_const};
+use starknet::{ContractAddress, contract_address_const,};
 use starknet::SyscallResultTrait;
 use traits::{TryInto, Into};
 use starknet::testing;
@@ -136,6 +136,28 @@ fn assert_event_Withdrawal(zklink: ContractAddress, _tokenId: u16, _amount: u128
     assert_no_events_left(zklink);
 }
 
+fn assert_event_TokenPausedUpdate(zklink: ContractAddress, _tokenId: u16, _paused: bool) {
+    let event = pop_log::<Zklink::TokenPausedUpdate>(zklink).unwrap();
+    assert(event.tokenId == _tokenId, 'tokenId');
+    assert(event.paused == _paused, 'paused');
+    assert_no_events_left(zklink);
+}
+
+fn assert_event_ValidatorStatusUpdate(
+    zklink: ContractAddress, _validator: ContractAddress, _isActive: bool
+) {
+    let event = pop_log::<Zklink::ValidatorStatusUpdate>(zklink).unwrap();
+    assert(event.validatorAddress == _validator, 'validator');
+    assert(event.isActive == _isActive, 'isActive');
+    assert_no_events_left(zklink);
+}
+
+fn assert_event_SetSyncService(zklink: ContractAddress, _syncService: ContractAddress) {
+    let event = pop_log::<Zklink::SetSyncService>(zklink).unwrap();
+    assert(event.newSyncService == _syncService, 'syncService');
+    assert_no_events_left(zklink);
+}
+
 #[derive(Clone, Copy, Serde, Drop)]
 struct Token {
     tokenId: u16,
@@ -178,12 +200,12 @@ fn prepare_test_deploy() -> (Array<ContractAddress>, Array<Token>) {
     let calldata = array![
         defaultSender.into(), // master
         verifier.into(), // verifier
-        2, // governor
+        defaultSender.into(), // governor
         0, // blockNumber
     ];
     let zklink: ContractAddress = deploy(ZklinkMock::TEST_CLASS_HASH, calldata);
     let dispatcher = IZklinkMockDispatcher { contract_address: zklink };
-
+    testing::set_contract_address(defaultSender);
     // tokens
     // eth: id 33, address 0x3
     let eth = Token {
