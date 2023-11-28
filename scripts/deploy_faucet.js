@@ -1,8 +1,7 @@
 import { program } from "commander";
 import fs from "fs";
-import { contractPath } from "./constants.js";
-import { connectStarknet, buildFaucetTokenConstructorArgs, getClassHashFromError } from "./utils.js";
-import { json } from "starknet";
+import { connectStarknet, buildFaucetTokenConstructorArgs, getClassHashFromError, getContractClass, getDeployLog } from "./utils.js";
+import { logName, contractPath } from "./constants.js"
 
 program
     .command("deployFaucetToken")
@@ -17,6 +16,7 @@ program
 program.parse();
 
 async function deploy_faucet_token(options) {
+    const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_FAUCET_TOKEN_LOG_PREFIX);
     const name = options.name;
     const symbol = options.symbol;
     const decimals = options.decimals;
@@ -28,30 +28,34 @@ async function deploy_faucet_token(options) {
     let { provider, deployer, governor, netConfig} = await connectStarknet();
 
     // declare faucet token
-    const ContractSierra = json.parse(fs.readFileSync(contractPath.FAUCET_TOKEN_SIERRA_PATH).toString("ascii"));
-    const contractCasm = json.parse(fs.readFileSync(contractPath.FAUCET_TOKEN_CASM_PATH).toString("ascii"));
-    let classHash;
-    try {
-        const declareResponse = await deployer.declare({ contract: ContractSierra, casm: contractCasm });
-        await provider.waitForTransaction(declareResponse.transaction_hash);
-        classHash = declareResponse.class_hash;
-        console.log('✅ Faucet Token Contract declared with classHash = ', classHash);
-    } catch (error) {
-        if (error.errorCode !== 'StarknetErrorCode.CLASS_ALREADY_DECLARED') {
-            throw error;
-        }
+    const {sierraContract, casmContract} = getContractClass(contractPath.FAUCET_TOKEN);
 
-        classHash = getClassHashFromError(error);
-        if (classHash === undefined) {
-            console.log('❌ Cannot declare gatekeeper contract class hash:', error);
-            return;
-        } else {
-            console.log('✅ Faucet Token Contract already declared with classHash =', classHash);
+    let classHash = deployLog[logName.DEPLOY_LOG_FAUCET_TOKEN_CLASS_HASH];
+    if (!(logName.DEPLOY_LOG_FAUCET_TOKEN_CLASS_HASH in deployLog)) {
+        try {
+            const declareResponse = await deployer.declare({ contract: sierraContract, casm: casmContract });
+            await provider.waitForTransaction(declareResponse.transaction_hash);
+            classHash = declareResponse.class_hash;
+            console.log('✅ Faucet Token Contract declared with classHash = ', classHash);
+        } catch (error) {
+            if (!error.message.includes('is already declared.')) {
+                throw error;
+            }
+    
+            classHash = getClassHashFromError(error);
+            if (classHash === undefined) {
+                console.log('❌ Cannot declare gatekeeper contract class hash:', error);
+                return;
+            } else {
+                console.log('✅ Faucet Token Contract already declared with classHash =', classHash);
+            }
         }
     }
+    deployLog[logName.DEPLOY_LOG_FAUCET_TOKEN_CLASS_HASH] = classHash;
+    fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
 
     // deploy faucet token
-    const constructorArgs = buildFaucetTokenConstructorArgs(ContractSierra.abi, name, symbol, decimals);
+    const constructorArgs = buildFaucetTokenConstructorArgs(sierraContract.abi, name, symbol, decimals);
     const deployResponse = await deployer.deployContract({ classHash: classHash, constructorCalldata: constructorArgs });
     await provider.waitForTransaction(deployResponse.transaction_hash);
 
