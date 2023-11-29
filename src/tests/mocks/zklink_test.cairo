@@ -2,6 +2,7 @@ use starknet::ContractAddress;
 use zklink_starknet_utils::bytes::Bytes;
 use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo};
 use zklink::utils::operations::Operations::{OpType, Withdraw};
+use zklink::utils::data_structures::DataStructures::RegisteredToken;
 
 #[starknet::interface]
 trait IZklinkMock<TContractState> {
@@ -36,13 +37,19 @@ trait IZklinkMock<TContractState> {
     fn addToken(
         self: @TContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
     );
+    fn changeGovernor(self: @TContractState, _governor: ContractAddress);
     fn setTokenPaused(self: @TContractState, _tokenId: u16, _paused: bool);
     fn setExodus(self: @TContractState, _exodusMode: bool);
     fn setAcceptor(self: @TContractState, _hash: u256, _acceptor: ContractAddress);
     fn setTotalOpenPriorityRequests(self: @TContractState, _totalOpenPriorityRequests: u64);
+    fn setValidator(self: @TContractState, _validatorAddress: ContractAddress, _active: bool);
+    fn setSyncService(ref self: TContractState, _syncService: ContractAddress);
     fn getPriorityHash(self: @TContractState, _index: u64) -> u256;
     fn getAcceptor(self: @TContractState, _hash: u256) -> ContractAddress;
     fn getPendingBalance(self: @TContractState, _address: u256, _tokenId: u16) -> u128;
+    fn getGovernor(self: @TContractState) -> ContractAddress;
+    fn getTokenById(self: @TContractState, _tokenId: u16) -> RegisteredToken;
+    fn getTokenIdByAddress(self: @TContractState, _tokenAddress: ContractAddress) -> u16;
     fn mockExecBlock(self: @TContractState, _storedBlockInfo: StoredBlockInfo);
     fn testCollectOnchainOps(
         self: @TContractState, _newBlockData: CommitBlockInfo
@@ -68,10 +75,12 @@ mod ZklinkMock {
         exodusModeContractMemberStateTrait, priorityRequestsContractMemberStateTrait,
         acceptsContractMemberStateTrait, storedBlockHashesContractMemberStateTrait,
         totalBlocksExecutedContractMemberStateTrait, pendingBalancesContractMemberStateTrait,
-        totalOpenPriorityRequestsContractMemberStateTrait
+        totalOpenPriorityRequestsContractMemberStateTrait, networkGovernorContractMemberStateTrait,
+        tokensContractMemberStateTrait, tokenIdsContractMemberStateTrait
     };
     use zklink::utils::data_structures::DataStructures::{CommitBlockInfo, StoredBlockInfo};
     use zklink::utils::operations::Operations::{OpType, Withdraw};
+    use zklink::utils::data_structures::DataStructures::RegisteredToken;
 
     #[storage]
     struct Storage {
@@ -164,15 +173,11 @@ mod ZklinkMock {
         fn addToken(
             self: @ContractState, _tokenId: u16, _tokenAddress: ContractAddress, _decimals: u8
         ) {
-            // only governor can add token
-            set_caller_address(self._governor.read());
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::Zklink::addToken(ref state, _tokenId, _tokenAddress, _decimals);
         }
 
         fn setTokenPaused(self: @ContractState, _tokenId: u16, _paused: bool) {
-            // only governor can set token paused
-            set_caller_address(self._governor.read());
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             Zklink::Zklink::setTokenPaused(ref state, _tokenId, _paused);
         }
@@ -192,6 +197,26 @@ mod ZklinkMock {
             state.totalOpenPriorityRequests.write(_totalOpenPriorityRequests);
         }
 
+        fn changeGovernor(self: @ContractState, _governor: ContractAddress) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::changeGovernor(ref state, _governor);
+        }
+
+        fn setValidator(self: @ContractState, _validatorAddress: ContractAddress, _active: bool) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::setValidator(ref state, _validatorAddress, _active);
+        }
+
+        fn setSyncService(ref self: ContractState, _syncService: ContractAddress) {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            Zklink::Zklink::setSyncService(ref state, _syncService);
+        }
+
+        fn getGovernor(self: @ContractState) -> ContractAddress {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            state.networkGovernor.read()
+        }
+
         fn getPriorityHash(self: @ContractState, _index: u64) -> u256 {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             state.priorityRequests.read(_index).hashedPubData
@@ -205,6 +230,16 @@ mod ZklinkMock {
         fn getPendingBalance(self: @ContractState, _address: u256, _tokenId: u16) -> u128 {
             let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
             state.pendingBalances.read((_address, _tokenId))
+        }
+
+        fn getTokenById(self: @ContractState, _tokenId: u16) -> RegisteredToken {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            state.tokens.read(_tokenId)
+        }
+
+        fn getTokenIdByAddress(self: @ContractState, _tokenAddress: ContractAddress) -> u16 {
+            let mut state: Zklink::ContractState = Zklink::contract_state_for_testing();
+            state.tokenIds.read(_tokenAddress)
         }
 
         fn mockExecBlock(self: @ContractState, _storedBlockInfo: StoredBlockInfo) {
