@@ -1,7 +1,7 @@
 import { program } from "commander";
 import fs from "fs";
 import { Contract, json } from "starknet";
-import { contractPath, logName } from "./constants.js";
+import { contractPath, logName, connectionType } from "./constants.js";
 import { connectStarknet, getDeployLog, getContractClass } from "./utils.js";
 
 program
@@ -23,10 +23,21 @@ program
         await add_bridge(options);
     });
 
+program
+    .command("mintFaucetToken")
+    .description("Mint faucet token")
+    .requiredOption('--token <address>', 'The token address')
+    .requiredOption('--to <address>', 'The receiver address')
+    .requiredOption('--amount <amount>', 'The amount to mint')
+    .requiredOption('--decimals <decimals>', 'The token decimals')
+    .action(async (options) => {
+        await mint_faucet_token(options);
+    });
+
 program.parse();
 
 async function add_token(options) {
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DEPLOY);
     const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
 
     const zklinkAddress = options.zklink === undefined ? deployLog[logName.DEPLOY_LOG_ZKLINK] : options.zklink;
@@ -52,7 +63,7 @@ async function add_token(options) {
 }
 
 async function add_bridge(options) {
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DEPLOY);
     const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
 
     const bridgeAddress = options.bridge;
@@ -65,4 +76,28 @@ async function add_bridge(options) {
     const tx = await zklink.setSyncService(call.calldata);
     await provider.waitForTransaction(tx.transaction_hash);
     console.log('✅ zklink add bridge success, tx:', tx.transaction_hash);
+}
+
+async function mint_faucet_token(options) {
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DEPLOY);
+
+    const tokenAddress = options.token;
+    const toAddress = options.to;
+    const amount = options.amount;
+    const decimals = options.decimals;
+
+    console.log("tokenAddress:", tokenAddress);
+    console.log("toAddress:", toAddress);
+    console.log("amount:", amount);
+    console.log("decimals:", decimals);
+    console.log("Minting faucet token");
+
+    const {sierraContract, casmContract} = getContractClass(contractPath.FAUCET_TOKEN);
+    const faucetToken = new Contract(sierraContract.abi, tokenAddress, provider);
+
+    faucetToken.connect(deployer);
+    const call = faucetToken.populate("mintTo", [toAddress, amount]);
+    const tx = await faucetToken.mintTo(call.calldata);
+    await provider.waitForTransaction(tx.transaction_hash);
+    console.log('✅ faucet token mint success, tx:', tx.transaction_hash);
 }

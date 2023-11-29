@@ -1,7 +1,7 @@
 import { Contract } from "starknet";
 import fs from "fs";
 import { program } from "commander";
-import { logName, contractPath } from "./constants.js"
+import { logName, contractPath, connectionType } from "./constants.js"
 import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklinkConstructorArgs, buildGateKeeperConstructorArgs, declare_zklink, getContractClass } from "./utils.js";
 
 
@@ -21,7 +21,7 @@ program
 async function deploy_zklink(options) {
     const log = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
     const { deployLogPath, deployLog } = log;
-    let { provider, deployer, governor, netConfig } = await connectStarknet();
+    let { provider, deployer, governor, netConfig } = await connectStarknet(connectionType.DECLARE);
 
     // declare contracts
     const declare_options = {
@@ -48,6 +48,8 @@ async function deploy_zklink(options) {
     deployLog[logName.DEPLOY_LOG_GOVERNOR] = options.governor;
     deployLog[logName.DEPLOY_LOG_VALIDATOR] = options.validator;
     fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
+
+    ({ provider, deployer, governor, netConfig } = await connectStarknet(connectionType.DEPLOY));
 
     const {sierraContract: gatekeeperContractSierra, casmContract: gatekeeperContractCasm} = getContractClass(contractPath.GATEKEEPER);
     const {sierraContract: verifierContractSierra, casmContract: verifierContractCasm} = getContractClass(contractPath.VERIFIER);
@@ -77,7 +79,12 @@ async function deploy_zklink(options) {
         );
 
         const deployResponse = await deployer.deployContract({ classHash: deployLog[logName.DEPLOY_LOG_ZKLINK_CLASS_HASH], constructorCalldata: zklinkConstructorArgs });
-        const tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+        // waiting for tx.block_number, if not undefined, waited for 1 minute
+        let tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+        while (tx.block_number === undefined) {
+            await new Promise(resolve => setTimeout(resolve, 60000));
+            tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+        }
         console.log('✅ zklink Contract deployed at =', deployResponse.contract_address);
         deployLog[logName.DEPLOY_LOG_ZKLINK] = deployResponse.contract_address;
         deployLog[logName.DEPLOY_LOG_ZKLINK_TX_HASH] = deployResponse.transaction_hash;

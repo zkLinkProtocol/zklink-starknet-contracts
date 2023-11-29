@@ -356,7 +356,7 @@ fn test_zklink_testCommitOneBlock_invalid_block_number() {
 
     let preBlock = StoredBlockInfo {
         blockNumber: 10,
-        preCommittedBlockNumber: 9,
+        blockSequence: 9,
         priorityOperations: 0,
         pendingOnchainOperationsHash: 1,
         syncHash: 4
@@ -492,7 +492,7 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
 
     let preBlock = StoredBlockInfo {
         blockNumber: 10,
-        preCommittedBlockNumber: 9,
+        blockSequence: 9,
         priorityOperations: 0,
         pendingOnchainOperationsHash: 1,
         syncHash: 4
@@ -515,9 +515,8 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     );
 
     let r: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, compressedBlock);
-
     assert(r.blockNumber == blockNumber, 'invaid value1');
-    assert(r.preCommittedBlockNumber == preBlock.blockNumber, 'invaid value2');
+    assert(r.blockSequence == preBlock.blockSequence + 1, 'invaid value2');
     assert(r.priorityOperations == priorityOperationsProcessed, 'invaid value3');
     assert(r.pendingOnchainOperationsHash == processableOpPubdataHash, 'invaid value4');
     assert(r.syncHash == syncHash, 'invaid value5');

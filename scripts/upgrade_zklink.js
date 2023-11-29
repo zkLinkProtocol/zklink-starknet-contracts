@@ -1,7 +1,7 @@
 import { Contract, json} from "starknet";
 import fs from "fs";
 import { program } from "commander";
-import { logName, contractPath, UpgradeStatus } from "./constants.js"
+import { logName, contractPath, UpgradeStatus, connectionType } from "./constants.js"
 import { connectStarknet, getDeployLog, declare_zklink, getContractClass } from "./utils.js"
 
 program
@@ -19,7 +19,7 @@ program.parse();
 async function upgrade_zklink(options) {
     const log = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
     const { deployLog, deployLogPath } = log;
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DECLARE);
 
     const upgradeVerifier = options.upgradeVerifier;
     const upgradeZklink = options.upgradeZklink;

@@ -1,7 +1,8 @@
 {
     "network": {
         "name": "devnet",
-        "url": "http://127.0.0.1",
+        "declareUrl": "http://127.0.0.1",
+        "deployUrl": "http://127.0.0.1",
         "accounts": {
             "deployer": {
                 "address": "",
