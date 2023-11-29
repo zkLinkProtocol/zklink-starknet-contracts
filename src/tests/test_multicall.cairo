@@ -31,7 +31,7 @@ use zklink::utils::operations::Operations::Withdraw;
 
 #[test]
 #[available_gas(20000000000)]
-fn test_zklink_multicall_success() {
+fn test_zklink_multicall_read_success() {
     let (addrs, tokens) = utils::prepare_test_deploy();
     let bob = *addrs[utils::ADDR_BOB];
     let zklink = *addrs[utils::ADDR_ZKLINK];
@@ -95,4 +95,50 @@ fn test_zklink_multicall_success() {
             Option::None(_) => { break; }
         }
     }
+}
+
+#[test]
+#[available_gas(20000000000)]
+fn test_zklink_multicall_write_success() {
+    let (address, token) = utils::prepare_test_deploy();
+
+    let defaultSender: ContractAddress = *address[utils::ADDR_DEFAULT];
+    let alice: ContractAddress = *address[utils::ADDR_ALICE];
+    let bob: ContractAddress = *address[utils::ADDR_BOB];
+    let eth: Token = *token[utils::TOKEN_ETH];
+    let multicall = utils::deploy(Multicall::TEST_CLASS_HASH, array![]);
+    let multicall_dispatcher = IMulticallDispatcher { contract_address: multicall };
+    let eth_dispatcher = IStandardTokenDispatcher { contract_address: eth.tokenAddress };
+
+    set_contract_address(alice);
+    // mint alice 10 ETH and transferFrom to bob 1 ETH using multicall
+    let amount: u256 = 10000000000000000000; // 10 Ether
+    let amount2: u256 = 1000000000000000000; // 1 Ether
+
+    // mintTo
+    let targets: Array<ContractAddress> = array![eth.tokenAddress];
+    let mut calls: Array<Call> = array![];
+    let mut calldata: Array<felt252> = array![];
+    Serde::serialize(@alice, ref calldata);
+    Serde::serialize(@amount, ref calldata);
+    let mut mintTo = Call { selector: selector!("mintTo"), calldata };
+    calls.append(mintTo);
+    multicall_dispatcher.multicall(targets, calls);
+
+    // approve
+    eth_dispatcher.approve(multicall, amount2);
+
+    // transferFrom
+    let targets: Array<ContractAddress> = array![eth.tokenAddress];
+    let mut calls: Array<Call> = array![];
+    let mut calldata: Array<felt252> = array![];
+    Serde::serialize(@alice, ref calldata);
+    Serde::serialize(@bob, ref calldata);
+    Serde::serialize(@amount2, ref calldata);
+    let mut transferFrom = Call { selector: selector!("transferFrom"), calldata };
+    calls.append(transferFrom);
+    multicall_dispatcher.multicall(targets, calls);
+
+    assert(eth_dispatcher.balanceOf(alice) == (amount - amount2), 'invalid balance');
+    assert(eth_dispatcher.balanceOf(bob) == amount2, 'invalid balance');
 }

@@ -45,13 +45,13 @@ struct AcceptInfo {
 #[starknet::interface]
 trait IMulticall<TContractState> {
     fn multicall(
-        self: @TContractState, _targets: Array<ContractAddress>, _calls: Array<Call>
+        ref self: TContractState, _targets: Array<ContractAddress>, _calls: Array<Call>
     ) -> Array<MulticallResult>;
     fn batchWithdrawToL1(
-        self: @TContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
+        ref self: TContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
     );
     fn batchWithdrawPendingBalance(
-        self: @TContractState,
+        ref self: TContractState,
         _zklink: ContractAddress,
         _withdrawDatas: Array<WithdrawPendingBalanceInfo>
     );
@@ -73,7 +73,7 @@ mod Multicall {
     #[external(v0)]
     impl Multicall of super::IMulticall<ContractState> {
         fn multicall(
-            self: @ContractState, _targets: Array<ContractAddress>, _calls: Array<Call>
+            ref self: ContractState, _targets: Array<ContractAddress>, _calls: Array<Call>
         ) -> Array<MulticallResult> {
             assert(_targets.len() == _calls.len(), 'Invalid input length');
 
@@ -103,7 +103,9 @@ mod Multicall {
         }
 
         fn batchWithdrawToL1(
-            self: @ContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
+            ref self: ContractState,
+            _zklink: ContractAddress,
+            _withdrawDatas: Array<WithdrawToL1Info>
         ) {
             let mut i = 0;
             loop {
@@ -134,7 +136,7 @@ mod Multicall {
         }
 
         fn batchWithdrawPendingBalance(
-            self: @ContractState,
+            ref self: ContractState,
             _zklink: ContractAddress,
             _withdrawDatas: Array<WithdrawPendingBalanceInfo>
         ) {
