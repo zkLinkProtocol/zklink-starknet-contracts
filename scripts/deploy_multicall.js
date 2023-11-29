@@ -48,7 +48,12 @@ async function deploy_multicall(options) {
     // deploy multicall
     const constructorArgs = buildMulticallConstructorArgs(sierraContract.abi);
     const deployResponse = await deployer.deployContract({ classHash: classHash, constructorCalldata: constructorArgs });
-    const tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+    let tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+    while (tx.block_number === undefined) {
+        await new Promise(resolve => setTimeout(resolve, 60000));
+        tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+    }
+    console.log('tx block number', tx.block_number);
     console.log('✅ Multicall Contract deployed at =', deployResponse.contract_address);
     deployLog[logName.DEPLOY_LOG_MULTICALL] = deployResponse.contract_address;
     deployLog[logName.DEPLOY_LOG_MULTICALL_TX_HASH] = deployResponse.transaction_hash;

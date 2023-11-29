@@ -77,7 +77,12 @@ async function deploy_zklink(options) {
         );
 
         const deployResponse = await deployer.deployContract({ classHash: deployLog[logName.DEPLOY_LOG_ZKLINK_CLASS_HASH], constructorCalldata: zklinkConstructorArgs });
-        const tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+        // waiting for tx.block_number, if not undefined, waited for 1 minute
+        let tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+        while (tx.block_number === undefined) {
+            await new Promise(resolve => setTimeout(resolve, 60000));
+            tx = await provider.waitForTransaction(deployResponse.transaction_hash);
+        }
         console.log('✅ zklink Contract deployed at =', deployResponse.contract_address);
         deployLog[logName.DEPLOY_LOG_ZKLINK] = deployResponse.contract_address;
         deployLog[logName.DEPLOY_LOG_ZKLINK_TX_HASH] = deployResponse.transaction_hash;
