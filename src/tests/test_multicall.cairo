@@ -115,28 +115,27 @@ fn test_zklink_multicall_write_success() {
     let amount: u256 = 10000000000000000000; // 10 Ether
     let amount2: u256 = 1000000000000000000; // 1 Ether
 
-    // mintTo
-    let targets: Array<ContractAddress> = array![eth.tokenAddress];
+    let targets: Array<ContractAddress> = array![eth.tokenAddress, eth.tokenAddress];
     let mut calls: Array<Call> = array![];
+
+    // approve
+    eth_dispatcher.approve(multicall, amount2);
+    // mintTo
     let mut calldata: Array<felt252> = array![];
     Serde::serialize(@alice, ref calldata);
     Serde::serialize(@amount, ref calldata);
     let mut mintTo = Call { selector: selector!("mintTo"), calldata };
     calls.append(mintTo);
-    multicall_dispatcher.multicall(targets, calls);
-
-    // approve
-    eth_dispatcher.approve(multicall, amount2);
 
     // transferFrom
-    let targets: Array<ContractAddress> = array![eth.tokenAddress];
-    let mut calls: Array<Call> = array![];
     let mut calldata: Array<felt252> = array![];
     Serde::serialize(@alice, ref calldata);
     Serde::serialize(@bob, ref calldata);
     Serde::serialize(@amount2, ref calldata);
     let mut transferFrom = Call { selector: selector!("transferFrom"), calldata };
     calls.append(transferFrom);
+
+    // call multicall
     multicall_dispatcher.multicall(targets, calls);
 
     assert(eth_dispatcher.balanceOf(alice) == (amount - amount2), 'invalid balance');
