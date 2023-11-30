@@ -49,6 +49,15 @@ const NOTICE_PERIOD = "NoticePeriod";
 // command
 const COMMAND_BUILD = "scarb --release build";
 
+// connetion type
+const DECLARE = "declare";
+const DEPLOY = "deploy";
+
+export var connectionType = {
+    DECLARE,
+    DEPLOY
+}
+
 export var UpgradeStatus = {
     IDLE,
     NOTICE_PERIOD

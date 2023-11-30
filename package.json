@@ -12,7 +12,7 @@
   "type": "module",
   "dependencies": {
     "commander": "^11.0.0",
-    "starknet": "^5.24.3"
+    "starknet": "5.24.3"
   },
   "scripts": {
     "build": "node scripts/build.js build",

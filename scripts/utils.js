@@ -1,23 +1,31 @@
 import fs from "fs";
 import { RpcProvider, CallData, Account, json } from "starknet";
 import { exec } from "child_process";
-import { logName, contractPath } from "./constants.js";
+import { logName, contractPath, connectionType } from "./constants.js";
 
 
-function buildProvider(networkConfig) {
-    let provider = new RpcProvider({ nodeUrl: networkConfig.url });
-    console.log(`✅ Connected to ${networkConfig.name}`);
+function buildProvider(networkConfig, type) {
+    let url = undefined;
+    if (type === connectionType.DEPLOY) {
+        url = networkConfig.deployUrl;
+        console.log('Connecting Starknet for deployment...');
+    } else if (type === connectionType.DECLARE) {
+        url = networkConfig.declareUrl;
+        console.log('Connecting Starknet for declaration...');
+    }
+    let provider = new RpcProvider({ nodeUrl: url });
+    console.log(`✅ Connected to ${url}`);
     return provider;
 }
 
-export async function connectStarknet() {
+export async function connectStarknet(type) {
     // read config json file
     const netName = process.env.NET === undefined ? "EXAMPLE" : process.env.NET;
     let netConfig = await fs.promises.readFile(`./etc/${netName}.json`, "utf-8");
     netConfig = JSON.parse(netConfig);
 
     // create provider
-    const provider = buildProvider(netConfig.network);
+    const provider = buildProvider(netConfig.network, type);
 
     const deployerConfig = netConfig.network.accounts.deployer;
     const governorConfig = netConfig.network.accounts.governor;
@@ -93,7 +101,7 @@ export async function declare_zklink(provider, deployer, log, options) {
                 gatekeeperContractClassHash = gatekeeperDeclareResponse.class_hash;
                 console.log('✅ Gatekeeper Contract declared with classHash = ', gatekeeperContractClassHash);
             } catch (error) {
-                if (!error.message.includes('is already declared.')) {
+                if (!error.message.includes('StarkFelt(\\')) {
                     throw error;
                 }
                 gatekeeperContractClassHash = getClassHashFromError(error);
@@ -124,7 +132,7 @@ export async function declare_zklink(provider, deployer, log, options) {
                 verifierContractClassHash = verifierDeclareResponse.class_hash;
                 console.log('✅ Verifier Contract declared with classHash = ', verifierContractClassHash);
             } catch (error) {
-                if (!error.message.includes('is already declared.')) {
+                if (!error.message.includes('StarkFelt(\\')) {
                     throw error;
                 }
     
@@ -154,7 +162,7 @@ export async function declare_zklink(provider, deployer, log, options) {
                 zklinkContractClassHash = zklinkDeclareResponse.class_hash;
                 console.log('✅ Zklink Contract declared with classHash = ', zklinkContractClassHash);
             } catch (error) {
-                if (!error.message.includes('is already declared.')) {
+                if (!error.message.includes('StarkFelt(\\')) {
                     throw error;
                 }
 

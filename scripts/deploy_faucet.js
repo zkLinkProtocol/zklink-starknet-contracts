@@ -1,7 +1,7 @@
 import { program } from "commander";
 import fs from "fs";
 import { connectStarknet, buildFaucetTokenConstructorArgs, getClassHashFromError, getContractClass, getDeployLog } from "./utils.js";
-import { logName, contractPath } from "./constants.js"
+import { logName, contractPath, connectionType } from "./constants.js"
 
 program
     .command("deployFaucetToken")
@@ -25,7 +25,7 @@ async function deploy_faucet_token(options) {
     console.log("symbol:", symbol);
     console.log("decimals:", decimals);
 
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DECLARE);
 
     // declare faucet token
     const {sierraContract, casmContract} = getContractClass(contractPath.FAUCET_TOKEN);
@@ -38,7 +38,7 @@ async function deploy_faucet_token(options) {
             classHash = declareResponse.class_hash;
             console.log('✅ Faucet Token Contract declared with classHash = ', classHash);
         } catch (error) {
-            if (!error.message.includes('is already declared.')) {
+            if (!error.message.includes('StarkFelt(\\')) {
                 throw error;
             }
     
@@ -50,11 +50,14 @@ async function deploy_faucet_token(options) {
                 console.log('✅ Faucet Token Contract already declared with classHash =', classHash);
             }
         }
+    } else {
+        console.log('✅ Faucet Token Contract already declared with classHash =', classHash);
     }
     deployLog[logName.DEPLOY_LOG_FAUCET_TOKEN_CLASS_HASH] = classHash;
     fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
 
     // deploy faucet token
+    ({ provider, deployer, governor, netConfig } = await connectStarknet(connectionType.DEPLOY));
     const constructorArgs = buildFaucetTokenConstructorArgs(sierraContract.abi, name, symbol, decimals);
     const deployResponse = await deployer.deployContract({ classHash: classHash, constructorCalldata: constructorArgs });
     await provider.waitForTransaction(deployResponse.transaction_hash);

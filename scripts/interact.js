@@ -1,7 +1,7 @@
 import { program } from "commander";
 import fs from "fs";
 import { Contract, json } from "starknet";
-import { contractPath, logName } from "./constants.js";
+import { contractPath, logName, connectionType } from "./constants.js";
 import { connectStarknet, getDeployLog, getContractClass } from "./utils.js";
 
 program
@@ -26,7 +26,7 @@ program
 program.parse();
 
 async function add_token(options) {
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DEPLOY);
     const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
 
     const zklinkAddress = options.zklink === undefined ? deployLog[logName.DEPLOY_LOG_ZKLINK] : options.zklink;
@@ -52,7 +52,7 @@ async function add_token(options) {
 }
 
 async function add_bridge(options) {
-    let { provider, deployer, governor, netConfig} = await connectStarknet();
+    let { provider, deployer, governor, netConfig} = await connectStarknet(connectionType.DEPLOY);
     const { deployLogPath, deployLog } = getDeployLog(logName.DEPLOY_ZKLINK_LOG_PREFIX);
 
     const bridgeAddress = options.bridge;
