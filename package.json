@@ -21,6 +21,7 @@
     "deployFaucetToken": "node scripts/deploy_faucet.js deployFaucetToken",
     "deployMulticall": "node scripts/deploy_multicall.js deployMulticall",
     "addToken": "node scripts/interact.js addToken",
-    "addBridge": "node scripts/interact.js addBridge"
+    "addBridge": "node scripts/interact.js addBridge",
+    "mintFaucetToken": "node scripts/interact.js mintFaucetToken"
   }
 }
