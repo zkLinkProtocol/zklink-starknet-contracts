@@ -73,24 +73,24 @@ mod Multicall {
     impl Multicall of super::IMulticall<ContractState> {
         fn multicall(ref self: ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
             let mut results: Array<MulticallResult> = array![];
-            let mut i = 0;
-
+            let mut _targets = _targets;
             loop {
-                if i == _targets.len() {
-                    break;
+                match _targets.pop_front() {
+                    Option::Some(Call{address,
+                    selector,
+                    calldata }) => {
+                        let returnData = starknet::call_contract_syscall(
+                            address, selector, calldata.span()
+                        )
+                            .unwrap_syscall();
+
+                        // TODO: when Sierra has the ability to catch a revert to resume execution
+                        // we should add false to the result to indicate a failure
+                        results.append(MulticallResult { success: true, returnData: returnData });
+                    },
+                    Option::None => { break; }
                 }
-                let Call{address, selector, calldata } = _targets[i].clone();
-                let returnData = starknet::call_contract_syscall(
-                    address: address, entry_point_selector: selector, calldata: calldata.span(),
-                )
-                    .unwrap_syscall();
-
-                // TODO: when Sierra has the ability to catch a revert to resume execution
-                // we should add false to the result to indicate a failure
-                results.append(MulticallResult { success: true, returnData: returnData });
-                i += 1;
             };
-
             results
         }
 
@@ -99,31 +99,28 @@ mod Multicall {
             _zklink: ContractAddress,
             _withdrawDatas: Array<WithdrawToL1Info>
         ) {
-            let mut i = 0;
+            let mut _withdrawDatas = _withdrawDatas;
             loop {
-                if i == _withdrawDatas.len() {
-                    break;
+                match _withdrawDatas.pop_front() {
+                    Option::Some(withdrawToL1Info) => {
+                        let mut calldata: Array<felt252> = array![];
+                        Serde::serialize(@withdrawToL1Info.owner, ref calldata);
+                        Serde::serialize(@withdrawToL1Info.token, ref calldata);
+                        Serde::serialize(@withdrawToL1Info.amount, ref calldata);
+                        Serde::serialize(@withdrawToL1Info.fastWithdrawFeeRate, ref calldata);
+                        Serde::serialize(@withdrawToL1Info.accountIdOfNonce, ref calldata);
+                        Serde::serialize(@withdrawToL1Info.subAccountIdOfNonce, ref calldata);
+                        Serde::serialize(@withdrawToL1Info.nonce, ref calldata);
+
+                        starknet::call_contract_syscall(
+                            address: _zklink,
+                            entry_point_selector: selector!("withdrawToL1"),
+                            calldata: calldata.span()
+                        )
+                            .unwrap_syscall();
+                    },
+                    Option::None => { break; }
                 }
-
-                let withdrawToL1Info: @WithdrawToL1Info = _withdrawDatas[i];
-                let mut calldata: Array<felt252> = array![];
-
-                Serde::serialize(withdrawToL1Info.owner, ref calldata);
-                Serde::serialize(withdrawToL1Info.token, ref calldata);
-                Serde::serialize(withdrawToL1Info.amount, ref calldata);
-                Serde::serialize(withdrawToL1Info.fastWithdrawFeeRate, ref calldata);
-                Serde::serialize(withdrawToL1Info.accountIdOfNonce, ref calldata);
-                Serde::serialize(withdrawToL1Info.subAccountIdOfNonce, ref calldata);
-                Serde::serialize(withdrawToL1Info.nonce, ref calldata);
-
-                starknet::call_contract_syscall(
-                    address: _zklink,
-                    entry_point_selector: selector!("withdrawToL1"),
-                    calldata: calldata.span()
-                )
-                    .unwrap_syscall();
-
-                i += 1;
             }
         }
 
@@ -132,27 +129,24 @@ mod Multicall {
             _zklink: ContractAddress,
             _withdrawDatas: Array<WithdrawPendingBalanceInfo>
         ) {
-            let mut i = 0;
+            let mut _withdrawDatas = _withdrawDatas;
             loop {
-                if i == _withdrawDatas.len() {
-                    break;
+                match _withdrawDatas.pop_front() {
+                    Option::Some(withdrawPendingBalanceInfo) => {
+                        let mut calldata: Array<felt252> = array![];
+                        Serde::serialize(@withdrawPendingBalanceInfo.owner, ref calldata);
+                        Serde::serialize(@withdrawPendingBalanceInfo.tokenId, ref calldata);
+                        Serde::serialize(@withdrawPendingBalanceInfo.amount, ref calldata);
+
+                        starknet::call_contract_syscall(
+                            address: _zklink,
+                            entry_point_selector: selector!("withdrawPendingBalance"),
+                            calldata: calldata.span()
+                        )
+                            .unwrap_syscall();
+                    },
+                    Option::None => { break; }
                 }
-
-                let withdrawPendingBalanceInfo: @WithdrawPendingBalanceInfo = _withdrawDatas[i];
-                let mut calldata: Array<felt252> = array![];
-
-                Serde::serialize(withdrawPendingBalanceInfo.owner, ref calldata);
-                Serde::serialize(withdrawPendingBalanceInfo.tokenId, ref calldata);
-                Serde::serialize(withdrawPendingBalanceInfo.amount, ref calldata);
-
-                starknet::call_contract_syscall(
-                    address: _zklink,
-                    entry_point_selector: selector!("withdrawPendingBalance"),
-                    calldata: calldata.span()
-                )
-                    .unwrap_syscall();
-
-                i += 1;
             }
         }
     }
