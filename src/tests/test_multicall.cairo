@@ -66,24 +66,22 @@ fn test_zklink_multicall_read_success() {
     zklink_dispatcher.testExecuteWithdraw(op);
 
     let mut i = 10;
-    let mut targets: Array<ContractAddress> = array![];
     let mut calls: Array<Call> = array![];
     loop {
         if i == 0 {
             break;
         }
-        targets.append(zklink);
 
         let mut calldata: Array<felt252> = array![];
         let address: u256 = utils::extendAddress(owner);
         Serde::serialize(@address.low, ref calldata);
         Serde::serialize(@address.high, ref calldata);
         Serde::serialize(@tokenId, ref calldata);
-        calls.append(Call { selector: selector!("getPendingBalance"), calldata });
+        calls.append(Call { address: zklink, selector: selector!("getPendingBalance"), calldata });
         i -= 1;
     };
 
-    let mut res = IMulticallDispatcher { contract_address: multicall }.multicall(targets, calls);
+    let mut res = IMulticallDispatcher { contract_address: multicall }.multicall(calls);
     loop {
         match res.pop_front() {
             Option::Some(result) => {
@@ -115,7 +113,7 @@ fn test_zklink_multicall_write_success() {
     let amount: u256 = 10000000000000000000; // 10 Ether
     let amount2: u256 = 1000000000000000000; // 1 Ether
 
-    let targets: Array<ContractAddress> = array![eth.tokenAddress, eth.tokenAddress];
+    let address = eth.tokenAddress;
     let mut calls: Array<Call> = array![];
 
     // approve
@@ -124,7 +122,7 @@ fn test_zklink_multicall_write_success() {
     let mut calldata: Array<felt252> = array![];
     Serde::serialize(@alice, ref calldata);
     Serde::serialize(@amount, ref calldata);
-    let mut mintTo = Call { selector: selector!("mintTo"), calldata };
+    let mut mintTo = Call { address, selector: selector!("mintTo"), calldata };
     calls.append(mintTo);
 
     // transferFrom
@@ -132,11 +130,11 @@ fn test_zklink_multicall_write_success() {
     Serde::serialize(@alice, ref calldata);
     Serde::serialize(@bob, ref calldata);
     Serde::serialize(@amount2, ref calldata);
-    let mut transferFrom = Call { selector: selector!("transferFrom"), calldata };
+    let mut transferFrom = Call { address, selector: selector!("transferFrom"), calldata };
     calls.append(transferFrom);
 
     // call multicall
-    multicall_dispatcher.multicall(targets, calls);
+    multicall_dispatcher.multicall(calls);
 
     assert(eth_dispatcher.balanceOf(alice) == (amount - amount2), 'invalid balance');
     assert(eth_dispatcher.balanceOf(bob) == amount2, 'invalid balance');
