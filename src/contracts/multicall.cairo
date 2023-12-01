@@ -2,6 +2,7 @@ use starknet::{ContractAddress, EthAddress};
 
 #[derive(Drop, Serde, Clone)]
 struct Call {
+    address: ContractAddress,
     selector: felt252,
     calldata: Array<felt252>
 }
@@ -44,9 +45,7 @@ struct AcceptInfo {
 
 #[starknet::interface]
 trait IMulticall<TContractState> {
-    fn multicall(
-        ref self: TContractState, _targets: Array<ContractAddress>, _calls: Array<Call>
-    ) -> Array<MulticallResult>;
+    fn multicall(ref self: TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn batchWithdrawToL1(
         ref self: TContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
     );
@@ -72,11 +71,7 @@ mod Multicall {
 
     #[external(v0)]
     impl Multicall of super::IMulticall<ContractState> {
-        fn multicall(
-            ref self: ContractState, _targets: Array<ContractAddress>, _calls: Array<Call>
-        ) -> Array<MulticallResult> {
-            assert(_targets.len() == _calls.len(), 'Invalid input length');
-
+        fn multicall(ref self: ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
             let mut results: Array<MulticallResult> = array![];
             let mut i = 0;
 
@@ -84,12 +79,9 @@ mod Multicall {
                 if i == _targets.len() {
                     break;
                 }
-
-                let target = *_targets[i];
-                let Call{selector, calldata } = _calls[i].clone();
-
+                let Call{address, selector, calldata } = _targets[i].clone();
                 let returnData = starknet::call_contract_syscall(
-                    address: target, entry_point_selector: selector, calldata: calldata.span(),
+                    address: address, entry_point_selector: selector, calldata: calldata.span(),
                 )
                     .unwrap_syscall();
 
