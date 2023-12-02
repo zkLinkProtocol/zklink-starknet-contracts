@@ -890,6 +890,7 @@ mod Zklink {
                 if i.into() == nBlocks {
                     break;
                 }
+                let _executedBlockIdx = _totalBlocksExecuted + i.into() + 1;
                 let _blockExecuteData: @ExecuteBlockInfo = _blocksData[i];
                 assert(
                     *_blockExecuteData
@@ -897,7 +898,7 @@ mod Zklink {
                         .preCommittedBlockNumber == latestExecutedBlockNumber,
                     'd2'
                 );
-                self.executeOneBlock(_blockExecuteData);
+                self.executeOneBlock(_blockExecuteData, _executedBlockIdx);
                 priorityRequestsExecuted += *_blockExecuteData.storedBlock.priorityOperations;
                 latestExecutedBlockNumber = *_blockExecuteData.storedBlock.blockNumber;
                 i += 1;
@@ -1520,12 +1521,14 @@ mod Zklink {
         // Executes one block
         // 1. Processes all pending operations (Send Exits, Complete priority requests)
         // 2. Finalizes block on Ethereum
-        fn executeOneBlock(ref self: ContractState, _blockExecuteData: @ExecuteBlockInfo) {
+        fn executeOneBlock(
+            ref self: ContractState, _blockExecuteData: @ExecuteBlockInfo, _executedBlockIdx: u64
+        ) {
             // Ensure block was committed
             assert(
                 hashStoredBlockInfo(*_blockExecuteData.storedBlock) == self
                     .storedBlockHashes
-                    .read(*_blockExecuteData.storedBlock.blockNumber),
+                    .read(_executedBlockIdx),
                 'm0'
             );
 
