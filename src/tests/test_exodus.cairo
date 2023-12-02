@@ -30,7 +30,7 @@ use zklink::utils::data_structures::DataStructures::StoredBlockInfo;
 fn getStoredBlockTemplate() -> StoredBlockInfo {
     StoredBlockInfo {
         blockNumber: 5,
-        preCommittedBlockNumber: 4,
+        blockSequence: 4,
         priorityOperations: 7,
         pendingOnchainOperationsHash: 0xcf2ef9f8da5935a514cc25835ea39be68777a2674197105ca904600f26547ad2,
         syncHash: 0xab04d07f7c285404dc58dd0b37894b20c4193a231499a20e4056d119fc2c1184

@@ -22,7 +22,7 @@ mod DataStructures {
     #[derive(Copy, Drop, Serde, starknet::Store)]
     struct StoredBlockInfo {
         blockNumber: u64, // Rollup block number
-        preCommittedBlockNumber: u64, // The pre not empty block number committed
+        blockSequence: u64, // The block commit sequence
         priorityOperations: u64, // Number of priority operations processed
         pendingOnchainOperationsHash: u256, // Hash of all operations that must be processed after verify
         syncHash: u256 // Used for cross chain block verify
@@ -32,7 +32,7 @@ mod DataStructures {
         fn into(self: StoredBlockInfo) -> Bytes {
             let mut bytes = BytesTrait::new();
             bytes.append_u64(self.blockNumber);
-            bytes.append_u64(self.preCommittedBlockNumber);
+            bytes.append_u64(self.blockSequence);
             bytes.append_u64(self.priorityOperations);
             bytes.append_u256(self.syncHash);
 

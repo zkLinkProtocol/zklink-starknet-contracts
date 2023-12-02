@@ -50,12 +50,12 @@ trait IZklink<TContractState> {
         _lastCommittedBlockData: StoredBlockInfo,
         _newBlocksData: Array<CommitBlockInfo>
     );
-    fn executeCompressedBlocks(
+    fn executeCompressedBlocks(ref self: TContractState, _blocksData: Array<ExecuteBlockInfo>);
+    fn revertBlocks(
         ref self: TContractState,
-        _latestExecutedBlockData: StoredBlockInfo,
-        _blocksData: Array<ExecuteBlockInfo>
+        _latestCommittedBlock: StoredBlockInfo,
+        _blocksToRevert: Array<StoredBlockInfo>
     );
-    fn revertBlocks(ref self: TContractState, _blocksToRevert: Array<StoredBlockInfo>);
     fn sendSyncHash(ref self: TContractState, _block: StoredBlockInfo);
     fn receiveBlockConfirmation(ref self: TContractState, _blockNumber: u64);
     fn changeGovernor(ref self: TContractState, _newGovernor: ContractAddress);
@@ -443,7 +443,7 @@ mod Zklink {
 
         let storedBlockZero = StoredBlockInfo {
             blockNumber: _blockNumber,
-            preCommittedBlockNumber: 0,
+            blockSequence: 0,
             priorityOperations: 0,
             pendingOnchainOperationsHash: EMPTY_STRING_KECCAK,
             syncHash: EMPTY_STRING_KECCAK
@@ -862,29 +862,21 @@ mod Zklink {
         // Execute blocks, completing priority operations and processing withdrawals.
         // 1. Processes all pending operations (Send Exits, Complete priority requests)
         // 2. Finalizes block on Ethereum
-        fn executeCompressedBlocks(
-            ref self: ContractState,
-            _latestExecutedBlockData: StoredBlockInfo,
-            _blocksData: Array<ExecuteBlockInfo>
-        ) {
+        fn executeCompressedBlocks(ref self: ContractState, _blocksData: Array<ExecuteBlockInfo>) {
             self.start();
             self.active();
             self.onlyValidator();
 
-            let _blocksData = _blocksData.span();
-            let nBlocks: u64 = _blocksData.len().into();
+            let _blocksData: Span<ExecuteBlockInfo> = _blocksData.span();
+            let nBlocks = _blocksData.len().into();
             assert(nBlocks > 0, 'd0');
 
-            let _totalBlocksExecuted: u64 = self.totalBlocksExecuted.read();
-            assert(
-                self
-                    .storedBlockHashes
-                    .read(_totalBlocksExecuted) == hashStoredBlockInfo(_latestExecutedBlockData),
-                'd1'
-            );
+            let latestExecutedBlock: @ExecuteBlockInfo = _blocksData[nBlocks - 1];
+            let latestExecutedBlockNumber = *latestExecutedBlock.storedBlock.blockNumber;
+            assert(latestExecutedBlockNumber <= self.totalBlocksSynchronized.read(), 'd1');
 
             let mut priorityRequestsExecuted = 0;
-            let mut latestExecutedBlockNumber: u64 = _latestExecutedBlockData.blockNumber;
+            let mut _totalBlocksExecuted = self.totalBlocksExecuted.read();
             let mut i: usize = 0;
             loop {
                 if i.into() == nBlocks {
@@ -892,19 +884,11 @@ mod Zklink {
                 }
                 let _executedBlockIdx = _totalBlocksExecuted + i.into() + 1;
                 let _blockExecuteData: @ExecuteBlockInfo = _blocksData[i];
-                assert(
-                    *_blockExecuteData
-                        .storedBlock
-                        .preCommittedBlockNumber == latestExecutedBlockNumber,
-                    'd2'
-                );
+                assert(*_blockExecuteData.storedBlock.blockSequence == _totalBlocksExecuted, 'd2');
                 self.executeOneBlock(_blockExecuteData, _executedBlockIdx);
                 priorityRequestsExecuted += *_blockExecuteData.storedBlock.priorityOperations;
-                latestExecutedBlockNumber = *_blockExecuteData.storedBlock.blockNumber;
                 i += 1;
             };
-
-            assert(latestExecutedBlockNumber <= self.totalBlocksSynchronized.read(), 'd3');
 
             self
                 .firstPriorityRequestId
@@ -916,7 +900,7 @@ mod Zklink {
                 .totalOpenPriorityRequests
                 .write(self.totalOpenPriorityRequests.read() - priorityRequestsExecuted);
 
-            self.totalBlocksExecuted.write(_totalBlocksExecuted + nBlocks);
+            self.totalBlocksExecuted.write(_totalBlocksExecuted + nBlocks.into());
 
             self
                 .emit(
@@ -927,7 +911,11 @@ mod Zklink {
         }
 
         // Reverts unExecuted blocks
-        fn revertBlocks(ref self: ContractState, _blocksToRevert: Array<StoredBlockInfo>) {
+        fn revertBlocks(
+            ref self: ContractState,
+            _latestCommittedBlock: StoredBlockInfo,
+            _blocksToRevert: Array<StoredBlockInfo>
+        ) {
             self.start();
             self.onlyValidator();
 
@@ -937,7 +925,6 @@ mod Zklink {
                 (blocksCommitted - self.totalBlocksExecuted.read()).try_into().unwrap()
             );
             let mut revertedPriorityRequests: u64 = 0;
-            let mut latestSynchronizedBlockNumber: u64 = self.totalBlocksSynchronized.read();
             let mut i: usize = 0;
 
             loop {
@@ -952,7 +939,6 @@ mod Zklink {
                         .read(blocksCommitted) == hashStoredBlockInfo(storedBlockInfo),
                     'c'
                 );
-                latestSynchronizedBlockNumber = storedBlockInfo.preCommittedBlockNumber;
 
                 // delete storedBlockHashes[blocksCommitted];
                 self.storedBlockHashes.write(blocksCommitted, 0);
@@ -962,12 +948,20 @@ mod Zklink {
 
                 i += 1;
             };
+            assert(
+                self
+                    .storedBlockHashes
+                    .read(blocksCommitted) == hashStoredBlockInfo(_latestCommittedBlock),
+                'c1'
+            );
 
             self.totalBlocksCommitted.write(blocksCommitted);
             self
                 .totalCommittedPriorityRequests
                 .write(self.totalCommittedPriorityRequests.read() - revertedPriorityRequests);
-            self.totalBlocksSynchronized.write(latestSynchronizedBlockNumber);
+            if (_latestCommittedBlock.blockNumber < self.totalBlocksSynchronized.read()) {
+                self.totalBlocksSynchronized.write(_latestCommittedBlock.blockNumber);
+            }
 
             self
                 .emit(
@@ -988,7 +982,8 @@ mod Zklink {
 
             assert(_block.blockNumber > self.totalBlocksSynchronized.read(), 'j0');
             assert(
-                self.storedBlockHashes.read(_block.blockNumber) == hashStoredBlockInfo(_block), 'j1'
+                self.storedBlockHashes.read(_block.blockSequence) == hashStoredBlockInfo(_block),
+                'j1'
             );
 
             ISyncServiceDispatcher { contract_address: self.syncService.read() }
@@ -1403,7 +1398,7 @@ mod Zklink {
 
             StoredBlockInfo {
                 blockNumber: *_newBlock.blockNumber,
-                preCommittedBlockNumber: *_previousBlock.blockNumber,
+                blockSequence: *_previousBlock.blockSequence + 1,
                 priorityOperations: priorityReqCommitted,
                 pendingOnchainOperationsHash: pendingOnchainOpsHash,
                 syncHash: syncHash
