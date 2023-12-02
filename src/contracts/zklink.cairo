@@ -884,7 +884,7 @@ mod Zklink {
                 }
                 let _executedBlockIdx = _totalBlocksExecuted + i.into() + 1;
                 let _blockExecuteData: @ExecuteBlockInfo = _blocksData[i];
-                assert(*_blockExecuteData.storedBlock.blockSequence == _totalBlocksExecuted, 'd2');
+                assert(*_blockExecuteData.storedBlock.blockSequence == _executedBlockIdx, 'd2');
                 self.executeOneBlock(_blockExecuteData, _executedBlockIdx);
                 priorityRequestsExecuted += *_blockExecuteData.storedBlock.priorityOperations;
                 i += 1;
