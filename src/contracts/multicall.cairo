@@ -45,6 +45,7 @@ struct AcceptInfo {
 
 #[starknet::interface]
 trait IMulticall<TContractState> {
+    fn multiStaticCall(self: @TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn multicall(ref self: TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn batchWithdrawToL1(
         ref self: TContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
@@ -58,6 +59,9 @@ trait IMulticall<TContractState> {
 
 #[starknet::contract]
 mod Multicall {
+    use core::traits::TryInto;
+    use core::traits::Into;
+    use contract_starknet::multicall::IMulticall;
     use core::array::ArrayTrait;
     use super::IMulticallDispatcher;
     use super::IMulticallDispatcherTrait;
@@ -71,14 +75,12 @@ mod Multicall {
 
     #[external(v0)]
     impl Multicall of super::IMulticall<ContractState> {
-        fn multicall(ref self: ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
+        fn multiStaticCall(self: @ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
             let mut results: Array<MulticallResult> = array![];
             let mut _targets = _targets;
             loop {
                 match _targets.pop_front() {
-                    Option::Some(Call{address,
-                    selector,
-                    calldata }) => {
+                    Option::Some(Call{address,selector,calldata }) => {
                         let returnData = starknet::call_contract_syscall(
                             address, selector, calldata.span()
                         )
@@ -92,6 +94,10 @@ mod Multicall {
                 }
             };
             results
+        }
+
+        fn multicall(ref self: ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
+            self.multiStaticCall(_targets)
         }
 
         fn batchWithdrawToL1(
