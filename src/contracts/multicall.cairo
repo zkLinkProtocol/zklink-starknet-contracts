@@ -59,9 +59,6 @@ trait IMulticall<TContractState> {
 
 #[starknet::contract]
 mod Multicall {
-    use core::traits::TryInto;
-    use core::traits::Into;
-    use contract_starknet::multicall::IMulticall;
     use core::array::ArrayTrait;
     use super::IMulticallDispatcher;
     use super::IMulticallDispatcherTrait;
