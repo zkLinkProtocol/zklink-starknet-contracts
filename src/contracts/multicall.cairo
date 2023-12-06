@@ -80,7 +80,9 @@ mod Multicall {
             let mut _targets = _targets;
             loop {
                 match _targets.pop_front() {
-                    Option::Some(Call{address,selector,calldata }) => {
+                    Option::Some(Call{address,
+                    selector,
+                    calldata }) => {
                         let returnData = starknet::call_contract_syscall(
                             address, selector, calldata.span()
                         )
