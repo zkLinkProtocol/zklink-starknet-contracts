@@ -45,6 +45,7 @@ struct AcceptInfo {
 
 #[starknet::interface]
 trait IMulticall<TContractState> {
+    fn multiStaticCall(self: @TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn multicall(ref self: TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn batchWithdrawToL1(
         ref self: TContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
@@ -71,7 +72,7 @@ mod Multicall {
 
     #[external(v0)]
     impl Multicall of super::IMulticall<ContractState> {
-        fn multicall(ref self: ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
+        fn multiStaticCall(self: @ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
             let mut results: Array<MulticallResult> = array![];
             let mut _targets = _targets;
             loop {
@@ -92,6 +93,10 @@ mod Multicall {
                 }
             };
             results
+        }
+
+        fn multicall(ref self: ContractState, _targets: Array<Call>) -> Array<MulticallResult> {
+            self.multiStaticCall(_targets)
         }
 
         fn batchWithdrawToL1(
