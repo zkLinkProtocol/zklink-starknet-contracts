@@ -856,6 +856,11 @@ mod Zklink {
                     )
                 );
 
+            // TODO: remove this when syncService supported
+            if self.syncService.read().is_zero() {
+                self.totalBlocksSynchronized.write(_lastCommittedBlockData.blockNumber);
+            }
+
             self.end();
         }
 
