@@ -150,7 +150,7 @@ NET=<network name> npm run setL1RemoteGateway -- --help
 NET=<network name> npm run setL2RemoteGateway -- --help
 ```
 
-- Set zkLink to L2 gatway
+- Set zkLink to L2 gateway
 
 ```sh
 NET=<network name> npm run setL2GatewayToZkLink -- --help

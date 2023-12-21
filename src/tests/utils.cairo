@@ -121,11 +121,11 @@ fn assert_event_ExodusMode(zklink: ContractAddress, exodusMode: bool) {
 }
 
 fn assert_event_WithdrawalPending(
-    zklink: ContractAddress, _tokenId: u16, _recepient: u256, _amount: u128
+    zklink: ContractAddress, _tokenId: u16, _recipient: u256, _amount: u128
 ) {
     let event = pop_log::<Zklink::WithdrawalPending>(zklink).unwrap();
     assert(event.tokenId == _tokenId, 'tokenId');
-    assert(event.recepient == _recepient, 'recepient');
+    assert(event.recipient == _recipient, 'recipient');
     assert(event.amount == _amount, 'amount');
 }
 

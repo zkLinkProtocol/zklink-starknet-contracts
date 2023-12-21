@@ -79,7 +79,7 @@ fn test_zklink_deposit_erc20_exodus() {
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('e3', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_deposit_token_unregisted() {
+fn test_zklink_deposit_token_unregistered() {
     let (addrs, _) = utils::prepare_test_deploy();
     let defaultSender = *addrs[utils::ADDR_DEFAULT];
     let zklink = *addrs[utils::ADDR_ZKLINK];
@@ -471,7 +471,7 @@ fn test_zklink_fullexit_subaccountid_too_large() {
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('a2', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_fullexit_token_unregisted() {
+fn test_zklink_fullexit_token_unregistered() {
     let (addrs, tokens) = utils::prepare_test_deploy();
     let defaultSender = *addrs[utils::ADDR_DEFAULT];
     let zklink = *addrs[utils::ADDR_ZKLINK];

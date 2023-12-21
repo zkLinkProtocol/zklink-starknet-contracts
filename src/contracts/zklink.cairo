@@ -274,7 +274,7 @@ mod Zklink {
         #[key]
         tokenId: u16,
         #[key]
-        recepient: u256,
+        recipient: u256,
         amount: u128
     }
 
@@ -1659,7 +1659,7 @@ mod Zklink {
                 .emit(
                     Event::WithdrawalPending(
                         WithdrawalPending {
-                            tokenId: _tokenId, recepient: recipient, amount: _amount
+                            tokenId: _tokenId, recipient: recipient, amount: _amount
                         }
                     )
                 );

@@ -26,7 +26,7 @@ In order to install and use `cairo`, install the following:
 curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh -s -- -v 2.3.1
 ```
 
-**If you need upgrade, just run the instllation scripts with new version again, and checkout to the newest tag, and rebuild the project.**
+**If you need upgrade, just run the installation scripts with new version again, and checkout to the newest tag, and rebuild the project.**
 
 After that, open a new shell and check that the following command returns a version number:
 

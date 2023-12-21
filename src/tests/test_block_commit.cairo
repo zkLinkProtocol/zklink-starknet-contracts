@@ -336,13 +336,13 @@ fn test_zklink_collectOnchainOps_success() {
     let (
         actual_processableOperationsHash,
         actual_priorityOperationsProcessed,
-        actual_currentOnchainOperationPubdataHashs
+        actual_currentOnchainOperationPubdataHashes
     ) =
         dispatcher
         .testCollectOnchainOps(block);
-    assert(actual_processableOperationsHash == processableOpPubdataHash, 'invaid value1');
-    assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invaid value2');
-    assert(actual_currentOnchainOperationPubdataHashs == onchainOpPubdataHash, 'invaid value3');
+    assert(actual_processableOperationsHash == processableOpPubdataHash, 'invalid value1');
+    assert(actual_priorityOperationsProcessed == priorityOperationsProcessed, 'invalid value2');
+    assert(actual_currentOnchainOperationPubdataHashes == onchainOpPubdataHash, 'invalid value3');
 }
 
 
@@ -515,9 +515,9 @@ fn test_zklink_testCommitOneBlock_commit_compressed_block() {
     );
 
     let r: StoredBlockInfo = dispatcher.testCommitOneBlock(preBlock, compressedBlock);
-    assert(r.blockNumber == blockNumber, 'invaid value1');
-    assert(r.blockSequence == preBlock.blockSequence + 1, 'invaid value2');
-    assert(r.priorityOperations == priorityOperationsProcessed, 'invaid value3');
-    assert(r.pendingOnchainOperationsHash == processableOpPubdataHash, 'invaid value4');
-    assert(r.syncHash == syncHash, 'invaid value5');
+    assert(r.blockNumber == blockNumber, 'invalid value1');
+    assert(r.blockSequence == preBlock.blockSequence + 1, 'invalid value2');
+    assert(r.priorityOperations == priorityOperationsProcessed, 'invalid value3');
+    assert(r.pendingOnchainOperationsHash == processableOpPubdataHash, 'invalid value4');
+    assert(r.syncHash == syncHash, 'invalid value5');
 }

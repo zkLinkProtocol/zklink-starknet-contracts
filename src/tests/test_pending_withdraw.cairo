@@ -31,7 +31,7 @@ use zklink::utils::data_structures::DataStructures::StoredBlockInfo;
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('b0', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_withdrawPendingBalance_token_unregisted() {
+fn test_zklink_withdrawPendingBalance_token_unregistered() {
     let (addrs, tokens) = utils::prepare_test_deploy();
     let defaultSender = *addrs[utils::ADDR_DEFAULT];
     let zklink = *addrs[utils::ADDR_ZKLINK];
