@@ -2,6 +2,7 @@
 // Do not change those value as below, otherwise unit test will fail.
 // And this value will be automatically modified by the automated
 // deployment script based on the configuration file in the ./etc directory before deployment
+// - DEFAULT_FEE_ADDRESS
 // - BLOCK_PERIOD
 // - PRIORITY_EXPIRATION
 // - UPGRADE_NOTICE_PERIOD
@@ -9,6 +10,9 @@
 // - MAX_CHAIN_ID
 // - ALL_CHAINS
 // - MASTER_CHAIN_ID
+
+// The default fee address
+const DEFAULT_FEE_ADDRESS: felt252 = 0x0;
 
 const EMPTY_STRING_KECCAK: u256 =
     0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
