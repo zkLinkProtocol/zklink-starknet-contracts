@@ -29,9 +29,10 @@ function writeZklinkConstants(configs) {
             console.error(err);
             return;
         }
-
+        // DEFAULT_FEE_ADDRESS
+        let result = data.replace(/(const DEFAULT_FEE_ADDRESS: felt252 = )(0x[a-fA-F0-9]+)(;)/, `$1${configs.defaultFeeAddress}$3`);
         // BLOCK_PERIOD
-        let result = data.replace(/(const BLOCK_PERIOD: u64 = )(\d+)(;)/, `$1${configs.blockPeriod}$3`);
+        result = result.replace(/(const BLOCK_PERIOD: u64 = )(\d+)(;)/, `$1${configs.blockPeriod}$3`);
         // PRIORITY_EXPIRATION
         result = result.replace(/(const PRIORITY_EXPIRATION: u64 = )(\d+)(;)/, `$1${configs.priorityExpiration}$3`);
         // UPGRADE_NOTICE_PERIOD
@@ -60,6 +61,7 @@ async function build() {
     let netConfig = await fs.promises.readFile(`./etc/${netName}.json`, "utf-8");
     netConfig = JSON.parse(netConfig);
 
+    const defaultFeeAddress = netConfig.macro.DEFAULT_FEE_ADDRESS;
     const blockPeriod = parseBlockPeriod(netConfig.macro.BLOCK_PERIOD);
     const upgradeNoticePeriod = netConfig.macro.UPGRADE_NOTICE_PERIOD;
     const priorityExpiration = netConfig.macro.PRIORITY_EXPIRATION;
@@ -69,6 +71,7 @@ async function build() {
     const masterChainId = netConfig.macro.MASTER_CHAIN_ID;
 
     const configs = {
+        defaultFeeAddress,
         blockPeriod,
         upgradeNoticePeriod,
         priorityExpiration,

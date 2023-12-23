@@ -8,9 +8,7 @@ import { connectStarknet, getDeployLog, buildVerifierConstructorArgs, buildZklin
 program
     .command("deployZklink")
     .description("Deploy zklink and verifier contract")
-    .option('--governor <governor>', 'Governor address')
     .option('--validator <validator>', 'Validator address')
-    .option('--fee-account <feeAccount>', 'Fee account address')
     .option('--block-number <blockNumber>', 'Block number', 0)
     .option('--skip-verify', 'Skip verification', false)
     .option('--force', 'Force redeploy', false)
@@ -32,20 +30,12 @@ async function deploy_zklink(options) {
     };
     await declare_zklink(provider, deployer, log, declare_options);
 
-    if (options.governor === undefined) {
-        options.governor = netConfig.network.accounts.governor.address;
-    }
-
     if (options.validator === undefined) {
         options.validator = netConfig.network.accounts.deployer.address;
     }
 
-    if (options.feeAccount === undefined) {
-        options.feeAccount = netConfig.network.accounts.deployer.address;
-    }
-
     deployLog[logName.DEPLOY_LOG_DEPLOYER] = deployer.address;
-    deployLog[logName.DEPLOY_LOG_GOVERNOR] = options.governor;
+    deployLog[logName.DEPLOY_LOG_GOVERNOR] = governor.address;
     deployLog[logName.DEPLOY_LOG_VALIDATOR] = options.validator;
     fs.writeFileSync(deployLogPath, JSON.stringify(deployLog, null, 2));
 
@@ -74,7 +64,7 @@ async function deploy_zklink(options) {
             zklinkContractSierra.abi,
             deployer.address,
             deployLog[logName.DEPLOY_LOG_VERIFIER],
-            options.governor,
+            governor.address,
             options.blockNumber,
         );
 
@@ -162,7 +152,7 @@ async function deploy_zklink(options) {
     // change gatekeeper master from deployer to governor
     if (!(logName.DEPLOY_LOG_GATEKEEPER_TRANSFER_MASTER_TX_HASH in deployLog) || options.force) {
         gatekeeper.connect(deployer);
-        const call = gatekeeper.populate("transferMastership", [options.governor]);
+        const call = gatekeeper.populate("transferMastership", [governor.address]);
         const tx = await gatekeeper.transferMastership(call.calldata);
         await provider.waitForTransaction(tx.transaction_hash);
         console.log('✅ Gatekeeper Contract master transferred to governor at tx:', tx.transaction_hash);

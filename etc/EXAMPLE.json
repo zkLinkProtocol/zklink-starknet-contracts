@@ -17,6 +17,7 @@
         }
     },
     "macro": {
+        "DEFAULT_FEE_ADDRESS": "0x0",
         "BLOCK_PERIOD": "1 seconds",
         "UPGRADE_NOTICE_PERIOD": 0,
         "PRIORITY_EXPIRATION": 0,
