@@ -17,3 +17,6 @@ jobs:
       - run: scarb fmt --check
       - run: scarb build
       - run: scarb test
+      # https://github.com/crate-ci/typos/blob/master/docs/github-action.md
+      - name: check spelling
+        uses: crate-ci/typos@master

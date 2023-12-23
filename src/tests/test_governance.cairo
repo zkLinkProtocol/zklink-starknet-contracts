@@ -156,7 +156,7 @@ fn test_zklink_add_token_invalid_decimals() {
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('I2', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_add_token_registed_1() {
+fn test_zklink_add_token_registered_1() {
     let address = prepare_test_deploy();
 
     let defaultSender: ContractAddress = *address[utils::ADDR_DEFAULT];
@@ -177,7 +177,7 @@ fn test_zklink_add_token_registed_1() {
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('I2', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_add_token_registed_2() {
+fn test_zklink_add_token_registered_2() {
     let address = prepare_test_deploy();
 
     let defaultSender: ContractAddress = *address[utils::ADDR_DEFAULT];
@@ -249,7 +249,7 @@ fn test_zklink_pause_token_not_governor() {
 #[test]
 #[available_gas(20000000000)]
 #[should_panic(expected: ('K', 'ENTRYPOINT_FAILED'))]
-fn test_zklink_pause_token_not_registed() {
+fn test_zklink_pause_token_not_registered() {
     let address = prepare_test_deploy();
 
     let defaultSender: ContractAddress = *address[utils::ADDR_DEFAULT];

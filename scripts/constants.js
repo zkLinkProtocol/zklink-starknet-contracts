@@ -49,7 +49,7 @@ const NOTICE_PERIOD = "NoticePeriod";
 // command
 const COMMAND_BUILD = "scarb --release build";
 
-// connetion type
+// connection type
 const DECLARE = "declare";
 const DEPLOY = "deploy";
 

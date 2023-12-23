@@ -75,7 +75,7 @@ fn test_zklink_activateExodusMode_twice() {
     let amount: u128 = 1000000000000000000; // 1 Ether
 
     // expire block is zero in unit test environment
-    // cairo-test defualt block number is 0
+    // cairo-test default block number is 0
     set_block_number(5);
     set_contract_address(defaultSender);
     eth_dispatcher.mint(amount.into() * 10);
@@ -87,7 +87,7 @@ fn test_zklink_activateExodusMode_twice() {
     zklink_dispatcher.activateExodusMode();
     utils::assert_event_ExodusMode(zklink, true);
 
-    // active agian should failed
+    // active again should failed
     zklink_dispatcher.activateExodusMode();
 }
 

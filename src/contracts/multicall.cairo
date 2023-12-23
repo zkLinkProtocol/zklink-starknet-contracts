@@ -48,12 +48,12 @@ trait IMulticall<TContractState> {
     fn multiStaticCall(self: @TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn multicall(ref self: TContractState, _targets: Array<Call>) -> Array<MulticallResult>;
     fn batchWithdrawToL1(
-        ref self: TContractState, _zklink: ContractAddress, _withdrawDatas: Array<WithdrawToL1Info>
+        ref self: TContractState, _zklink: ContractAddress, _withdrawData: Array<WithdrawToL1Info>
     );
     fn batchWithdrawPendingBalance(
         ref self: TContractState,
         _zklink: ContractAddress,
-        _withdrawDatas: Array<WithdrawPendingBalanceInfo>
+        _withdrawData: Array<WithdrawPendingBalanceInfo>
     );
 }
 
@@ -102,11 +102,11 @@ mod Multicall {
         fn batchWithdrawToL1(
             ref self: ContractState,
             _zklink: ContractAddress,
-            _withdrawDatas: Array<WithdrawToL1Info>
+            _withdrawData: Array<WithdrawToL1Info>
         ) {
-            let mut _withdrawDatas = _withdrawDatas;
+            let mut _withdrawData = _withdrawData;
             loop {
-                match _withdrawDatas.pop_front() {
+                match _withdrawData.pop_front() {
                     Option::Some(withdrawToL1Info) => {
                         let mut calldata: Array<felt252> = array![];
                         Serde::serialize(@withdrawToL1Info.owner, ref calldata);
@@ -132,11 +132,11 @@ mod Multicall {
         fn batchWithdrawPendingBalance(
             ref self: ContractState,
             _zklink: ContractAddress,
-            _withdrawDatas: Array<WithdrawPendingBalanceInfo>
+            _withdrawData: Array<WithdrawPendingBalanceInfo>
         ) {
-            let mut _withdrawDatas = _withdrawDatas;
+            let mut _withdrawData = _withdrawData;
             loop {
-                match _withdrawDatas.pop_front() {
+                match _withdrawData.pop_front() {
                     Option::Some(withdrawPendingBalanceInfo) => {
                         let mut calldata: Array<felt252> = array![];
                         Serde::serialize(@withdrawPendingBalanceInfo.owner, ref calldata);
